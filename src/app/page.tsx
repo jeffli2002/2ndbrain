@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Brain,
   FileText,
@@ -44,6 +45,37 @@ interface Task {
   lastDuration: string;
   nextRun: string;
   errorCount: number;
+}
+
+// 认证检查组件
+function AuthCheck({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const auth = localStorage.getItem("secondbrain_auth");
+    if (auth !== "true") {
+      router.push("/login");
+    } else {
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
+        <div className="text-white">加载中...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
 }
 
 // 模拟数据 - 实际应该从API获取
@@ -716,6 +748,7 @@ export default function SecondBrain() {
   );
 
   return (
+    <AuthCheck>
     <div className="flex min-h-screen bg-[#0a0a0b]">
       {renderSidebar()}
       <main className="flex-1 overflow-y-auto">
@@ -725,5 +758,6 @@ export default function SecondBrain() {
         {activeTab === "tasks" && renderTasks()}
       </main>
     </div>
+    </AuthCheck>
   );
 }
