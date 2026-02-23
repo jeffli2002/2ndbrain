@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Brain, Lock, Eye, EyeOff } from "lucide-react";
 
-interface LoginProps {
-  onLogin: (password: string) => boolean;
-}
+const ADMIN_PASSWORD = "jeff2026";
 
-export default function Login({ onLogin }: LoginProps) {
+export default function Login() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
@@ -17,12 +17,11 @@ export default function Login({ onLogin }: LoginProps) {
     e.preventDefault();
     setLoading(true);
     setError(false);
-
-    // Simulate loading
     await new Promise(resolve => setTimeout(resolve, 500));
-
-    const success = onLogin(password);
-    if (!success) {
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem("secondbrain_auth", "true");
+      router.push("/");
+    } else {
       setError(true);
       setPassword("");
     }
