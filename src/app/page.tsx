@@ -1046,10 +1046,103 @@ export default function SecondBrain() {
     <div className="flex min-h-screen bg-[#0a0a0b]">
       {renderSidebar()}
       <main className="flex-1 overflow-y-auto">
+        {/* 全局搜索区域 */}
+        {searchQuery && (
+          <div className="p-8 animate-fadeIn">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+                <Search className="w-7 h-7 text-blue-400" />
+                搜索结果
+              </h2>
+              <p className="text-[#71717a]">关键词: "{searchQuery}"</p>
+            </div>
+
+            {/* 记忆搜索结果 */}
+            {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
+                  <Brain className="w-5 h-5" />
+                  记忆 ({mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                </h3>
+                <div className="space-y-3">
+                  {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
+                    <div key={m.id} onClick={() => {setSelectedItem(m); setActiveTab("memories");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-purple-500/50 cursor-pointer">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getMemoryTypeIcon(m.type)}
+                        <span className="font-semibold">{m.title}</span>
+                        <span className="text-xs text-[#71717a] ml-auto">{m.date}</span>
+                      </div>
+                      <p className="text-sm text-[#a1a1aa] line-clamp-2">{m.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 文档搜索结果 */}
+            {mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  文档 ({mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                </h3>
+                <div className="space-y-3">
+                  {mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
+                    <div key={d.id} onClick={() => {setSelectedItem(d); setActiveTab("documents");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-blue-500/50 cursor-pointer">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getDocumentTypeIcon(d.type)}
+                        <span className="font-semibold">{d.title}</span>
+                        <span className="text-xs text-[#71717a] ml-auto">{d.date}</span>
+                      </div>
+                      <p className="text-sm text-[#a1a1aa] truncate">{d.path}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 任务搜索结果 */}
+            {mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
+                  <CheckSquare className="w-5 h-5" />
+                  任务 ({mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                </h3>
+                <div className="space-y-3">
+                  {mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map(t => (
+                    <div key={t.id} onClick={() => setActiveTab("tasks")} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-green-500/50 cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(t.status)}
+                        <span className="font-semibold">{t.name}</span>
+                        <span className="text-xs text-[#71717a] ml-auto">{t.schedule}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 无结果 */}
+            {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              <div className="text-center py-12">
+                <Search className="w-12 h-12 text-[#3f3f46] mx-auto mb-4" />
+                <p className="text-[#71717a]">未找到相关结果</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!searchQuery && (
+          <>
         {activeTab === "home" && renderHome()}
         {activeTab === "memories" && renderMemories()}
         {activeTab === "documents" && renderDocuments()}
         {activeTab === "tasks" && renderTasks()}
+        {activeTab === "agents" && renderAgents()}
+          </>
+        )}
       </main>
     </div>
     </AuthCheck>
