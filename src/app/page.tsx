@@ -315,22 +315,42 @@ export default function SecondBrain() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [dateRange, setDateRange] = useState<{start: string; end: string}>({
+    start: new Date().toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
 
   // 获取今天的日期
   const getToday = () => new Date().toISOString().split('T')[0];
+  
+  // 获取本周第一天
+  const getWeekStart = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    return new Date(now.setDate(diff)).toISOString().split('T')[0];
+  };
+  
+  // 获取本月第一天
+  const getMonthStart = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  };
 
-  // 过滤数据 - 按日期筛选
+  // 过滤数据 - 按日期范围筛选 (空范围=显示全部)
   const filteredMemories = mockMemories.filter(
     (m) =>
-      (m.date === dateFilter || m.type === "long-term") &&
+      (m.type === "long-term" || 
+       !dateRange.start || !dateRange.end ||
+       (m.date >= dateRange.start && m.date <= dateRange.end)) &&
       (m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredDocuments = mockDocuments.filter(
     (d) =>
-      d.date === dateFilter &&
+      (!dateRange.start || !dateRange.end ||
+       (d.date >= dateRange.start && d.date <= dateRange.end)) &&
       (d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.path.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -414,21 +434,52 @@ export default function SecondBrain() {
 
       {/* 日期筛选 */}
       <div className="p-4 border-b border-[#27272a]">
-        <label className="text-xs text-[#a1a1aa] block mb-2">日期筛选</label>
-        <div className="flex gap-2">
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            max={getToday()}
-            className="flex-1 bg-[#27272a] border border-[#3f3f46] rounded-lg px-3 py-2 text-white text-sm"
-          />
-          <button
-            onClick={() => setDateFilter(getToday())}
-            className="bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg text-sm hover:bg-blue-500/30"
-          >
-            今天
-          </button>
+        <label className="text-xs text-[#a1a1aa] block mb-2">日期范围</label>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+              max={dateRange.end}
+              className="flex-1 bg-[#27272a] border border-[#3f3f46] rounded-lg px-2 py-2 text-white text-xs"
+            />
+            <span className="text-[#71717a] self-center">-</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+              min={dateRange.start}
+              max={getToday()}
+              className="flex-1 bg-[#27272a] border border-[#3f3f46] rounded-lg px-2 py-2 text-white text-xs"
+            />
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setDateRange({start: getToday(), end: getToday()})}
+              className="flex-1 bg-blue-500/20 text-blue-400 px-2 py-1.5 rounded text-xs hover:bg-blue-500/30"
+            >
+              今天
+            </button>
+            <button
+              onClick={() => setDateRange({start: getWeekStart(), end: getToday()})}
+              className="flex-1 bg-purple-500/20 text-purple-400 px-2 py-1.5 rounded text-xs hover:bg-purple-500/30"
+            >
+              本周
+            </button>
+            <button
+              onClick={() => setDateRange({start: getMonthStart(), end: getToday()})}
+              className="flex-1 bg-green-500/20 text-green-400 px-2 py-1.5 rounded text-xs hover:bg-green-500/30"
+            >
+              本月
+            </button>
+            <button
+              onClick={() => setDateRange({start: "", end: ""})}
+              className="flex-1 bg-[#27272a] text-[#71717a] px-2 py-1.5 rounded text-xs hover:bg-[#3f3f46]"
+            >
+              清除
+            </button>
+          </div>
         </div>
       </div>
 
