@@ -16,6 +16,7 @@ import {
   Calendar,
   BookOpen,
   Activity,
+  Zap,
 } from "lucide-react";
 
 // 类型定义
@@ -236,7 +237,79 @@ const mockTasks: Task[] = [
   },
 ];
 
-type TabType = "home" | "memories" | "documents" | "tasks";
+// Agent 类型定义
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  status: "ok" | "error" | "running";
+  tasks: number;
+  completedTasks: number;
+  failedTasks: number;
+  tokenUsage: number;
+  lastRun: string;
+}
+
+// Agent 模拟数据
+const mockAgents: Agent[] = [
+  {
+    id: "1",
+    name: "Content Agent",
+    description: "负责AI日报、内容发布、KOL追踪",
+    status: "ok",
+    tasks: 3,
+    completedTasks: 3,
+    failedTasks: 0,
+    tokenUsage: 125000,
+    lastRun: "2026-02-23 11:00",
+  },
+  {
+    id: "2",
+    name: "Growth Agent",
+    description: "负责SEO和关键词分析",
+    status: "ok",
+    tasks: 1,
+    completedTasks: 1,
+    failedTasks: 0,
+    tokenUsage: 45000,
+    lastRun: "2026-02-23 10:00",
+  },
+  {
+    id: "3",
+    name: "Product Agent",
+    description: "负责竞品分析和产品规划",
+    status: "ok",
+    tasks: 1,
+    completedTasks: 1,
+    failedTasks: 0,
+    tokenUsage: 38000,
+    lastRun: "2026-02-23 14:00",
+  },
+  {
+    id: "4",
+    name: "Chief Agent",
+    description: "负责生成每日工作报告",
+    status: "error",
+    tasks: 1,
+    completedTasks: 0,
+    failedTasks: 1,
+    tokenUsage: 15000,
+    lastRun: "2026-02-22 19:30",
+  },
+  {
+    id: "5",
+    name: "Evo Agent",
+    description: "负责自我进化和技能演进",
+    status: "ok",
+    tasks: 1,
+    completedTasks: 1,
+    failedTasks: 0,
+    tokenUsage: 22000,
+    lastRun: "2026-02-22 22:00",
+  },
+];
+
+type TabType = "home" | "memories" | "documents" | "tasks" | "agents";
 
 export default function SecondBrain() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
@@ -423,6 +496,19 @@ export default function SecondBrain() {
                   {stats.errorTasks}
                 </span>
               )}
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setActiveTab("agents")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "agents"
+                  ? "bg-blue-500/20 text-blue-400"
+                  : "text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
+              }`}
+            >
+              <Activity className="w-5 h-5" />
+              <span>Agent中心</span>
             </button>
           </li>
         </ul>
@@ -680,6 +766,100 @@ export default function SecondBrain() {
       )}
     </div>
   );
+
+  // 渲染Agent中心
+  const renderAgents = () => {
+    const totalTasks = mockAgents.reduce((sum, a) => sum + a.tasks, 0);
+    const totalCompleted = mockAgents.reduce((sum, a) => sum + a.completedTasks, 0);
+    const totalFailed = mockAgents.reduce((sum, a) => sum + a.failedTasks, 0);
+    const totalTokens = mockAgents.reduce((sum, a) => sum + a.tokenUsage, 0);
+
+    return (
+      <div className="p-8 animate-fadeIn">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Activity className="w-7 h-7 text-purple-400" />
+            Agent中心
+          </h2>
+        </div>
+
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckSquare className="w-5 h-5 text-blue-400" />
+              <span className="text-[#a1a1aa] text-sm">总任务</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{totalTasks}</p>
+          </div>
+          <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="text-[#a1a1aa] text-sm">已完成</span>
+            </div>
+            <p className="text-2xl font-bold text-green-400">{totalCompleted}</p>
+          </div>
+          <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
+            <div className="flex items-center gap-3 mb-2">
+              <XCircle className="w-5 h-5 text-red-400" />
+              <span className="text-[#a1a1aa] text-sm">失败</span>
+            </div>
+            <p className="text-2xl font-bold text-red-400">{totalFailed}</p>
+          </div>
+          <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
+            <div className="flex items-center gap-3 mb-2">
+              <Zap className="w-5 h-5 text-yellow-400" />
+              <span className="text-[#a1a1aa] text-sm">Token消耗</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-400">{(totalTokens / 1000).toFixed(1)}k</p>
+          </div>
+        </div>
+
+        {/* Agent列表 */}
+        <div className="space-y-4">
+          {mockAgents.map((agent) => (
+            <div
+              key={agent.id}
+              className="bg-[#141416] p-5 rounded-xl border border-[#27272a] hover:border-purple-500/50 transition-colors"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-white">{agent.name}</h3>
+                  {agent.status === "ok" ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : agent.status === "running" ? (
+                    <Activity className="w-4 h-4 text-blue-400 animate-pulse" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-400" />
+                  )}
+                </div>
+                <span className="text-xs text-[#71717a]">{agent.lastRun}</span>
+              </div>
+              <p className="text-sm text-[#a1a1aa] mb-4">{agent.description}</p>
+              <div className="grid grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-[#71717a] text-xs">任务数</p>
+                  <p className="text-white">{agent.tasks}</p>
+                </div>
+                <div>
+                  <p className="text-[#71717a] text-xs">完成</p>
+                  <p className="text-green-400">{agent.completedTasks}</p>
+                </div>
+                <div>
+                  <p className="text-[#71717a] text-xs">失败</p>
+                  <p className="text-red-400">{agent.failedTasks}</p>
+                </div>
+                <div>
+                  <p className="text-[#71717a] text-xs">Token</p>
+                  <p className="text-yellow-400">{(agent.tokenUsage / 1000).toFixed(1)}k</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // 渲染任务中心
   const renderTasks = () => (
