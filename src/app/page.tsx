@@ -242,18 +242,24 @@ export default function SecondBrain() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
+  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // 过滤数据
+  // 获取今天的日期
+  const getToday = () => new Date().toISOString().split('T')[0];
+
+  // 过滤数据 - 按日期筛选
   const filteredMemories = mockMemories.filter(
     (m) =>
-      m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.content.toLowerCase().includes(searchQuery.toLowerCase())
+      (m.date === dateFilter || m.type === "long-term") &&
+      (m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredDocuments = mockDocuments.filter(
     (d) =>
-      d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.path.toLowerCase().includes(searchQuery.toLowerCase())
+      d.date === dateFilter &&
+      (d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.path.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredTasks = mockTasks.filter((t) =>
@@ -331,6 +337,26 @@ export default function SecondBrain() {
           第二大脑
         </h1>
         <p className="text-xs text-[#a1a1aa] mt-1">知识管理 · 记忆提取 · 任务追踪</p>
+      </div>
+
+      {/* 日期筛选 */}
+      <div className="p-4 border-b border-[#27272a]">
+        <label className="text-xs text-[#a1a1aa] block mb-2">日期筛选</label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            max={getToday()}
+            className="flex-1 bg-[#27272a] border border-[#3f3f46] rounded-lg px-3 py-2 text-white text-sm"
+          />
+          <button
+            onClick={() => setDateFilter(getToday())}
+            className="bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg text-sm hover:bg-blue-500/30"
+          >
+            今天
+          </button>
+        </div>
       </div>
 
       {/* 导航 */}
