@@ -243,6 +243,7 @@ interface Agent {
   name: string;
   description: string;
   status: "ok" | "error" | "running";
+  model: string;
   tasks: number;
   completedTasks: number;
   failedTasks: number;
@@ -257,6 +258,7 @@ const mockAgents: Agent[] = [
     name: "Content Agent",
     description: "负责AI日报、内容发布、KOL追踪",
     status: "ok",
+    model: "Kimi K2.5",
     tasks: 3,
     completedTasks: 3,
     failedTasks: 0,
@@ -265,9 +267,22 @@ const mockAgents: Agent[] = [
   },
   {
     id: "2",
+    name: "Coding Agent",
+    description: "负责代码开发、项目修复、功能实现",
+    status: "ok",
+    model: "MiniMax M2.5",
+    tasks: 5,
+    completedTasks: 4,
+    failedTasks: 1,
+    tokenUsage: 89000,
+    lastRun: "2026-02-23 20:30",
+  },
+  {
+    id: "3",
     name: "Growth Agent",
     description: "负责SEO和关键词分析",
     status: "ok",
+    model: "Kimi K2.5",
     tasks: 1,
     completedTasks: 1,
     failedTasks: 0,
@@ -275,10 +290,11 @@ const mockAgents: Agent[] = [
     lastRun: "2026-02-23 10:00",
   },
   {
-    id: "3",
+    id: "4",
     name: "Product Agent",
     description: "负责竞品分析和产品规划",
     status: "ok",
+    model: "Kimi K2.5",
     tasks: 1,
     completedTasks: 1,
     failedTasks: 0,
@@ -286,10 +302,11 @@ const mockAgents: Agent[] = [
     lastRun: "2026-02-23 14:00",
   },
   {
-    id: "4",
+    id: "5",
     name: "Chief Agent",
     description: "负责生成每日工作报告",
     status: "error",
+    model: "MiniMax M2.5",
     tasks: 1,
     completedTasks: 0,
     failedTasks: 1,
@@ -297,10 +314,11 @@ const mockAgents: Agent[] = [
     lastRun: "2026-02-22 19:30",
   },
   {
-    id: "5",
+    id: "6",
     name: "Evo Agent",
     description: "负责自我进化和技能演进",
     status: "ok",
+    model: "MiniMax M2.5",
     tasks: 1,
     completedTasks: 1,
     failedTasks: 0,
@@ -924,7 +942,11 @@ export default function SecondBrain() {
                 <span className="text-xs text-[#71717a]">{agent.lastRun}</span>
               </div>
               <p className="text-sm text-[#a1a1aa] mb-4">{agent.description}</p>
-              <div className="grid grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-5 gap-4 text-sm">
+                <div>
+                  <p className="text-[#71717a] text-xs">模型</p>
+                  <p className="text-blue-400 text-xs">{agent.model}</p>
+                </div>
                 <div>
                   <p className="text-[#71717a] text-xs">任务数</p>
                   <p className="text-white">{agent.tasks}</p>
