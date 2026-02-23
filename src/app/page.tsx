@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import {
   Brain,
   FileText,
@@ -18,6 +19,11 @@ import {
   Activity,
   Zap,
 } from "lucide-react";
+
+// Supabase 配置
+const supabaseUrl = "https://njxjuvxosvwvluxefrzg.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjkyNTUsImV4cCI6MjA4NzQwNTI1NX0.FqfMyI3uSkiHVepVVccxFU4ie5RU00VVdrF-aOr9LjI";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 类型定义
 interface Memory {
@@ -333,10 +339,39 @@ export default function SecondBrain() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
+  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{start: string; end: string}>({
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+
+  // 真实数据状态
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // 从Supabase获取数据
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const [memRes, docRes, taskRes] = await Promise.all([
+          supabase.from("memories").select("*").order("date", { ascending: false }),
+          supabase.from("documents").select("*").order("date", { ascending: false }),
+          supabase.from("tasks").select("*"),
+        ]);
+        
+        if (memRes.data) setMemories(memRes.data as Memory[]);
+        if (docRes.data) setDocuments(docRes.data as Document[]);
+        if (taskRes.data) setTasks(taskRes.data as Task[]);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // 获取今天的日期
   const getToday = () => new Date().toISOString().split('T')[0];
@@ -356,7 +391,7 @@ export default function SecondBrain() {
   };
 
   // 过滤数据 - 按日期范围筛选 (空范围=显示全部)
-  const filteredMemories = mockMemories.filter(
+  const filteredMemories = memories.filter(
     (m) =>
       (m.type === "long-term" || 
        !dateRange.start || !dateRange.end ||
@@ -365,7 +400,7 @@ export default function SecondBrain() {
       m.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredDocuments = mockDocuments.filter(
+  const filteredDocuments = documents.filter(
     (d) =>
       (!dateRange.start || !dateRange.end ||
        (d.date >= dateRange.start && d.date <= dateRange.end)) &&
@@ -373,16 +408,16 @@ export default function SecondBrain() {
       d.path.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredTasks = mockTasks.filter((t) =>
+  const filteredTasks = tasks.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // 统计
   const stats = {
-    totalMemories: mockMemories.length,
-    totalDocuments: mockDocuments.length,
-    activeTasks: mockTasks.filter((t) => t.status === "ok").length,
-    errorTasks: mockTasks.filter((t) => t.status === "error").length,
+    totalMemories: memories.length,
+    totalDocuments: documents.length,
+    activeTasks: tasks.filter((t) => t.status === "ok").length,
+    errorTasks: tasks.filter((t) => t.status === "error").length,
   };
 
   // 获取状态图标
@@ -647,7 +682,7 @@ export default function SecondBrain() {
             </button>
           </div>
           <div className="p-4 space-y-3">
-            {mockMemories.slice(0, 3).map((memory) => (
+            {memories.slice(0, 3).map((memory) => (
               <div
                 key={memory.id}
                 className="p-3 bg-[#1f1f22] rounded-lg hover:bg-[#27272a] cursor-pointer transition-colors"
@@ -681,7 +716,7 @@ export default function SecondBrain() {
             </button>
           </div>
           <div className="p-4 space-y-3">
-            {mockTasks.slice(0, 4).map((task) => (
+            {tasks.slice(0, 4).map((task) => (
               <div
                 key={task.id}
                 className="p-3 bg-[#1f1f22] rounded-lg flex items-center justify-between"
@@ -1012,7 +1047,7 @@ export default function SecondBrain() {
         <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a] flex items-center gap-4">
           <Clock className="w-8 h-8 text-blue-500" />
           <div>
-            <p className="text-2xl font-bold">{mockTasks.length}</p>
+            <p className="text-2xl font-bold">{tasks.length}</p>
             <p className="text-xs text-[#a1a1aa]">总任务数</p>
           </div>
         </div>
@@ -1080,14 +1115,14 @@ export default function SecondBrain() {
             </div>
 
             {/* 记忆搜索结果 */}
-            {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <Brain className="w-5 h-5" />
-                  记忆 ({mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  记忆 ({memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length})
                 </h3>
                 <div className="space-y-3">
-                  {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
+                  {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
                     <div key={m.id} onClick={() => {setSelectedItem(m); setActiveTab("memories");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-purple-500/50 cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         {getMemoryTypeIcon(m.type)}
@@ -1102,14 +1137,14 @@ export default function SecondBrain() {
             )}
 
             {/* 文档搜索结果 */}
-            {mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5" />
-                  文档 ({mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  文档 ({documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length})
                 </h3>
                 <div className="space-y-3">
-                  {mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
+                  {documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
                     <div key={d.id} onClick={() => {setSelectedItem(d); setActiveTab("documents");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-blue-500/50 cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         {getDocumentTypeIcon(d.type)}
@@ -1124,14 +1159,14 @@ export default function SecondBrain() {
             )}
 
             {/* 任务搜索结果 */}
-            {mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <CheckSquare className="w-5 h-5" />
-                  任务 ({mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  任务 ({tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length})
                 </h3>
                 <div className="space-y-3">
-                  {mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map(t => (
+                  {tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map(t => (
                     <div key={t.id} onClick={() => setActiveTab("tasks")} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-green-500/50 cursor-pointer">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(t.status)}
@@ -1145,9 +1180,9 @@ export default function SecondBrain() {
             )}
 
             {/* 无结果 */}
-            {mockMemories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             mockDocuments.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             mockTasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+            {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
+             tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
               <div className="text-center py-12">
                 <Search className="w-12 h-12 text-[#3f3f46] mx-auto mb-4" />
                 <p className="text-[#71717a]">未找到相关结果</p>
