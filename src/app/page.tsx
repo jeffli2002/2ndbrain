@@ -721,7 +721,7 @@ export default function SecondBrain() {
         ))}
       </div>
 
-      {/* 详情模态框 */}
+      {/* 详情模态框 - 记忆 */}
       {selectedItem && "content" in selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-[#141416] rounded-xl border border-[#27272a] max-w-2xl w-full max-h-[80vh] overflow-y-auto">
@@ -732,13 +732,29 @@ export default function SecondBrain() {
               </h3>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="text-[#a1a1aa] hover:text-white"
+                className="text-[#a1a1aa] hover:text-white text-xl"
               >
                 ✕
               </button>
             </div>
             <div className="p-6">
-              <p className="text-[#a1a1aa] whitespace-pre-wrap">{selectedItem.content}</p>
+              {/* 元信息 */}
+              <div className="flex gap-4 mb-4 text-sm">
+                <span className="text-[#71717a]">
+                  类型: {"type" in selectedItem && (
+                    <span className="text-blue-400">{selectedItem.type === 'long-term' ? '长期记忆' : selectedItem.type === 'daily' ? '日记' : '进化'}</span>
+                  )}
+                </span>
+                <span className="text-[#71717a]">
+                  日期: <span className="text-white">{selectedItem.date}</span>
+                </span>
+              </div>
+              {/* 详细内容 */}
+              <div className="border-t border-[#27272a] pt-4">
+                <pre className="text-[#d4d4d8] whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                  {selectedItem.content}
+                </pre>
+              </div>
             </div>
           </div>
         </div>
@@ -790,7 +806,7 @@ export default function SecondBrain() {
         ))}
       </div>
 
-      {/* 详情模态框 */}
+      {/* 详情模态框 - 文档 */}
       {selectedItem && "path" in selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-[#141416] rounded-xl border border-[#27272a] max-w-2xl w-full max-h-[80vh] overflow-y-auto">
@@ -801,15 +817,36 @@ export default function SecondBrain() {
               </h3>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="text-[#a1a1aa] hover:text-white"
+                className="text-[#a1a1aa] hover:text-white text-xl"
               >
                 ✕
               </button>
             </div>
             <div className="p-6">
-              <p className="text-xs text-[#a1a1aa] mb-4">{selectedItem.path}</p>
-              <p className="text-sm text-[#a1a1aa]">
-                文件大小: {formatSize(selectedItem.size)} | 创建日期: {selectedItem.date}
+              {/* 元信息 */}
+              <div className="bg-[#0a0a0c] rounded-lg p-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-[#71717a] text-xs">文件路径</p>
+                    <p className="text-[#d4d4d8] truncate mt-1">{selectedItem.path}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#71717a] text-xs">文件类型</p>
+                    <p className="text-blue-400 mt-1">{selectedItem.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#71717a] text-xs">文件大小</p>
+                    <p className="text-white mt-1">{formatSize(selectedItem.size)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#71717a] text-xs">创建日期</p>
+                    <p className="text-white mt-1">{selectedItem.date}</p>
+                  </div>
+                </div>
+              </div>
+              {/* 提示 */}
+              <p className="text-xs text-[#71717a] text-center">
+                文件预览功能开发中...
               </p>
             </div>
           </div>
