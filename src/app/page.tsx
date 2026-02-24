@@ -349,6 +349,7 @@ export default function SecondBrain() {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // 从Supabase获取数据
   useEffect(() => {
@@ -366,6 +367,10 @@ export default function SecondBrain() {
         if (taskRes.data) setTasks(taskRes.data as Task[]);
       } catch (error) {
         console.error("Failed to fetch data:", error);
+        setFetchError(error instanceof Error ? error.message : '数据获取失败');
+        setMemories(mockMemories);
+        setDocuments(mockDocuments);
+        setTasks(mockTasks);
       } finally {
         setLoading(false);
       }
@@ -632,6 +637,13 @@ export default function SecondBrain() {
   const renderHome = () => (
     <div className="p-8 animate-fadeIn">
       <h2 className="text-2xl font-bold mb-6">仪表盘概览</h2>
+
+      {/* 错误提示 */}
+      {fetchError && (
+        <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-lg mb-6">
+          ⚠️ 数据获取失败: {fetchError} (显示模拟数据)
+        </div>
+      )}
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
