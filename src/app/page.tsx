@@ -340,9 +340,11 @@ export default function SecondBrain() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
   const [loading, setLoading] = useState(true);
+  // 默认日期范围：今天
+  const getToday = () => new Date().toISOString().split('T')[0];
   const [dateRange, setDateRange] = useState<{start: string; end: string}>({
-    start: "",
-    end: ""
+    start: getToday(),
+    end: getToday()
   });
 
   // 真实数据状态
@@ -350,6 +352,7 @@ export default function SecondBrain() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   // 从Supabase获取数据
   useEffect(() => {
@@ -365,6 +368,8 @@ export default function SecondBrain() {
         if (memRes.data) setMemories(memRes.data as Memory[]);
         if (docRes.data) setDocuments(docRes.data as Document[]);
         if (taskRes.data) setTasks(taskRes.data as Task[]);
+        // 设置更新时间
+        setLastUpdated(new Date().toLocaleString('zh-CN'));
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setFetchError(error instanceof Error ? error.message : '数据获取失败');
@@ -378,9 +383,6 @@ export default function SecondBrain() {
     fetchData();
   }, []);
 
-  // 获取今天的日期
-  const getToday = () => new Date().toISOString().split('T')[0];
-  
   // 获取本周第一天
   const getWeekStart = () => {
     const now = new Date();
@@ -417,12 +419,12 @@ export default function SecondBrain() {
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 统计
+  // 统计（使用筛选后的数据）
   const stats = {
-    totalMemories: memories.length,
-    totalDocuments: documents.length,
-    activeTasks: tasks.filter((t) => t.status === "ok").length,
-    errorTasks: tasks.filter((t) => t.status === "error").length,
+    totalMemories: filteredMemories.length,
+    totalDocuments: filteredDocuments.length,
+    activeTasks: filteredTasks.filter((t) => t.status === "ok").length,
+    errorTasks: filteredTasks.filter((t) => t.status === "error").length,
   };
 
   // 获取状态图标
@@ -515,25 +517,41 @@ export default function SecondBrain() {
           <div className="flex gap-1">
             <button
               onClick={() => setDateRange({start: getToday(), end: getToday()})}
-              className="flex-1 bg-blue-500/20 text-blue-400 px-2 py-1.5 rounded text-xs hover:bg-blue-500/30"
+              className={`flex-1 px-2 py-1.5 rounded text-xs transition-all ${
+                dateRange.start === getToday() && dateRange.end === getToday()
+                  ? "bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/30"
+                  : "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+              }`}
             >
               今天
             </button>
             <button
               onClick={() => setDateRange({start: getWeekStart(), end: getToday()})}
-              className="flex-1 bg-purple-500/20 text-purple-400 px-2 py-1.5 rounded text-xs hover:bg-purple-500/30"
+              className={`flex-1 px-2 py-1.5 rounded text-xs transition-all ${
+                dateRange.start === getWeekStart() && dateRange.end === getToday()
+                  ? "bg-purple-500 text-white font-bold shadow-lg shadow-purple-500/30"
+                  : "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30"
+              }`}
             >
               本周
             </button>
             <button
               onClick={() => setDateRange({start: getMonthStart(), end: getToday()})}
-              className="flex-1 bg-green-500/20 text-green-400 px-2 py-1.5 rounded text-xs hover:bg-green-500/30"
+              className={`flex-1 px-2 py-1.5 rounded text-xs transition-all ${
+                dateRange.start === getMonthStart() && dateRange.end === getToday()
+                  ? "bg-green-500 text-white font-bold shadow-lg shadow-green-500/30"
+                  : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+              }`}
             >
               本月
             </button>
             <button
               onClick={() => setDateRange({start: "", end: ""})}
-              className="flex-1 bg-[#27272a] text-[#71717a] px-2 py-1.5 rounded text-xs hover:bg-[#3f3f46]"
+              className={`flex-1 px-2 py-1.5 rounded text-xs transition-all ${
+                !dateRange.start && !dateRange.end
+                  ? "bg-gray-500 text-white font-bold shadow-lg"
+                  : "bg-[#27272a] text-[#71717a] hover:bg-[#3f3f46]"
+              }`}
             >
               清除
             </button>
@@ -624,11 +642,16 @@ export default function SecondBrain() {
       </nav>
 
       {/* 底部状态 */}
-      <div className="p-4 border-t border-[#27272a]">
+      <div className="p-4 border-t border-[#27272a] space-y-2">
         <div className="flex items-center gap-2 text-xs text-[#a1a1aa]">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <span>系统正常运行</span>
         </div>
+        {lastUpdated && (
+          <div className="text-xs text-[#71717a]">
+            更新时间：{lastUpdated}
+          </div>
+        )}
       </div>
     </aside>
   );
