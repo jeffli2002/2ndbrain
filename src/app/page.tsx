@@ -341,8 +341,8 @@ export default function SecondBrain() {
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{start: string; end: string}>({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: "",
+    end: ""
   });
 
   // 真实数据状态
