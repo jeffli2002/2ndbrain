@@ -243,18 +243,17 @@ const mockTasks: Task[] = [
   },
 ];
 
-// Agent 类型定义
+// Agent 类型定义 (基于tasks表)
 interface Agent {
   id: string;
   name: string;
   description: string;
   status: "ok" | "error" | "running";
-  model: string;
-  tasks: number;
-  completedTasks: number;
-  failedTasks: number;
-  tokenUsage: number;
+  schedule: string;
   lastRun: string;
+  lastDuration: string;
+  nextRun: string;
+  errorCount: number;
 }
 
 // Agent 模拟数据
@@ -367,9 +366,17 @@ export default function SecondBrain() {
         
         if (memRes.data) setMemories(memRes.data as Memory[]);
         if (docRes.data) setDocuments(docRes.data as Document[]);
-        if (taskRes.data) setTasks(taskRes.data as Task[]);
-        // 设置更新时间
-        setLastUpdated(new Date().toLocaleString('zh-CN'));
+        if (taskRes.data) {
+          setTasks(taskRes.data as Task[]);
+          // 从最新任务更新时间获取
+          const latestTask = taskRes.data.reduce((latest, task) => {
+            const taskTime = task.updated_at ? new Date(task.updated_at).getTime() : 0;
+            return taskTime > latest ? taskTime : latest;
+          }, 0);
+          if (latestTask > 0) {
+            setLastUpdated(new Date(latestTask).toLocaleString('zh-CN'));
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setFetchError(error instanceof Error ? error.message : '数据获取失败');
@@ -659,7 +666,10 @@ export default function SecondBrain() {
   // 渲染首页
   const renderHome = () => (
     <div className="p-8 animate-fadeIn">
-      <h2 className="text-2xl font-bold mb-6">仪表盘概览</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">仪表盘概览</h2>
+        {lastUpdated && <span className="text-xs text-[#71717a]">更新于 {lastUpdated}</span>}
+      </div>
 
       {/* 错误提示 */}
       {fetchError && (
@@ -777,6 +787,7 @@ export default function SecondBrain() {
           <Brain className="w-7 h-7 text-purple-400" />
           记忆库
         </h2>
+        {lastUpdated && <span className="text-xs text-[#71717a]">更新于 {lastUpdated}</span>}
       </div>
 
       {/* 搜索 */}
@@ -858,6 +869,7 @@ export default function SecondBrain() {
           <FileText className="w-7 h-7 text-blue-400" />
           文档库
         </h2>
+        {lastUpdated && <span className="text-xs text-[#71717a]">更新于 {lastUpdated}</span>}
       </div>
 
       {/* 搜索 */}
@@ -943,12 +955,35 @@ export default function SecondBrain() {
     </div>
   );
 
+  // Agent名称映射
+  const agentNames: Record<string, { name: string; description: string; model: string }> = {
+    "task-content-publish": { name: "Content Agent", description: "负责内容发布和KOL追踪", model: "MiniMax M2.5" },
+    "task-product": { name: "Product Agent", description: "负责竞品分析和产品规划", model: "MiniMax M2.5" },
+    "task-health": { name: "Health Agent", description: "负责系统健康检查和备份", model: "MiniMax M2.5" },
+    "task-ai-daily": { name: "AI Daily Agent", description: "负责AI日报生成", model: "MiniMax M2.5" },
+    "task-seo": { name: "Growth Agent", description: "负责SEO和关键词分析", model: "MiniMax M2.5" },
+    "task-kol": { name: "KOL Agent", description: "负责AI KOL追踪", model: "MiniMax M2.5" },
+    "task-chief": { name: "Chief Agent", description: "负责生成每日工作报告", model: "MiniMax M2.5" },
+    "task-evolution": { name: "Evo Agent", description: "负责自我进化和技能演进", model: "MiniMax M2.5" },
+  };
+
   // 渲染Agent中心
   const renderAgents = () => {
-    const totalTasks = mockAgents.reduce((sum, a) => sum + a.tasks, 0);
-    const totalCompleted = mockAgents.reduce((sum, a) => sum + a.completedTasks, 0);
-    const totalFailed = mockAgents.reduce((sum, a) => sum + a.failedTasks, 0);
-    const totalTokens = mockAgents.reduce((sum, a) => sum + a.tokenUsage, 0);
+    // 使用真实tasks数据
+    const agents = tasks.map(task => {
+      const info = agentNames[task.id] || { name: task.name, description: task.name, model: "MiniMax M2.5" };
+      return {
+        ...task,
+        ...info,
+        lastRun: task.last_run ? new Date(task.last_run).toLocaleString('zh-CN') : '-',
+        lastDuration: task.last_duration || '-',
+        nextRun: task.next_run ? new Date(task.next_run).toLocaleString('zh-CN') : '-',
+      };
+    });
+
+    const totalTasks = agents.length;
+    const totalCompleted = agents.filter((a) => a.status === "ok").length;
+    const totalFailed = agents.filter((a) => a.status === "error").length;
 
     return (
       <div className="p-8 animate-fadeIn">
@@ -957,6 +992,7 @@ export default function SecondBrain() {
             <Activity className="w-7 h-7 text-purple-400" />
             Agent中心
           </h2>
+          {lastUpdated && <span className="text-xs text-[#71717a]">更新于 {lastUpdated}</span>}
         </div>
 
         {/* 统计卡片 */}
@@ -993,7 +1029,7 @@ export default function SecondBrain() {
 
         {/* Agent列表 */}
         <div className="space-y-4">
-          {mockAgents.map((agent) => (
+          {agents.map((agent) => (
             <div
               key={agent.id}
               className="bg-[#141416] p-5 rounded-xl border border-[#27272a] hover:border-purple-500/50 transition-colors"
@@ -1049,6 +1085,7 @@ export default function SecondBrain() {
           <CheckSquare className="w-7 h-7 text-green-400" />
           任务中心
         </h2>
+        {lastUpdated && <span className="text-xs text-[#71717a]">更新于 {lastUpdated}</span>}
       </div>
 
       {/* 搜索 */}
