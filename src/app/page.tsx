@@ -56,6 +56,7 @@ interface Task {
   last_run?: string;
   last_duration?: string;
   next_run?: string;
+  updated_at?: string;
 }
 
 // 认证检查组件
@@ -432,9 +433,15 @@ export default function SecondBrain() {
       d.path.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredTasks = tasks.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = tasks.filter((t) => {
+    // 搜索过滤
+    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
+    // 日期范围过滤 - 使用 updated_at 或 last_run
+    const taskDate = t.updated_at || t.last_run;
+    const matchesDate = !taskDate || !dateRange.start || !dateRange.end || 
+      (taskDate.split('T')[0] >= dateRange.start && taskDate.split('T')[0] <= dateRange.end);
+    return matchesSearch && matchesDate;
+  });
 
   // 统计（使用筛选后的数据）
   const stats = {
@@ -979,8 +986,14 @@ export default function SecondBrain() {
 
   // 渲染Agent中心
   const renderAgents = () => {
-    // 使用真实tasks数据
-    const agents = tasks.map(task => {
+    // 使用真实tasks数据，按日期范围过滤
+    const filteredTasksForAgents = tasks.filter((t) => {
+      const taskDate = t.updated_at || t.last_run;
+      return !taskDate || !dateRange.start || !dateRange.end || 
+        (taskDate.split('T')[0] >= dateRange.start && taskDate.split('T')[0] <= dateRange.end);
+    });
+    
+    const agents = filteredTasksForAgents.map(task => {
       const info = agentNames[task.id] || { name: task.name, description: task.name, model: "MiniMax M2.5", tokenUsage: 0 };
       return {
         ...task,
