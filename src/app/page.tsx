@@ -249,15 +249,16 @@ interface Agent {
   name: string;
   description: string;
   status: "ok" | "error" | "running";
+  schedule?: string;
   model?: string;
   tasks?: number;
   completedTasks?: number;
   failedTasks?: number;
   tokenUsage?: number;
-  lastRun: string;
-  lastDuration: string;
-  nextRun: string;
-  errorCount: number;
+  lastRun?: string;
+  lastDuration?: string;
+  nextRun?: string;
+  errorCount?: number;
 }
 
 // Agent 模拟数据
