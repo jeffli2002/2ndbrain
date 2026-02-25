@@ -373,6 +373,11 @@ export default function SecondBrain() {
           supabase.from("tasks").select("*"),
         ]);
         
+        // 调试：打印 Supabase 响应
+        console.log("Supabase tasks response:", taskRes);
+        console.log("Supabase tasks error:", taskRes.error);
+        console.log("Supabase tasks data:", taskRes.data);
+        
         if (memRes.data) setMemories(memRes.data as Memory[]);
         if (docRes.data) setDocuments(docRes.data as Document[]);
         if (taskRes.data && taskRes.data.length > 0) {
@@ -385,10 +390,8 @@ export default function SecondBrain() {
           if (latestTask > 0) {
             setLastUpdated(new Date(latestTask).toLocaleString('zh-CN'));
           }
-        } else {
-          // 如果没有数据，使用模拟数据
-          setTasks(mockTasks);
         }
+        // 空数据时不设置，使用初始状态
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setFetchError(error instanceof Error ? error.message : '数据获取失败');
