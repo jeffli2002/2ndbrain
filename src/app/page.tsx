@@ -58,6 +58,7 @@ interface Task {
   next_run?: string;
   updated_at?: string;
   error_count?: number;
+  token_usage?: number;
 }
 
 // 认证检查组件
@@ -1007,21 +1008,23 @@ export default function SecondBrain() {
     "task-health": 5000,              // 几秒钟，健康检查
   };
 
-  // 从任务执行时长计算真实token消耗
+  // 计算token消耗 - 优先使用Supabase真实值
   const calculateTokenUsage = (task: Task): number => {
+    // 优先使用 Supabase 中存储的真实 token 使用量
+    if (task.token_usage && task.token_usage > 0) {
+      return task.token_usage;
+    }
+    
+    // 如果没有真实值，使用基于执行时间的估算
     const baseUsage = taskTokenUsage[task.id] || 50000;
-    // 从 last_duration 解析执行时间
     const duration = task.last_duration;
     if (!duration) return baseUsage;
     
-    // 解析 duration 字符串（如 "44s", "110s"）
     const seconds = parseInt(duration.replace('s', '').replace('m', ''));
     if (isNaN(seconds)) return baseUsage;
     
-    // 基于实际执行时间调整token估算
-    // 假设平均每秒消耗约 2000 tokens
     const adjustedUsage = seconds * 2000;
-    return Math.max(adjustedUsage, baseUsage * 0.5); // 最低50%的基准
+    return Math.max(adjustedUsage, baseUsage * 0.5);
   };
 
   // 合并Agent和任务数据
