@@ -57,6 +57,7 @@ interface Task {
   last_duration?: string;
   next_run?: string;
   updated_at?: string;
+  error_count?: number;
 }
 
 // 认证检查组件
@@ -972,46 +973,68 @@ export default function SecondBrain() {
     </div>
   );
 
-  // Agent名称映射
-  const agentNames: Record<string, { name: string; description: string; model: string; tokenUsage?: number; tasks?: number; completedTasks?: number; failedTasks?: number }> = {
-    "task-content-publish": { name: "Content Agent", description: "负责内容发布和KOL追踪", model: "MiniMax M2.5", tokenUsage: 125000, tasks: 3, completedTasks: 3, failedTasks: 0 },
-    "task-product": { name: "Product Agent", description: "负责竞品分析和产品规划", model: "MiniMax M2.5", tokenUsage: 80000, tasks: 2, completedTasks: 2, failedTasks: 0 },
-    "task-health": { name: "Health Agent", description: "负责系统健康检查和备份", model: "MiniMax M2.5", tokenUsage: 20000, tasks: 1, completedTasks: 1, failedTasks: 0 },
-    "task-ai-daily": { name: "AI Daily Agent", description: "负责AI日报生成", model: "MiniMax M2.5", tokenUsage: 150000, tasks: 1, completedTasks: 1, failedTasks: 0 },
-    "task-seo": { name: "Growth Agent", description: "负责SEO和关键词分析", model: "MiniMax M2.5", tokenUsage: 60000, tasks: 5, completedTasks: 4, failedTasks: 1 },
-    "task-kol": { name: "KOL Agent", description: "负责AI KOL追踪", model: "MiniMax M2.5", tokenUsage: 90000, tasks: 2, completedTasks: 2, failedTasks: 0 },
-    "task-chief": { name: "Chief Agent", description: "负责生成每日工作报告", model: "MiniMax M2.5", tokenUsage: 70000, tasks: 1, completedTasks: 1, failedTasks: 0 },
-    "task-evolution": { name: "Evo Agent", description: "负责自我进化和技能演进", model: "MiniMax M2.5", tokenUsage: 100000, tasks: 1, completedTasks: 1, failedTasks: 0 },
+  // Agent定义
+  const agentsConfig = [
+    { id: "content", name: "Content Agent", description: "负责内容发布和KOL追踪", model: "MiniMax M2.5", color: "blue" },
+    { id: "coding", name: "Coding Agent", description: "负责代码开发和项目修复", model: "Kimi K2.5", color: "green" },
+    { id: "growth", name: "Growth Agent", description: "负责SEO和关键词分析", model: "MiniMax M2.5", color: "purple" },
+    { id: "chief", name: "Chief Agent", description: "负责工作报告和自我进化", model: "MiniMax M2.5", color: "orange" },
+    { id: "product", name: "Product Agent", description: "负责竞品分析和产品规划", model: "MiniMax M2.5", color: "red" },
+    { id: "finance", name: "Finance Agent", description: "负责财务分析和融资", model: "MiniMax M2.5", color: "yellow" },
+  ];
+
+  // 任务到Agent的映射
+  const taskToAgent: Record<string, string> = {
+    "task-content-publish": "content",
+    "task-kol": "content",
+    "task-seo": "growth",
+    "task-chief": "chief",
+    "task-evolution": "chief",
+    "task-product": "product",
+    "task-ai-daily": "chief",
+    "task-health": "chief",
   };
+
+  // 合并Agent和任务数据
+  const getAgentWithTasks = (agentId: string) => {
+    const agent = agentsConfig.find(a => a.id === agentId);
+    const agentTasks = tasks.filter(t => taskToAgent[t.id] === agentId);
+    const totalTokens = agentTasks.reduce((sum, t) => sum + (t.error_count || 0) * 10000, 0);
+    const okTasks = agentTasks.filter(t => t.status === "ok").length;
+    const errorTasks = agentTasks.filter(t => t.status === "error").length;
+    
+    return {
+      ...agent,
+      tasks: agentTasks,
+      totalTasks: agentTasks.length,
+      completedTasks: okTasks,
+      failedTasks: errorTasks,
+      tokenUsage: totalTokens,
+      lastRun: agentTasks.length > 0 ? agentTasks[0].last_run : null,
+    };
+  };
+
+  const agentsWithTasks = agentsConfig.map(a => getAgentWithTasks(a.id));
 
   // 渲染Agent中心
   const renderAgents = () => {
-    // 使用真实tasks数据，按日期范围过滤
-    const filteredTasksForAgents = tasks.filter((t) => {
+    // 按日期范围过滤任务
+    const filteredTasks = tasks.filter((t) => {
       const taskDate = t.updated_at || t.last_run;
       return !taskDate || !dateRange.start || !dateRange.end || 
         (taskDate.split('T')[0] >= dateRange.start && taskDate.split('T')[0] <= dateRange.end);
     });
     
-    const agents = filteredTasksForAgents.map(task => {
-      const info = agentNames[task.id] || { name: task.name, description: task.name, model: "MiniMax M2.5", tokenUsage: 0 };
-      return {
-        ...task,
-        ...info,
-        lastRun: task.last_run ? new Date(task.last_run).toLocaleString('zh-CN') : '-',
-        lastDuration: task.last_duration || '-',
-        nextRun: task.next_run ? new Date(task.next_run).toLocaleString('zh-CN') : '-',
-        tokenUsage: info.tokenUsage || 0,
-        tasks: info.tasks || 0,
-        completedTasks: info.completedTasks || 0,
-        failedTasks: info.failedTasks || 0,
-      };
-    });
+    // 按Agent分组
+    const agentsData = agentsWithTasks.map(agent => ({
+      ...agent,
+      tasks: filteredTasks.filter(t => taskToAgent[t.id] === agent.id),
+    }));
 
-    const totalTasks = agents.length;
-    const totalCompleted = agents.filter((a) => a.status === "ok").length;
-    const totalFailed = agents.filter((a) => a.status === "error").length;
-    const totalTokens = agents.reduce((sum, a) => sum + (a.tokenUsage || 0), 0);
+    const totalTasks = agentsData.reduce((sum, a) => sum + a.tasks.length, 0);
+    const totalCompleted = agentsData.reduce((sum, a) => sum + a.completedTasks, 0);
+    const totalFailed = agentsData.reduce((sum, a) => sum + a.failedTasks, 0);
+    const totalTokens = agentsData.reduce((sum, a) => sum + a.tokenUsage, 0);
 
     return (
       <div className="p-8 animate-fadeIn">
@@ -1028,16 +1051,16 @@ export default function SecondBrain() {
           <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
             <div className="flex items-center gap-3 mb-2">
               <CheckSquare className="w-5 h-5 text-blue-400" />
-              <span className="text-[#a1a1aa] text-sm">总任务</span>
+              <span className="text-[#a1a1aa] text-sm">总Agent</span>
             </div>
-            <p className="text-2xl font-bold text-white">{totalTasks}</p>
+            <p className="text-2xl font-bold text-white">{agentsData.length}</p>
           </div>
           <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
             <div className="flex items-center gap-3 mb-2">
               <CheckCircle className="w-5 h-5 text-green-400" />
-              <span className="text-[#a1a1aa] text-sm">已完成</span>
+              <span className="text-[#a1a1aa] text-sm">总任务</span>
             </div>
-            <p className="text-2xl font-bold text-green-400">{totalCompleted}</p>
+            <p className="text-2xl font-bold text-green-400">{totalTasks}</p>
           </div>
           <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
             <div className="flex items-center gap-3 mb-2">
@@ -1057,7 +1080,7 @@ export default function SecondBrain() {
 
         {/* Agent列表 */}
         <div className="space-y-4">
-          {agents.map((agent) => (
+          {agentsData.map((agent) => (
             <div
               key={agent.id}
               className="bg-[#141416] p-5 rounded-xl border border-[#27272a] hover:border-purple-500/50 transition-colors"
@@ -1065,15 +1088,13 @@ export default function SecondBrain() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h3 className="font-semibold text-white">{agent.name}</h3>
-                  {agent.status === "ok" ? (
+                  {agent.tasks.length > 0 ? (
                     <CheckCircle className="w-4 h-4 text-green-400" />
-                  ) : agent.status === "running" ? (
-                    <Activity className="w-4 h-4 text-blue-400 animate-pulse" />
                   ) : (
                     <XCircle className="w-4 h-4 text-red-400" />
                   )}
                 </div>
-                <span className="text-xs text-[#71717a]">{agent.lastRun}</span>
+                <span className="text-xs text-[#71717a]">{agent.lastRun ? new Date(agent.lastRun).toLocaleString('zh-CN') : '-'}</span>
               </div>
               <p className="text-sm text-[#a1a1aa] mb-4">{agent.description}</p>
               <div className="grid grid-cols-5 gap-4 text-sm">
@@ -1083,7 +1104,7 @@ export default function SecondBrain() {
                 </div>
                 <div>
                   <p className="text-[#71717a] text-xs">任务数</p>
-                  <p className="text-white">{agent.tasks}</p>
+                  <p className="text-white">{agent.tasks.length}</p>
                 </div>
                 <div>
                   <p className="text-[#71717a] text-xs">完成</p>
@@ -1098,6 +1119,19 @@ export default function SecondBrain() {
                   <p className="text-yellow-400">{(agent.tokenUsage / 1000).toFixed(1)}k</p>
                 </div>
               </div>
+              {/* 展开显示该Agent下的任务 */}
+              {agent.tasks.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-[#27272a]">
+                  <p className="text-xs text-[#71717a] mb-2">所属任务：</p>
+                  <div className="flex flex-wrap gap-2">
+                    {agent.tasks.map((t: Task) => (
+                      <span key={t.id} className="text-xs bg-[#27272a] px-2 py-1 rounded text-[#a1a1aa]">
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
