@@ -48,10 +48,14 @@ interface Task {
   name: string;
   schedule: string;
   status: "ok" | "error" | "running";
-  lastRun: string;
-  lastDuration: string;
-  nextRun: string;
-  errorCount: number;
+  lastRun?: string;
+  lastDuration?: string;
+  nextRun?: string;
+  errorCount?: number;
+  // Supabase 返回的蛇形命名
+  last_run?: string;
+  last_duration?: string;
+  next_run?: string;
 }
 
 // 认证检查组件
