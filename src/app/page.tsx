@@ -993,6 +993,7 @@ export default function SecondBrain() {
     const totalTasks = agents.length;
     const totalCompleted = agents.filter((a) => a.status === "ok").length;
     const totalFailed = agents.filter((a) => a.status === "error").length;
+    const totalTokens = agents.reduce((sum, a) => sum + (a.tokenUsage || 0), 0);
 
     return (
       <div className="p-8 animate-fadeIn">
