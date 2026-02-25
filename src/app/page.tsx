@@ -995,11 +995,23 @@ export default function SecondBrain() {
     "task-health": "chief",
   };
 
+  // 每个任务的预估token消耗
+  const taskTokenUsage: Record<string, number> = {
+    "task-content-publish": 120000,
+    "task-kol": 90000,
+    "task-seo": 60000,
+    "task-chief": 80000,
+    "task-evolution": 150000,
+    "task-product": 85000,
+    "task-ai-daily": 180000,
+    "task-health": 20000,
+  };
+
   // 合并Agent和任务数据
   const getAgentWithTasks = (agentId: string) => {
     const agent = agentsConfig.find(a => a.id === agentId);
     const agentTasks = tasks.filter(t => taskToAgent[t.id] === agentId);
-    const totalTokens = agentTasks.reduce((sum, t) => sum + (t.error_count || 0) * 10000, 0);
+    const totalTokens = agentTasks.reduce((sum, t) => sum + (taskTokenUsage[t.id] || 0), 0);
     const okTasks = agentTasks.filter(t => t.status === "ok").length;
     const errorTasks = agentTasks.filter(t => t.status === "error").length;
     
