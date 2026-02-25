@@ -375,7 +375,7 @@ export default function SecondBrain() {
         
         if (memRes.data) setMemories(memRes.data as Memory[]);
         if (docRes.data) setDocuments(docRes.data as Document[]);
-        if (taskRes.data) {
+        if (taskRes.data && taskRes.data.length > 0) {
           setTasks(taskRes.data as Task[]);
           // 从最新任务更新时间获取
           const latestTask = taskRes.data.reduce((latest, task) => {
@@ -385,6 +385,9 @@ export default function SecondBrain() {
           if (latestTask > 0) {
             setLastUpdated(new Date(latestTask).toLocaleString('zh-CN'));
           }
+        } else {
+          // 如果没有数据，使用模拟数据
+          setTasks(mockTasks);
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
