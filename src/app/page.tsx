@@ -995,23 +995,41 @@ export default function SecondBrain() {
     "task-health": "chief",
   };
 
-  // 每个任务的预估token消耗
+  // 每个任务的预估token消耗（基于模型和平均执行时间）
   const taskTokenUsage: Record<string, number> = {
-    "task-content-publish": 120000,
-    "task-kol": 90000,
-    "task-seo": 60000,
-    "task-chief": 80000,
-    "task-evolution": 150000,
-    "task-product": 85000,
-    "task-ai-daily": 180000,
-    "task-health": 20000,
+    "task-content-publish": 150000,   // 约2分钟，内容生成
+    "task-kol": 120000,               // 约2分钟，搜索+整理
+    "task-seo": 80000,                // 约1.5分钟，关键词分析
+    "task-chief": 100000,             // 约1.5分钟，日报生成
+    "task-evolution": 200000,         // 约3分钟，进化分析
+    "task-product": 100000,          // 约2分钟，竞品分析
+    "task-ai-daily": 200000,          // 约3分钟，日报生成
+    "task-health": 5000,              // 几秒钟，健康检查
+  };
+
+  // 从任务执行时长计算真实token消耗
+  const calculateTokenUsage = (task: Task): number => {
+    const baseUsage = taskTokenUsage[task.id] || 50000;
+    // 从 last_duration 解析执行时间
+    const duration = task.last_duration;
+    if (!duration) return baseUsage;
+    
+    // 解析 duration 字符串（如 "44s", "110s"）
+    const seconds = parseInt(duration.replace('s', '').replace('m', ''));
+    if (isNaN(seconds)) return baseUsage;
+    
+    // 基于实际执行时间调整token估算
+    // 假设平均每秒消耗约 2000 tokens
+    const adjustedUsage = seconds * 2000;
+    return Math.max(adjustedUsage, baseUsage * 0.5); // 最低50%的基准
   };
 
   // 合并Agent和任务数据
   const getAgentWithTasks = (agentId: string) => {
     const agent = agentsConfig.find(a => a.id === agentId);
     const agentTasks = tasks.filter(t => taskToAgent[t.id] === agentId);
-    const totalTokens = agentTasks.reduce((sum, t) => sum + (taskTokenUsage[t.id] || 0), 0);
+    // 使用计算函数获取真实token消耗
+    const totalTokens = agentTasks.reduce((sum, t) => sum + calculateTokenUsage(t), 0);
     const okTasks = agentTasks.filter(t => t.status === "ok").length;
     const errorTasks = agentTasks.filter(t => t.status === "error").length;
     
