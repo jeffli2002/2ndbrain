@@ -1154,7 +1154,7 @@ export default function SecondBrain() {
               <div className="flex items-center gap-3">
                 {getStatusIcon(task.status)}
                 <h3 className="font-semibold">{task.name}</h3>
-                {task.errorCount > 0 && (
+                {(task.errorCount || 0) > 0 && (
                   <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs">
                     {task.errorCount}次错误
                   </span>
