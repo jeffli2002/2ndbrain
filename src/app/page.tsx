@@ -980,13 +980,14 @@ export default function SecondBrain() {
   const renderAgents = () => {
     // 使用真实tasks数据
     const agents = tasks.map(task => {
-      const info = agentNames[task.id] || { name: task.name, description: task.name, model: "MiniMax M2.5" };
+      const info = agentNames[task.id] || { name: task.name, description: task.name, model: "MiniMax M2.5", tokenUsage: 0 };
       return {
         ...task,
         ...info,
         lastRun: task.last_run ? new Date(task.last_run).toLocaleString('zh-CN') : '-',
         lastDuration: task.last_duration || '-',
         nextRun: task.next_run ? new Date(task.next_run).toLocaleString('zh-CN') : '-',
+        tokenUsage: info.tokenUsage || 0,
       };
     });
 
