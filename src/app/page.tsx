@@ -22,7 +22,7 @@ import {
 
 // Supabase 配置
 const supabaseUrl = "https://njxjuvxosvwvluxefrzg.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjkyNTUsImV4cCI6MjA4NzQwNTI1NX0.FqfMyI3uSkiHVepVVccxFU4ie5RU00VVdrF-aOr9LjI";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjkyNTUsImV4cCI6MjA4NzQwNTI1NX0.FqfMyI3uSkiHVepWVccxFU4ie5RU00VVdrF-aOr9LjI";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 类型定义
@@ -372,11 +372,6 @@ export default function SecondBrain() {
           supabase.from("documents").select("*").order("date", { ascending: false }),
           supabase.from("tasks").select("*"),
         ]);
-        
-        // 调试：打印 Supabase 响应
-        console.log("Supabase tasks response:", taskRes);
-        console.log("Supabase tasks error:", taskRes.error);
-        console.log("Supabase tasks data:", taskRes.data);
         
         if (memRes.data) setMemories(memRes.data as Memory[]);
         if (docRes.data) setDocuments(docRes.data as Document[]);
