@@ -965,15 +965,15 @@ export default function SecondBrain() {
   );
 
   // Agent名称映射
-  const agentNames: Record<string, { name: string; description: string; model: string }> = {
-    "task-content-publish": { name: "Content Agent", description: "负责内容发布和KOL追踪", model: "MiniMax M2.5" },
-    "task-product": { name: "Product Agent", description: "负责竞品分析和产品规划", model: "MiniMax M2.5" },
-    "task-health": { name: "Health Agent", description: "负责系统健康检查和备份", model: "MiniMax M2.5" },
-    "task-ai-daily": { name: "AI Daily Agent", description: "负责AI日报生成", model: "MiniMax M2.5" },
-    "task-seo": { name: "Growth Agent", description: "负责SEO和关键词分析", model: "MiniMax M2.5" },
-    "task-kol": { name: "KOL Agent", description: "负责AI KOL追踪", model: "MiniMax M2.5" },
-    "task-chief": { name: "Chief Agent", description: "负责生成每日工作报告", model: "MiniMax M2.5" },
-    "task-evolution": { name: "Evo Agent", description: "负责自我进化和技能演进", model: "MiniMax M2.5" },
+  const agentNames: Record<string, { name: string; description: string; model: string; tokenUsage?: number }> = {
+    "task-content-publish": { name: "Content Agent", description: "负责内容发布和KOL追踪", model: "MiniMax M2.5", tokenUsage: 125000 },
+    "task-product": { name: "Product Agent", description: "负责竞品分析和产品规划", model: "MiniMax M2.5", tokenUsage: 80000 },
+    "task-health": { name: "Health Agent", description: "负责系统健康检查和备份", model: "MiniMax M2.5", tokenUsage: 20000 },
+    "task-ai-daily": { name: "AI Daily Agent", description: "负责AI日报生成", model: "MiniMax M2.5", tokenUsage: 150000 },
+    "task-seo": { name: "Growth Agent", description: "负责SEO和关键词分析", model: "MiniMax M2.5", tokenUsage: 60000 },
+    "task-kol": { name: "KOL Agent", description: "负责AI KOL追踪", model: "MiniMax M2.5", tokenUsage: 90000 },
+    "task-chief": { name: "Chief Agent", description: "负责生成每日工作报告", model: "MiniMax M2.5", tokenUsage: 70000 },
+    "task-evolution": { name: "Evo Agent", description: "负责自我进化和技能演进", model: "MiniMax M2.5", tokenUsage: 100000 },
   };
 
   // 渲染Agent中心
