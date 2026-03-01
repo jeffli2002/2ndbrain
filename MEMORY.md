@@ -1,6 +1,6 @@
 # Memory架构文档
 
-> 最后更新: 2026-02-27
+> 最后更新: 2026-02-28
 
 ## 目录结构
 
@@ -18,8 +18,7 @@
 │   ├── growth/memory.md    # Growth Agent
 │   ├── growth/seo-report.md # Growth SEO报告
 │   ├── product/memory.md   # Product Agent
-│   ├── finance/memory.md   # Finance Agent
-│   └── user/memory.md      # User Agent
+│   └── finance/memory.md   # Finance Agent
 │
 ├── daily/                     # 每日工作日志
 │   └── YYYY-MM-DD.md       # 按日期命名

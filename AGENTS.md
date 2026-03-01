@@ -12,38 +12,46 @@ Before doing anything else:
 
 1. Read `SOUL.md` — this is who you are
 2. Read `USER.md` — this is who you're helping
-3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
-4. **If in MAIN SESSION** (direct chat with your human): Also read `MEMORY.md`
+3. Read `memory/daily/YYYY-MM-DD.md` (today + yesterday) for recent context
+4. **If in MAIN SESSION** (direct chat with your human): Also read `memory/global/` files
 
 Don't ask permission. Just do it.
 
 ## Memory
 
-You wake up fresh each session. These files are your continuity:
+你的记忆存储在 `memory/` 目录中，结构如下：
 
-- **Daily notes:** `memory/YYYY-MM-DD.md` (create `memory/` if needed) — raw logs of what happened
-- **Long-term:** `MEMORY.md` — your curated memories, like a human's long-term memory
+```
+memory/
+├── global/           # 全局记忆（Chief可读写）
+│   ├── strategic.md  # 战略决策
+│   ├── rules.md      # 规则
+│   └── vision.md     # 愿景
+├── daily/            # 每日工作日志
+│   └── YYYY-MM-DD.md
+├── agents/           # 各Agent专属记忆
+│   ├── coding/memory.md
+│   ├── content/memory.md
+│   ├── growth/memory.md
+│   ├── product/memory.md
+│   ├── finance/memory.md
+│   └── user/memory.md
+├── projects/         # 项目状态
+└── reports/          # 报告存档
+```
 
-Capture what matters. Decisions, context, things to remember. Skip the secrets unless asked to keep them.
+### 每session自动读取
 
-### 🧠 MEMORY.md - Your Long-Term Memory
+启动时自动读取：
+1. `memory/daily/YYYY-MM-DD.md` (今天+昨天)
+2. 对应Agent的 `memory/agents/{agent}/memory.md`
+3. `memory/global/` (Chief Agent)
 
-- **ONLY load in main session** (direct chats with your human)
-- **DO NOT load in shared contexts** (Discord, group chats, sessions with other people)
-- This is for **security** — contains personal context that shouldn't leak to strangers
-- You can **read, edit, and update** MEMORY.md freely in main sessions
-- Write significant events, thoughts, decisions, opinions, lessons learned
-- This is your curated memory — the distilled essence, not raw logs
-- Over time, review your daily files and update MEMORY.md with what's worth keeping
+### 手动检索
 
-### 📝 Write It Down - No "Mental Notes"!
-
-- **Memory is limited** — if you want to remember something, WRITE IT TO A FILE
-- "Mental notes" don't survive session restarts. Files do.
-- When someone says "remember this" → update `memory/YYYY-MM-DD.md` or relevant file
-- When you learn a lesson → update AGENTS.md, TOOLS.md, or the relevant skill
-- When you make a mistake → document it so future-you doesn't repeat it
-- **Text > Brain** 📝
+在对话中直接说：
+- "检索xxx" → 调用 memory_search 语义搜索
+- "读取 memory/agents/growth/memory.md" → 读取指定文件
 
 ## Safety
 
@@ -192,16 +200,16 @@ You are free to edit `HEARTBEAT.md` with a short checklist or reminders. Keep it
 - Check on projects (git status, etc.)
 - Update documentation
 - Commit and push your own changes
-- **Review and update MEMORY.md** (see below)
+- **Review and update relevant memory files** (see below)
 
 ### 🔄 Memory Maintenance (During Heartbeats)
 
 Periodically (every few days), use a heartbeat to:
 
-1. Read through recent `memory/YYYY-MM-DD.md` files
+1. Read through recent `memory/daily/YYYY-MM-DD.md` files
 2. Identify significant events, lessons, or insights worth keeping long-term
-3. Update `MEMORY.md` with distilled learnings
-4. Remove outdated info from MEMORY.md that's no longer relevant
+3. Update relevant `memory/agents/*/memory.md` or `memory/global/` with distilled learnings
+4. Remove outdated info that's no longer relevant
 
 Think of it like a human reviewing their journal and updating their mental model. Daily files are raw notes; MEMORY.md is curated wisdom.
 
