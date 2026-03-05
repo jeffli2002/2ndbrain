@@ -19,17 +19,16 @@ global:
     - "MVP聚焦角色分离和协同"
 
 # ============================================
-# Chief Agent 配置（主调度）- 主力模型改为 MiniMax 2.5
+# Chief Agent 配置（主调度）
 # ============================================
 chief_agent:
   name: "Chief Agent"
   role: "AI CEO 助理 + 调度系统"
   
-  model:
-    primary: "minimax-portal/MiniMax-M2.5"    # ✅ 主力: MiniMax 2.5
+ primary: "min  model:
+   imax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
     fallbacks:
-      - "kimi-coding/k2p5"                    # Fallback 1: Kimi 2.5
-      - "qwen-portal/qwen3.5-pro"             # Fallback 2: Qwen 3.5 Pro
+      - "kimi-coding/k2p5"                    # Fallback 1: Kimi K2.5
     thinking: "high"
     reasoning: true
   
@@ -50,18 +49,16 @@ chief_agent:
     finance_keywords: ["财务", "成本", "定价", "收入", "现金流", "ROI"]
 
 # ============================================
-# Content Agent 配置 - 主力模型改为 MiniMax M2.5
+# Content Agent 配置
 # ============================================
 content_agent:
   name: "Content Agent"
   role: "内容创作专家"
   
   model:
-    primary: "minimax-portal/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
+    primary: "minimax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
     fallbacks:
-      - "minimax-portal/MiniMax-M2.5"        # Fallback 1: MiniMax M2.5
-      - "kimi-coding/k2p5"                    # Fallback 2: Kimi 2.5
-      - "qwen-portal/qwen3.5-pro"             # Fallback 3: Qwen 3.5 Pro
+      - "kimi-coding/k2p5"                 # Fallback 1: Kimi K2.5
     thinking: "medium"
   
   memory_namespace: "content"
@@ -80,18 +77,16 @@ content_agent:
     - "message"
 
 # ============================================
-# Growth Agent 配置 - 主力模型改为 MiniMax M2.5
+# Growth Agent 配置
 # ============================================
 growth_agent:
   name: "Growth Agent"
   role: "增长黑客"
   
   model:
-    primary: "minimax-portal/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
     fallbacks:
-      - "minimax-portal/MiniMax-M2.5"        # Fallback 1: MiniMax M2.5
-      - "kimi-coding/k2p5"                    # Fallback 2: Kimi 2.5
-      - "qwen-portal/qwen3.5-pro"             # Fallback 3: Qwen 3.5 Pro
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
     thinking: "medium"
   
   memory_namespace: "growth"
@@ -109,17 +104,16 @@ growth_agent:
     - "canvas"
 
 # ============================================
-# Coding Agent 配置 - 主力模型改为 Qwen 3.5 Pro
+# Coding Agent 配置
 # ============================================
 coding_agent:
   name: "Coding Agent"
   role: "全栈工程师"
   
   model:
-    primary: "qwen-portal/qwen3.5-pro"         # ✅ 主力: Qwen 3.5 Pro
+    primary: "minimax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
     fallbacks:
-      - "minimax-portal/MiniMax-M2.5"         # Fallback 1: MiniMax M2.5
-      - "kimi-coding/k2p5"                    # Fallback 2: Kimi K2.5
+      - "kimi-coding/k2p5"                 # Fallback 1: Kimi K2.5
     thinking: "high"
     reasoning: true
   
@@ -152,10 +146,9 @@ product_agent:
   role: "产品经理"
   
   model:
-    primary: "kimi-coding/k2p5"                # ✅ 主力: Kimi 2.5
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
     fallbacks:
-      - "minimax-portal/MiniMax-M2.5"         # Fallback 1: MiniMax 2.5
-      - "qwen-portal/qwen3.5-pro"             # Fallback 2: Qwen 3.5 Pro
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
     thinking: "high"
   
   memory_namespace: "product"
@@ -184,10 +177,9 @@ finance_agent:
   role: "财务分析师"
   
   model:
-    primary: "minimax-portal/MiniMax-M2.5"    # ✅ 主力: MiniMax 2.5
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
     fallbacks:
-      - "kimi-coding/k2p5"                    # Fallback 1: Kimi 2.5
-      - "qwen-portal/qwen3.5-pro"             # Fallback 2: Qwen 3.5 Pro
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
     thinking: "medium"
   
   memory_namespace: "finance"
@@ -202,6 +194,21 @@ finance_agent:
   tools:
     - "web_search"
     - "canvas"
+
+# ============================================
+# System Agent 配置（健康检查等系统任务）
+# ============================================
+system_agent:
+  name: "System Agent"
+  description: "系统任务执行者（健康检查、定时任务等）"
+  
+  # 系统任务由 Chief Agent 执行
+  handler: "chief_agent"
+  
+  tasks:
+    - "cron-health-check"
+    - "daily-memory-extractor"
+    - "openclaw-news-monitor"
 
 # ============================================
 # 调度配置
@@ -270,6 +277,14 @@ constraints:
 # 版本记录
 # ============================================
 changelog:
+  v1.3.0:
+    - "更新: Chief Agent 模型 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Content Agent 模型 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Coding Agent 模型改为 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Growth Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "更新: Product Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "更新: Finance Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "新增: System Agent 配置，系统任务由 Chief Agent 执行"
   v1.2.0:
     - "更新: Coding Agent 主力模型改为 Qwen 3.5 Pro"
     - "更新: 所有 Agent Fallback 链中 Qwen Coder 替换为 Qwen 3.5 Pro"

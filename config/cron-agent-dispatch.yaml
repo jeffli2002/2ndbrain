@@ -1,0 +1,238 @@
+# Cron 任务调度配置
+# 定义每个 Cron 任务如何调度 Sub Agent
+# 版本: v1.0
+
+# ============================================
+# 任务到 Agent 的映射
+# ============================================
+
+task_agent_mapping:
+  # ===== 内容类任务 =====
+
+  daily-content-publish:
+    agent: "content"
+    agent_name: "Content Agent (小文)"
+    description: "每日内容发布 - 生成公众号文章"
+    schedule: "0 9 * * *"
+    priority: P0
+    workflow:
+      - step: "research"
+        description: "研究热门AI资讯"
+        tools: ["web_search", "youtube"]
+      - step: "generate_topics"
+        description: "生成3-5个候选主题"
+        tools: ["memory"]
+      - step: "wait_user_confirm"
+        description: "等待用户确认主题"
+        mode: "interactive"  # 需要用户交互
+      - step: "write_article"
+        description: "撰写完整文章"
+        model: "MiniMax-M2.5"
+      - step: "format_output"
+        description: "生成4种格式输出"
+      - step: "publish"
+        description: "发布到公众号"
+        tools: ["feishu_doc"]
+
+  ai-daily-newsletter:
+    agent: "content"
+    agent_name: "Content Agent (小文)"
+    description: "AI日报 newsletter"
+    schedule: "30 7 * * *"
+    priority: P0
+    workflow:
+      - step: "collect_news"
+        description: "收集AI行业新闻"
+        tools: ["web_search"]
+      - step: "compile_newsletter"
+        description: "编译日报"
+      - step: "send_email"
+        description: "发送邮件"
+        tools: ["agentmail"]
+
+  ai-kol-daily-newsletter:
+    agent: "content"
+    agent_name: "Content Agent (小文)"
+    description: "KOL观点每日通讯"
+    schedule: "0 11 * * *"
+    priority: P1
+    workflow:
+      - step: "monitor_kol"
+        description: "监控KOL动态"
+        tools: ["youtube", "web_search"]
+      - step: "compile_insights"
+        description: "编译洞察"
+      - step: "publish"
+        description: "发布内容"
+
+  # ===== 增长类任务 =====
+
+  openclaw-news-monitor:
+    agent: "growth"
+    agent_name: "Growth Agent (增长)"
+    description: "监控OpenClaw安全新闻"
+    schedule: "0 */2 * * *"
+    priority: P1
+    workflow:
+      - step: "search_news"
+        description: "搜索安全相关新闻"
+        tools: ["web_search"]
+      - step: "analyze_impact"
+        description: "分析影响"
+      - step: "notify"
+        description: "通知Chief"
+        tools: ["message"]
+
+  # ===== 产品类任务 =====
+
+  product-competitor-analysis:
+    agent: "product"
+    agent_name: "Product Agent (产品)"
+    description: "竞品分析"
+    schedule: "0 14 * * *"
+    priority: P1
+    workflow:
+      - step: "collect_competitor_info"
+        description: "收集竞品信息"
+        tools: ["web_search"]
+      - step: "analyze_features"
+        description: "分析功能"
+      - step: "generate_report"
+        description: "生成报告"
+      - step: "save_to_memory"
+        description: "保存到memory"
+
+  # ===== 开发类任务 =====
+
+  daily-skill-evolution:
+    agent: "coding"
+    agent_name: "Coding Agent (代码)"
+    description: "每日Skill进化检查"
+    schedule: "0 22 * * *"
+    priority: P2
+    workflow:
+      - step: "check_updates"
+        description: "检查Skill更新"
+        tools: ["exec"]
+      - step: "analyze_trends"
+        description: "分析趋势"
+      - step: "update_memory"
+        description: "更新memory"
+
+  daily-memory-extractor:
+    agent: "chief"
+    agent_name: "Chief Agent (虾仔)"
+    description: "每日记忆提取"
+    schedule: "0 */2 * * *"
+    priority: P2
+    workflow:
+      - step: "extract_daily"
+        description: "提取每日要点"
+      - step: "update_strategic"
+        description: "更新战略记忆"
+
+  # ===== 调度类任务 =====
+
+  chief-daily-report:
+    agent: "chief"
+    agent_name: "Chief Agent (虾仔)"
+    description: "Chief每日汇报"
+    schedule: "30 19 * * *"
+    priority: P0
+    workflow:
+      - step: "collect_agent_reports"
+        description: "收集各Agent工作汇总"
+      - step: "compile_report"
+        description: "编译汇报"
+      - step: "send_report"
+        description: "发送汇报"
+        tools: ["message"]
+
+  cron-health-check:
+    agent: "system"
+    agent_name: "System"
+    description: "Cron健康检查"
+    schedule: "0 */2 * * *"
+    priority: P0
+    workflow:
+      - step: "check_all_jobs"
+        description: "检查所有任务状态"
+      - step: "fix_errors"
+        description: "修复错误任务"
+      - step: "report"
+        description: "报告状态"
+
+  # ===== 同步类任务 =====
+
+  sync-github-*-*:
+    agent: "coding"
+    agent_name: "Coding Agent (代码)"
+    description: "GitHub同步"
+    schedule: "0 */3 * * *"
+    priority: P2
+    workflow:
+      - step: "sync"
+        description: "同步代码"
+        tools: ["exec"]
+
+# ============================================
+# Agent 调度配置
+# ============================================
+
+agent_dispatch:
+  # 默认调度超时时间（秒）
+  default_timeout: 300
+  
+  # 最大重试次数
+  max_retries: 2
+  
+  # 重试间隔（秒）
+  retry_interval: 30
+  
+  # 是否等待用户交互
+  wait_for_interaction: true
+  
+  # 用户交互超时（秒）
+  interaction_timeout: 600
+
+# ============================================
+# 消息传递配置
+# ============================================
+
+message_delivery:
+  # 模式: "message" | "session_send"
+  default_mode: "message"
+  
+  # 如果 message 失败，是否尝试 session_send
+  fallback_to_session_send: true
+  
+  # delivery 失败时是否记录
+  log_failures: true
+
+# ============================================
+# 调度日志
+# ============================================
+
+logging:
+  # 日志文件
+  log_file: "/root/.openclaw/workspace/logs/cron-dispatch.log"
+  
+  # 日志级别: DEBUG | INFO | WARN | ERROR
+  log_level: "INFO"
+  
+  # 是否保留执行历史
+  keep_history: true
+  
+  # 历史保留天数
+  history_days: 30
+
+# ============================================
+# 版本记录
+# ============================================
+
+changelog:
+  v1.0.0:
+    - "初始版本"
+    - 定义任务到Agent的映射
+    - 定义工作流程
+    - 配置调度参数

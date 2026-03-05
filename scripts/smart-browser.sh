@@ -1,15 +1,18 @@
 #!/bin/bash
-# Smart Browser - 智能浏览器调度器
-# 根据场景自动选择 browser-use 或 agent-browser
-# 支持错误处理、日志记录、会话管理
+# Smart Browser Ultimate - 智能浏览器调度器 v2.0
+# 整合 browser-use + agent-browser + Agent-Reach
+# 根据场景自动选择最佳工具
 
 # 配置
 BROWSER_USE_API_KEY="bu_asA1iDkZjaZlZoWaGoWJrh-ocb3ZyiygObrc1XFx5Jo"
 LOG_FILE="/tmp/smart-browser.log"
 SESSION_FILE="/tmp/smart-browser.session"
 
-# 设置环境变量
-export BROWSER_USE_API_KEY
+# Twitter Cookie (可选)
+XREACH_AUTH_TOKEN="41d25c54e34668229d0356c04221d4058f0761b7"
+XREACH_CT0="24a15787d231809f64a14dc33ce3624bd2da7e68150db25bc9f72a05f219d8983e6ed506ec9064c53fbe609b90ee0a9acd4923a10b7b5170e3bf9024aa141ed94f9a36f018eb8a2891412be5ce1b08a6"
+
+export BROWSER_USE_API_KEY XREACH_AUTH_TOKEN XREACH_CT0
 
 # 日志函数
 log() {
@@ -25,15 +28,8 @@ error_exit() {
 
 # 检查依赖
 check_dependencies() {
-    # 检查 browser-use
-    if ! command -v browser-use &> /dev/null; then
-        error_exit "browser-use not installed. Run: pip install agentmail"
-    fi
-    
-    # 检查 agent-browser (可选)
-    if ! command -v agent-browser &> /dev/null; then
-        log "WARNING: agent-browser not installed, will use browser-use only"
-    fi
+    command -v browser-use &> /dev/null || error_exit "browser-use not installed"
+    command -v yt-dlp &> /dev/null || log "WARNING: yt-dlp not installed (YouTube功能不可用)"
 }
 
 # 判断是否有本地GUI
@@ -41,162 +37,181 @@ has_gui() {
     [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]
 }
 
-# 判断是否为AI任务
-is_ai_task() {
-    local cmd="$1"
-    echo "$cmd" | grep -iqE "run|agent|ai|research|search|extract|crawl"
+# ========== Agent-Reach 功能 ==========
+
+# YouTube/B站 提取
+do_youtube() {
+    local url="$1"
+    log "YouTube: $url"
+    echo "📺 提取YouTube: $url"
+    
+    if command -v yt-dlp &> /dev/null; then
+        yt-dlp --dump-subs --no-download "$url" 2>&1 | head -50 || echo "无法提取字幕"
+    else
+        echo "yt-dlp未安装"
+    fi
 }
 
-# 判断是否需要交互
-is_interactive() {
-    local cmd="$1"
-    echo "$cmd" | grep -iqE "click|type|fill|input|select|hover|scroll"
+# Twitter/X 搜索
+do_twitter() {
+    local query="$*"
+    log "Twitter: $query"
+    echo "🐦 Twitter搜索: $query"
+    
+    export PATH="$PATH:/root/.nvm/versions/node/v22.22.0/bin"
+    xreach --auth-token "$XREACH_AUTH_TOKEN" --ct0 "$XREACH_CT0" search "$query" -n 10 2>&1 | head -30
 }
 
-# 获取或创建会话
+# GitHub 搜索
+do_github() {
+    local query="$*"
+    log "GitHub: $query"
+    echo "🐙 GitHub搜索: $query"
+    
+    curl -s "https://api.github.com/search/repositories?q=$query&per_page=5" 2>&1 | python3 -c "
+import json,sys
+data=json.load(sys.stdin)
+for item in data.get('items',[])[:5]:
+    print(f\"★ {item['full_name']}\")
+    print(f\"  {item['description'] or 'No description'}\")
+    print(f\"  ⭐ {item['stargazers_count']} | 🔀 {item['forks_count']}\")
+    print()
+" 2>/dev/null || echo "GitHub API调用失败"
+}
+
+# RSS 订阅
+do_rss() {
+    local url="$1"
+    log "RSS: $url"
+    echo "📡 RSS订阅: $url"
+    curl -s "$url" 2>&1 | python3 -c "
+from xml.etree import ElementTree as ET
+import sys
+try:
+    for item in ET.fromstring(sys.stdin.read()).findall('.//item')[:5]:
+        print(f\"• {item.find('title').text}\")
+except: print('解析失败')
+" 2>/dev/null || echo "无法解析RSS"
+}
+
+# 网页读取 (Jina)
+do_read() {
+    local url="$1"
+    log "Read: $url"
+    echo "🌐 读取网页: $url"
+    curl -s "https://r.jina.ai/$url" 2>&1 | head -50
+}
+
+# 自动路由判断
+analyze_task() {
+    local task="$1"
+    local lower=$(echo "$task" | tr '[:upper:]' '[:lower:]')
+    
+    # Agent-Reach 专长
+    if echo "$lower" | grep -qE "youtube|视频|字幕|b站|bilibili"; then
+        echo "youtube"
+    elif echo "$lower" | grep -qE "twitter|推特|tweet"; then
+        echo "twitter"
+    elif echo "$lower" | grep -qE "github|代码|仓库|repo"; then
+        echo "github"
+    elif echo "$lower" | grep -qE "rss|订阅"; then
+        echo "rss"
+    elif echo "$lower" | grep -qE "读取|看看这个|这个网页"; then
+        echo "read"
+    # browser-use 专长
+    elif echo "$lower" | grep -qE "打开|登录|点击|填表|自动化"; then
+        echo "browser"
+    # 通用搜索
+    else
+        echo "search"
+    fi
+}
+
+# 获取会话
 get_session() {
     if [ -f "$SESSION_FILE" ]; then
-        local session_id=$(cat "$SESSION_FILE")
-        log "Using existing session: $session_id"
-        echo "$session_id"
-    else
-        # 创建新会话
-        local new_session=$(browser-use session create --json 2>/dev/null | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-        if [ -n "$new_session" ]; then
-            echo "$new_session" > "$SESSION_FILE"
-            log "Created new session: $new_session"
-            echo "$new_session"
-        fi
+        cat "$SESSION_FILE"
     fi
 }
 
-# 路由决策
+# 主路由
 route_browser() {
-    local cmd="$1"
-    shift
-    local args="$@"
+    local task="$*"
+    local mode=$(analyze_task "$task")
     
-    # AI任务 → browser-use
-    if is_ai_task "$cmd"; then
-        log "Mode: AI task → browser-use"
-        echo "🤖 Using browser-use (AI mode)"
-        browser-use --browser remote run "$args" 2>&1
-        return $?
+    log "Task: $task | Mode: $mode"
     
-    # 沙盒环境(无GUI) → browser-use
-    elif ! has_gui; then
-        log "Mode: remote (no GUI) → browser-use"
-        echo "🌐 Using browser-use (remote)"
-        
-        # 交互式命令使用会话
-        if is_interactive "$cmd"; then
-            local session_id=$(get_session)
-            if [ -n "$session_id" ]; then
-                browser-use --browser remote --session "$session_id" "$cmd" "$args" 2>&1
-                return $?
+    case $mode in
+        youtube)
+            do_youtube "$task"
+            ;;
+        twitter)
+            do_twitter "$task"
+            ;;
+        github)
+            do_github "$task"
+            ;;
+        rss)
+            do_rss "$task"
+            ;;
+        read)
+            do_read "$task"
+            ;;
+        browser)
+            # 使用 browser-use
+            if ! has_gui; then
+                browser-use --browser remote run "$task" 2>&1
+            else
+                agent-browser "$task" 2>&1
             fi
-        fi
-        
-        browser-use --browser remote "$cmd" "$args" 2>&1
-        return $?
-    
-    # 本地有GUI → agent-browser
-    else
-        log "Mode: local (GUI) → agent-browser"
-        echo "🖥️ Using agent-browser (local)"
-        agent-browser "$cmd" "$args" 2>&1
-        return $?
-    fi
-}
-
-# 会话管理
-session_manager() {
-    local action="$1"
-    case $action in
-        list)
-            echo "📋 Browser sessions:"
-            browser-use session list 2>&1
             ;;
-        clean)
-            log "Cleaning up sessions..."
-            browser-use session stop --all 2>&1
-            rm -f "$SESSION_FILE"
-            echo "✅ Sessions cleaned"
-            ;;
-        new)
-            rm -f "$SESSION_FILE"
-            get_session
-            echo "✅ New session created"
-            ;;
-        *)
-            echo "Usage: smart-browser session [list|clean|new]"
+        search)
+            # 通用搜索
+            if ! has_gui; then
+                browser-use --browser remote run "$task" 2>&1
+            else
+                agent-browser "$task" 2>&1
+            fi
             ;;
     esac
 }
 
-# 帮助信息
+# 帮助
 show_help() {
     cat << EOF
-🤖 Smart Browser - 智能浏览器调度器
+🤖 Smart Browser Ultimate v2.0 - 智能浏览器调度器
 
 用法: smart-browser <command> [args...]
 
 命令:
-  open <url>              打开网页
-  state                   获取页面元素
-  click <index>          点击元素
-  type <text>            输入文字
-  input <index> <text>   点击后输入
-  screenshot [file]      截图
-  run <task>             AI Agent任务
-  close                  关闭浏览器
-  session <action>       会话管理 [list|clean|new]
+  <任务描述>           自动分析并执行
+
+自动路由:
+  YouTube/B站        → Agent-Reach (yt-dlp)
+  Twitter/推特       → Agent-Reach (xreach)
+  GitHub代码         → Agent-Reach (API)
+  RSS订阅            → Agent-Reach (curl)
+  网页读取           → Agent-Reach (Jina)
+  打开/登录/点击     → browser-use
+  其他任务           → browser-use
 
 示例:
-  smart-browser open https://example.com
-  smart-browser run "搜索AI新闻并总结"
-  smart-browser state
-  smart-browser click 0
-  smart-browser session list
-
-自动选择逻辑:
-  - AI任务 (run/agent/search) → browser-use
-  - 沙盒环境 (无GUI) → browser-use
-  - 本地有GUI → agent-browser
-
-会话管理:
-  smart-browser session list   查看所有会话
-  smart-browser session clean  清理所有会话
-  smart-browser session new   创建新会话
+  smart-browser "YouTube视频 https://youtube.com/watch?v=xxx"
+  smart-browser "Twitter AI news"
+  smart-browser "GitHub openclaw"
+  smart-browser "打开google.com"
+  smart-browser "搜索AI最新资讯"
 EOF
 }
 
-# 主入口
 main() {
-    # 检查依赖
     check_dependencies
     
-    # 无参数显示帮助
     if [ $# -eq 0 ]; then
         show_help
         exit 0
     fi
     
-    local cmd="$1"
-    
-    # 会话管理命令
-    if [ "$cmd" = "session" ]; then
-        session_manager "$2"
-        exit $?
-    fi
-    
-    # 帮助命令
-    if [ "$cmd" = "-h" ] || [ "$cmd" = "--help" ]; then
-        show_help
-        exit 0
-    fi
-    
-    # 执行路由
     route_browser "$@"
 }
 

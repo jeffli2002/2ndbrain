@@ -33,6 +33,8 @@ pip install yt-dlp
 
 ### 2. Get YouTube API Key
 
+> ⚠️ **凭据管理**: API Key 必须存储在 `/root/.openclaw/credentials/youtube.json`
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create/select a project (e.g., "YouTube Research")
 3. Enable the API:
@@ -43,7 +45,11 @@ pip install yt-dlp
    - "APIs & Services" → "Credentials"
    - "Create Credentials" → "API Key"
    - Copy the key
-5. Optional - Restrict:
+5. **保存到凭据文件**:
+   ```bash
+   echo '{"api_key": "你的API Key"}' > /root/.openclaw/credentials/youtube.json
+   ```
+6. Optional - Restrict:
    - Click the created key
    - "API restrictions" → Select only "YouTube Data API v3"
    - Save

@@ -552,30 +552,60 @@ After completing the MD draft, perform a structured quality review and scoring:
 
 **1. 段落行间距 (必须只有一行)**
 - `<p>` 标签之间不能有额外的空行
-- 使用 `<br><br>` 换行的地方改为单个 `<br>` 或直接使用段落分隔
-- CSS: `p { margin: 12px 0; }` (紧凑间距)
+- CSS: `p { margin: 4px 0; line-height: 1.4; }` (紧凑间距，一行)
 
-**2. 重点字词背景阴影**
+**2. 标题样式 (必须有背景阴影和左侧下划线)**
+- `# 标题`：紫色渐变背景 + 白色字 + 左侧白线
+  - CSS: `h1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border-left: 5px solid #fff; padding: 10px 14px; border-radius: 6px; }`
+- `## 二级标题`：黄橙渐变背景 + 左侧红线
+  - CSS: `h2 { background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); border-left: 4px solid #ff6b6b; padding: 8px 12px; border-radius: 5px; }`
+- `### 三级标题`：蓝色渐变背景 + 白色字 + 左侧白线
+  - CSS: `h3 { background: linear-gradient(120deg, #4facfe 0%, #00f2fe 100%); color: #fff; border-left: 3px solid #fff; padding: 6px 10px; border-radius: 4px; }`
+
+**3. 重点字词背景阴影**
 - 使用黄色渐变背景突出重点词汇
 - CSS类: `.key-point { background: linear-gradient(120deg, #fff3cd 0%, #fff8e1 100%); padding: 2px 6px; border-radius: 3px; }`
 - 应用场景: 核心概念、关键数据、行动词
 
-**3. 重点句点下划线**
+**4. 重点句点下划线**
 - 使用点状下划线强调重要句子
 - CSS类: `.important { border-bottom: 2px dotted #ff6b6b; padding-bottom: 2px; }`
 - 应用场景: 核心观点、关键结论、重要提醒
 
-**4. 完整CSS样式示例**
+**5. 完整CSS样式示例 (必须使用)**
 ```css
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.4; padding: 16px; }
+h1 { font-size: 20px; font-weight: bold; margin: 16px 0 8px; color: #fff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 10px 14px; border-radius: 6px; border-left: 5px solid #fff; }
+h2 { font-size: 18px; font-weight: bold; margin: 14px 0 6px; color: #333; background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); padding: 8px 12px; border-radius: 5px; border-left: 4px solid #ff6b6b; }
+h3 { font-size: 16px; font-weight: bold; margin: 12px 0 4px; color: #fff; background: linear-gradient(120deg, #4facfe 0%, #00f2fe 100%); padding: 6px 10px; border-radius: 4px; border-left: 3px solid #fff; }
+p { margin: 4px 0; line-height: 1.4; }
+ul, ol { margin: 4px 0; padding-left: 18px; }
+li { margin: 2px 0; line-height: 1.4; }
 .key-point { background: linear-gradient(120deg, #fff3cd 0%, #fff8e1 100%); padding: 2px 6px; border-radius: 3px; }
 .important { border-bottom: 2px dotted #ff6b6b; padding-bottom: 2px; }
-p { margin: 12px 0; }
+.cta-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 10px; text-align: center; color: #fff; margin: 16px 0; }
 ```
 
-**5. HTML中使用方式**
+**6. HTML中使用方式**
+- 标题: 使用标准 Markdown `# ## ###`
 - 重点词汇: `<span class="key-point">核心概念</span>`
-- 重点句子: `<span class="key-point important">关键结论</span>`
+- 重点句子: `<span class="important">关键结论</span>`
 - 引用块: `<blockquote>引用的重点内容</blockquote>`
+
+**7. 禁止事项**
+- ❌ 禁止在文章结尾添加 "本文由AI Agent编写" 等说明
+- ❌ 禁止添加日期、版本号等元信息
+- ❌ 禁止添加非必要的版权声明
+
+**8. 结尾CTA (必须添加)**
+```html
+<div class="cta-box">
+<p>如果你觉得这篇文章有帮助，欢迎关注我们</p>
+<p>📱 微信公众号：搜索「AI进化社」</p>
+<p>🔗 官网：https://example.com</p>
+<p>💬 评论区聊聊：你用的是什么方案？</p>
+</div>
+```
 
 - **Apply styling classes to key content**:
   - Wrap important numbers in `<span class="key-number">$XXX</span>`
@@ -1305,3 +1335,13 @@ All API keys and credentials are stored in `.env` file for security and easy man
 
 **Output Directory:**
 - `D:\AI\contents\CCoutput\` - Target directory for generated MD, HTML, Xiaohongshu, Tweet files, and cover photos
+
+---
+
+如果你觉得这篇文章有帮助，欢迎关注我们
+
+📱 微信公众号：搜索「AI进化社」
+🔗 官网：https://example.com
+💬 评论区聊聊：你用的是什么方案？
+```
+

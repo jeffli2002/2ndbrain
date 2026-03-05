@@ -20,7 +20,9 @@ AgentMail is an API-first email platform designed specifically for AI agents. Un
 1. **Create an account** at [console.agentmail.to](https://console.agentmail.to)
 2. **Generate API key** in the console dashboard
 3. **Install Python SDK**: `pip install agentmail python-dotenv`
-4. **Set environment variable**: `AGENTMAIL_API_KEY=your_key_here`
+4. **Set environment variable**: 
+   - 从凭据文件读取: `cat /root/.openclaw/credentials/agentmail.json | jq -r '.api_key'`
+   - 或设置环境变量: `export AGENTMAIL_API_KEY=$(cat /root/.openclaw/credentials/agentmail.json | jq -r '.api_key')`
 
 ## Basic Operations
 

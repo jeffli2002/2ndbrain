@@ -199,6 +199,8 @@ All data stored in `~/.claude/skills/notebooklm/data/`:
 
 ## Configuration
 
+> ⚠️ **凭据管理**: 浏览器 cookies 和 session 存储在 skill 目录，不要提交到 git。
+
 Optional `.env` file in skill directory:
 ```env
 HEADLESS=false           # Browser visibility
