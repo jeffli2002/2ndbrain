@@ -1,5 +1,5 @@
 # Group Agent Mapping - 群聊Agent映射配置
-# 版本: v1.0
+# 版本: v1.1
 # 用途: 将不同群聊映射到不同Agent角色
 
 # 群聊到Agent的映射
@@ -15,44 +15,49 @@ group_mappings:
     memory_namespace: "chief"
   
   # ===== Content Agent 群聊 =====
-  - group_id: "oc_content_xxx"  # 内容创作群
+  - group_id: "oc_1e781764ad5c3b463eef7d0aee1de2a9"
+    group_name: "Content 神笔马良"
     agent: "content"
-    name: "Content Agent"
+    name: "Content Agent (小文)"
     description: "内容创作专家"
     memory_namespace: "content"
-    keywords: ["内容", "公众号", "文章", "小红书", "Twitter"]
+    keywords: ["内容", "公众号", "文章", "小红书", "Twitter", "视频", "脚本"]
   
   # ===== Growth Agent 群聊 =====  
-  - group_id: "oc_growth_xxx"   # 增长运营群
+  - group_id: "oc_86babca945b808774c67a3ef130f64a5"
+    group_name: "Growth"
     agent: "growth"
-    name: "Growth Agent"  
+    name: "Growth Agent (增长)"
     description: "增长黑客"
     memory_namespace: "growth"
-    keywords: ["增长", "推广", "SEO", "流量", "运营"]
+    keywords: ["增长", "推广", "SEO", "流量", "运营", "关键词"]
   
   # ===== Coding Agent 群聊 =====
-  - group_id: "oc_coding_xxx"   # 技术开发群
+  - group_id: "oc_3eca5aac26f0a945e0b4febc76214066"
+    group_name: "Coding 牛马🐮"
     agent: "coding"
-    name: "Coding Agent"
+    name: "Coding Agent (代码)"
     description: "全栈工程师"
     memory_namespace: "coding"
-    keywords: ["代码", "bug", "开发", "修复", "技术"]
+    keywords: ["代码", "bug", "开发", "修复", "技术", "编程"]
   
   # ===== Product Agent 群聊 =====
-  - group_id: "oc_product_xxx"  # 产品规划群
+  - group_id: "oc_76d55844d04e400ed71327069580be96"
+    group_name: "Product 鲁班大师"
     agent: "product"
-    name: "Product Agent"
+    name: "Product Agent (产品)"
     description: "产品经理"
     memory_namespace: "product"
-    keywords: ["产品", "需求", "设计", "PRD", "用研"]
+    keywords: ["产品", "需求", "设计", "PRD", "用研", "功能"]
   
   # ===== Finance Agent 群聊 =====
-  - group_id: "oc_finance_xxx"  # 财务分析群
+  - group_id: "oc_e810980541f92c802b8e970f49854381"
+    group_name: "Finance 账房先生"
     agent: "finance"
-    name: "Finance Agent"
+    name: "Finance Agent (财务)"
     description: "财务分析师"
     memory_namespace: "finance"
-    keywords: ["财务", "收入", "预算", "ROI", "利润"]
+    keywords: ["财务", "收入", "预算", "ROI", "利润", "成本"]
 
 # 默认配置
 default:
@@ -82,3 +87,15 @@ memory_rules:
     - 消息: {message}
     - 回复: {response}
     - 重要信息: {key_info}
+
+# 版本记录
+changelog:
+  v1.1.0:
+    - "更新真实的群聊ID映射"
+    - "Content神笔马良 -> Content Agent"
+    - "Growth -> Growth Agent"
+    - "Coding牛马 -> Coding Agent"
+    - "Product鲁班大师 -> Product Agent"
+    - "Finance账房先生 -> Finance Agent"
+  v1.0.0:
+    - "初始版本"
