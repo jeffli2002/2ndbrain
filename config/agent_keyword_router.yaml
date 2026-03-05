@@ -2,7 +2,6 @@
 # 版本: v1.0
 # 用途: 根据消息关键词自动匹配并路由到对应Agent
 
----
 # 路由规则
 # 优先级: 从上到下，第一个匹配的Agent获胜
 
@@ -137,9 +136,7 @@ rules:
       - "*"  # 通配符，匹配所有未匹配的消息
     priority: 0
 
----
 # 路由行为配置
-
 behavior:
   # 匹配模式
   match_mode: "first_match"  # first_match: 第一个匹配的Agent; multi_match: 多个Agent并行
@@ -156,9 +153,7 @@ behavior:
   # 相似度阈值 (0-1)
   similarity_threshold: 0.8
 
----
 # 消息处理配置
-
 message_handling:
   # 收到消息后的处理流程
   process:
@@ -177,9 +172,7 @@ message_handling:
   # 失败后的fallback
   fallback: "chief"
 
----
 # 特殊规则
-
 special_rules:
   # 多人同时被@时的处理
   multi_mention:
@@ -201,9 +194,7 @@ special_rules:
     - "架构设计"
     - "全面"
 
----
 # 版本记录
-
 changelog:
   v1.0.0:
     - "初始版本"
