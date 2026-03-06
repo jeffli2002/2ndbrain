@@ -164,6 +164,9 @@ behavior:
   
   # 最小关键词匹配数
   min_keywords: 1
+
+  # 最低有效分数；低于该值则不认为命中某个领域
+  min_score: 1.0
   
   # 是否区分大小写
   case_sensitive: false
@@ -173,6 +176,20 @@ behavior:
   
   # 相似度阈值 (0-1)
   similarity_threshold: 0.8
+
+  # 低信号泛词：命中时只给低权重，避免把任务带偏
+  low_signal_keywords:
+    - "分析"
+    - "设计"
+    - "实现"
+    - "规划"
+    - "策略"
+    - "建议"
+    - "发布"
+    - "自动化"
+    - "技术"
+    - "功能"
+    - "用户"
 
 # 消息处理配置
 message_handling:

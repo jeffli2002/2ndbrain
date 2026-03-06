@@ -8,6 +8,8 @@ Agent Keyword Router - 关键词自动路由系统
 - 不直接调用 OpenClaw tools；真实分发由 runtime / tool 层完成
 """
 
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -38,7 +40,12 @@ class AgentKeywordRouter:
         except Exception as e:
             print(f"加载配置失败: {e}")
             self.rules = self._default_rules()
-            self.behavior = {"match_mode": "first_match", "min_keywords": 1}
+            self.behavior = {
+                "match_mode": "first_match",
+                "min_keywords": 1,
+                "min_score": 1.0,
+                "low_signal_keywords": ["分析", "设计", "实现", "建议", "策略"],
+            }
             self.special_rules = {}
             self.message_handling = {}
 
@@ -83,7 +90,7 @@ class AgentKeywordRouter:
         ]
 
     def extract_keywords(self, message: str) -> List[str]:
-        """从消息中提取关键词。"""
+        """从消息中提取关键词，仅用于可读展示，不作为最终路由依据。"""
         if not message:
             return []
 
@@ -105,38 +112,63 @@ class AgentKeywordRouter:
         return sorted(keywords)
 
     def _normalize(self, value: str) -> str:
-        return value.lower().strip()
+        normalized = (value or "").strip()
+        if not self.behavior.get("case_sensitive", False):
+            normalized = normalized.lower()
+        return normalized
 
-    def _rule_matches(self, extracted_keywords: List[str], rule: Dict) -> Tuple[List[str], float]:
-        agent_keywords = [self._normalize(kw) for kw in rule.get("keywords", []) if kw != "*"]
+    def _low_signal_keywords(self) -> set[str]:
+        return {self._normalize(item) for item in self.behavior.get("low_signal_keywords", [])}
+
+    def _keyword_weight(self, keyword: str) -> float:
+        return 0.35 if self._normalize(keyword) in self._low_signal_keywords() else 1.0
+
+    def _contains_keyword(self, normalized_message: str, normalized_keyword: str) -> bool:
+        if not normalized_message or not normalized_keyword:
+            return False
+
+        # 英文 / 技术词：按词边界精确匹配，避免 API 命中 scrapAPI 之类噪音
+        if re.search(r"[a-z0-9]", normalized_keyword):
+            pattern = rf"(?<![a-z0-9_]){re.escape(normalized_keyword)}(?![a-z0-9_])"
+            return re.search(pattern, normalized_message, flags=re.IGNORECASE) is not None
+
+        # 中文短语：要求配置关键词原样出现在消息中，不再对抽取短语做双向子串猜测
+        return normalized_keyword in normalized_message
+
+    def _rule_matches(self, message: str, rule: Dict) -> Tuple[List[str], float, int, int]:
+        normalized_message = self._normalize(message)
+        agent_keywords = [kw for kw in rule.get("keywords", []) if kw != "*"]
         priority = float(rule.get("priority", 0))
-        matches = []
 
-        for keyword in extracted_keywords:
-            normalized_keyword = self._normalize(keyword)
-            for agent_kw in agent_keywords:
-                if (
-                    normalized_keyword == agent_kw
-                    or normalized_keyword in agent_kw
-                    or agent_kw in normalized_keyword
-                ):
-                    matches.append(keyword)
-                    break
+        matched_keywords: List[str] = []
+        high_signal_count = 0
+        low_signal_count = 0
+        score = 0.0
 
-        unique_matches = sorted(set(matches))
-        score = len(unique_matches) * (priority / 100)
-        return unique_matches, score
+        for raw_keyword in agent_keywords:
+            normalized_keyword = self._normalize(raw_keyword)
+            if not self._contains_keyword(normalized_message, normalized_keyword):
+                continue
+
+            matched_keywords.append(raw_keyword)
+            weight = self._keyword_weight(raw_keyword)
+            score += weight * (priority / 100)
+            if weight >= 1.0:
+                high_signal_count += 1
+            else:
+                low_signal_count += 1
+
+        return matched_keywords, score, high_signal_count, low_signal_count
 
     def rank_agents(self, message: str) -> List[Dict]:
         """返回所有非通配候选，按分数从高到低排序。"""
-        extracted_keywords = self.extract_keywords(message)
         candidates: List[Dict] = []
 
         for rule in self.rules:
             if "*" in rule.get("keywords", []):
                 continue
 
-            matches, score = self._rule_matches(extracted_keywords, rule)
+            matches, score, high_signal_count, low_signal_count = self._rule_matches(message, rule)
             if matches:
                 candidates.append(
                     {
@@ -144,11 +176,20 @@ class AgentKeywordRouter:
                         "agent_name": rule.get("name"),
                         "priority": rule.get("priority", 0),
                         "matched_keywords": matches,
-                        "score": score,
+                        "score": round(score, 4),
+                        "high_signal_count": high_signal_count,
+                        "low_signal_count": low_signal_count,
                     }
                 )
 
-        candidates.sort(key=lambda item: (-item["score"], -int(item.get("priority", 0)), item["agent"]))
+        candidates.sort(
+            key=lambda item: (
+                -int(item.get("high_signal_count", 0)),
+                -item["score"],
+                -int(item.get("priority", 0)),
+                item["agent"],
+            )
+        )
         return candidates
 
     def _chief_rule(self) -> Dict:
@@ -158,10 +199,10 @@ class AgentKeywordRouter:
         return {"agent": "chief", "name": "Chief Agent", "keywords": ["*"], "priority": 0}
 
     def _contains_any(self, message: str, keywords: List[str]) -> List[str]:
-        lowered = message.lower()
+        normalized_message = self._normalize(message)
         hits = []
         for keyword in keywords:
-            if keyword.lower() in lowered:
+            if self._contains_keyword(normalized_message, self._normalize(keyword)):
                 hits.append(keyword)
         return hits
 
@@ -170,11 +211,14 @@ class AgentKeywordRouter:
         extracted_keywords = self.extract_keywords(message)
         candidates = self.rank_agents(message)
         min_keywords = int(self.behavior.get("min_keywords", 1) or 1)
+        min_score = float(self.behavior.get("min_score", 1.0) or 1.0)
         chief_rule = self._chief_rule()
 
         primary_candidate: Optional[Dict] = None
-        if candidates and len(candidates[0].get("matched_keywords", [])) >= min_keywords:
-            primary_candidate = candidates[0]
+        if candidates:
+            first = candidates[0]
+            if len(first.get("matched_keywords", [])) >= min_keywords and float(first.get("score", 0.0)) >= min_score:
+                primary_candidate = first
 
         tied_candidates: List[Dict] = []
         if primary_candidate:
@@ -220,7 +264,9 @@ class AgentKeywordRouter:
         if execution_kind == "triage":
             notes.append("命中多个高分领域，建议 Chief 先追问或拆分任务，再决定委派目标。")
         if not primary_candidate:
-            notes.append("未命中明确领域关键词，按 Chief 兜底处理。")
+            notes.append("未命中足够强的领域信号，按 Chief 兜底处理。")
+        if primary_candidate and primary_candidate.get("low_signal_count") and not primary_candidate.get("high_signal_count"):
+            notes.append("当前命中以低信号泛词为主，已降低分数，避免误派。")
         if urgent_hits:
             notes.append(f"检测到紧急标识: {', '.join(urgent_hits)}")
         if long_task_hits:

@@ -70,6 +70,7 @@ class ChiefDispatchPlanner:
             "enabled": bool(bridge_cfg.get("enabled", True)),
             "dispatch_id": dispatch_id,
             "result_file": str(result_file),
+            "allowed_dir": str(result_dir),
             "wait_timeout_seconds": int(bridge_cfg.get("wait_timeout_seconds", 180)),
         }
 

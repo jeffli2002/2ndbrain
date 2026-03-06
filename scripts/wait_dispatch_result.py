@@ -15,7 +15,24 @@ import time
 from pathlib import Path
 
 
-def parse_result(path: Path, expected_dispatch_id: str | None = None, expected_agent: str | None = None, expected_route_debug: str | None = None) -> dict:
+def _safe_resolve(path: Path) -> Path:
+    return path.expanduser().resolve(strict=False)
+
+
+def _is_within(path: Path, allowed_dir: Path) -> bool:
+    try:
+        path.relative_to(allowed_dir)
+        return True
+    except ValueError:
+        return False
+
+
+def parse_result(
+    path: Path,
+    expected_dispatch_id: str | None = None,
+    expected_agent: str | None = None,
+    expected_route_debug: str | None = None,
+) -> dict:
     text = path.read_text(encoding="utf-8").strip()
     lines = text.splitlines()
     status = None
@@ -39,6 +56,7 @@ def parse_result(path: Path, expected_dispatch_id: str | None = None, expected_a
 
     body = "\n".join(lines[body_start:]).strip() if lines else ""
 
+    # 兼容历史 worker：如果头部缺失，但外部调用已提供 expected_*，则用 expected_* 补齐契约字段。
     if dispatch_id is None and expected_dispatch_id:
         dispatch_id = expected_dispatch_id
     if agent is None and expected_agent:
@@ -48,6 +66,12 @@ def parse_result(path: Path, expected_dispatch_id: str | None = None, expected_a
     if status is None and body:
         status = "ok"
 
+    header_complete = all([status, route_debug, dispatch_id, agent])
+    dispatch_matches = (not expected_dispatch_id) or (dispatch_id == expected_dispatch_id)
+    agent_matches = (not expected_agent) or (agent == expected_agent)
+    route_matches = (not expected_route_debug) or (route_debug == expected_route_debug)
+    contract_valid = header_complete and dispatch_matches and agent_matches and route_matches
+
     return {
         "path": str(path),
         "status": status,
@@ -56,7 +80,11 @@ def parse_result(path: Path, expected_dispatch_id: str | None = None, expected_a
         "agent": agent,
         "body": body,
         "raw": text,
-        "header_complete": all([status, route_debug, dispatch_id, agent]),
+        "header_complete": header_complete,
+        "dispatch_matches": dispatch_matches,
+        "agent_matches": agent_matches,
+        "route_matches": route_matches,
+        "contract_valid": contract_valid,
     }
 
 
@@ -65,20 +93,43 @@ def main() -> None:
     parser.add_argument("path", help="result file path")
     parser.add_argument("--timeout", type=int, default=180, help="seconds to wait")
     parser.add_argument("--interval", type=float, default=1.0, help="poll interval seconds")
+    parser.add_argument("--allowed-dir", default="/root/.openclaw/workspace/output/dispatch_results")
     parser.add_argument("--expected-dispatch-id", default=None)
     parser.add_argument("--expected-agent", default=None)
     parser.add_argument("--expected-route-debug", default=None)
     parser.add_argument("--json", action="store_true", help="output json")
     args = parser.parse_args()
 
-    path = Path(args.path)
+    path = _safe_resolve(Path(args.path))
+    allowed_dir = _safe_resolve(Path(args.allowed_dir))
     deadline = time.time() + max(args.timeout, 1)
+
+    if not _is_within(path, allowed_dir):
+        payload = {
+            "ready": False,
+            "path": str(path),
+            "error": "path_outside_allowed_dir",
+            "allowed_dir": str(allowed_dir),
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(payload["error"])
+        return
 
     while time.time() < deadline:
         if path.exists() and path.stat().st_size > 0:
-            parsed = parse_result(path, expected_dispatch_id=args.expected_dispatch_id, expected_agent=args.expected_agent, expected_route_debug=args.expected_route_debug)
+            parsed = parse_result(
+                path,
+                expected_dispatch_id=args.expected_dispatch_id,
+                expected_agent=args.expected_agent,
+                expected_route_debug=args.expected_route_debug,
+            )
+            if not parsed["contract_valid"]:
+                time.sleep(max(args.interval, 0.2))
+                continue
             if args.json:
-                print(json.dumps({"ready": True, **parsed}, ensure_ascii=False, indent=2))
+                print(json.dumps({"ready": True, "allowed_dir": str(allowed_dir), **parsed}, ensure_ascii=False, indent=2))
             else:
                 print(parsed["raw"])
             return
@@ -87,6 +138,7 @@ def main() -> None:
     payload = {
         "ready": False,
         "path": str(path),
+        "allowed_dir": str(allowed_dir),
         "error": "timeout_waiting_for_dispatch_result",
     }
     if args.json:
