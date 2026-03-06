@@ -1,6 +1,44 @@
 # 战略记忆 - 虾仔的长期记忆
 
-> 最后更新: 2026-03-06 18:00
+> 最后更新: 2026-03-07 07:51
+
+---
+
+## 📊 Memory 提炼 | 2026-03-07 07:51
+
+### 近2日战略级进展（2026-03-06 ~ 2026-03-07）
+
+**1. Chief 私聊委派链路已从“概念路由”升级为“真实闭环”**
+- 已完成真相源收敛：Chief 读取 `openclaw.json` bindings + `config/agent_keyword_router.yaml` 做分类与执行规划，不再依赖伪 session_key / 旧路由配置。
+- 当前 Feishu 通道下，稳定委派方式已明确为：`sessions_spawn(runtime="subagent", mode="run")` 按任务即时拉起 worker，而不是假设存在持久 thread worker。
+- 已跑通 content / coding / growth / product / finance 五类 worker 的完整闭环：**分类 → delegate_spawn → worker执行 → JSON结果桥回传 → Chief消费结果**。
+- 已加固 `scripts/wait_dispatch_result.py` 与 `scripts/chief_dispatch.py`：结果桥默认走 JSON 协议，并强校验 `allowed_dir + expected_dispatch_id + expected_agent + expected_route_debug`，降低误读旧文件或脏结果的风险。
+- 已归档 legacy 路由文件并补充 `docs/chief-dispatch-truth-sources.md`，避免再次出现“双真相源”与“看起来能派活、实际没派”的配置幻觉。
+- **战略含义**：Chief 的私聊分发现在已经具备真实执行能力，下一阶段重点应放在稳定性、观测性和交互体验，而不是继续堆抽象路由设计。
+
+**2. 小红书发布路径已从“登录受阻”推进到“可复用登录态 + 半自动发布验证”**
+- 03-06 暴露的核心阻塞点是：纯服务器 Headless 环境无法完成小红书登录验证；滑块/验证链路不适合无 GUI 的纯自动登录。
+- 03-07 在老板提供关键 cookies 后，已通过 CDP `Network.setCookies` 将登录态注入远端 Chrome，并验证可直接进入 creator 发布页：`https://creator.xiaohongshu.com/publish/publish?source=official`。
+- 发布页上传区域与创作者相关元素已可见，说明后续可继续做图文发布半链路测试。
+- 当前登录态已备份到：`/root/.openclaw/credentials/xiaohongshu.json`。
+- **战略含义**：小红书现阶段的现实可行方案不是“纯自动登录”，而是**可复用 cookies/登录态备份 + 浏览器会话注入**。这条路径比继续死磕 Headless 登录更稳。
+
+**3. 小红书发布 Skill 已从临时脚本升级为“前置校验 + 资产兜底”的可复用流程**
+- 已把内容规则固化进 `skills/xiaohongshu-skills/skills/xhs-publish/SKILL.md`：标题≤20、正文≤1000（建议 800~1000）、首句不重复标题、开头带 emoji、结尾带 #tag。
+- 已新增 `skills/xiaohongshu-skills/scripts/content_rules.py`，把内容校验与轻量规范化提前到发布前，而不是等浏览器流程里才报错。
+- 已修改 `skills/xiaohongshu-skills/scripts/cli.py` 与 `scripts/publish_pipeline.py`：未提供图片时自动尝试 fallback 封面。
+- 已沉淀稳定 fallback 资源：`skills/xiaohongshu-skills/assets/fallback-cover.png`。
+- **战略含义**：内容合规、基础素材与失败兜底已经前移，后续小红书发布失败会更多暴露在“平台交互/风控”层，而不是文案规则或素材缺失这类低级问题。
+
+**4. GitHub 备份与工作区同步机制继续有效**
+- 已检查 workspace 仓库状态：工作区干净，本地 `main` 一度领先远端 4 个提交。
+- 已成功执行 `git push origin main`，把小红书登录态备份流程、发布规则固化等关键工作同步到 GitHub 仓库 `jeffli2002/openclaw`。
+- **战略含义**：与发布链路、技能固化相关的关键资产已完成远端留档，降低“只存在本机会话里”的单点风险。
+
+### 当前应持续坚持的方向
+- **外部内容与发布**：继续坚持“前置规则校验 + 自动化到草稿/半链路 + 人工把关最终发布”的稳妥策略。
+- **系统建设**：Chief→Worker 真实闭环已经具备，现阶段优先补稳定性、日志、失败恢复与用户可见状态反馈。
+- **平台攻坚**：遇到小红书这类强风控平台，优先利用已验证的登录态复用与浏览器注入方案，不再把纯 Headless 登录当主路径。
 
 ---
 
