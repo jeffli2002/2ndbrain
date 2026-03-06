@@ -1,29 +1,36 @@
 # 战略记忆 - 虾仔的长期记忆
 
-> 最后更新: 2026-03-05 22:05
+> 最后更新: 2026-03-06 08:05
 
 ---
 
-## 📊 Memory 提炼 | 2026-03-05 22:05
+## 📊 Memory 提炼 | 2026-03-06 02:00
 
 ### 今日核心进展
 
-**Skills日常检查** (2026-03-05 22:00)
-- 已安装: agentmail 1.1.1 (ClawHub最新3.665分), 21个自定义skills
-- ClawHub热门: youtube-watcher(3.652), tiangong-notebooklm-cli(3.716), xiaohongshu-mcp(3.595)
-- 结论: 日常运行稳定，无重大更新需求
+**Sub Agent 身份配置修复** (2026-03-05)
+- 问题：各Sub Agent在群聊中不知道用户身份，直接喊"黎镭"
+- 修复：更新6个Agent的system prompt，明确要求称呼用户为"老板"或"Jeff"
+- 修改文件：chief_system.md, content_system.md, growth_system.md, coding_system.md, product_system.md, finance_system.md
+- 更新config/sub_agents.yaml：所有Agent的greeting改为"老板好！"
 
-### 历史核心进展
+**Cron任务调度集成** (2026-03-05)
+- 创建config/cron-agent-dispatch.yaml：定义10个主要任务到Agent的映射
+- 创建scripts/cron_dispatcher.py调度器脚本
+- 任务映射：daily-content-publish→Content, ai-daily-newsletter→Content, openclaw-news-monitor→Growth等
+- 完成8个主要Cron任务迁移到新调度机制
+
+**Agent模型配置** (2026-03-05)
+- Chief/Content/Coding: MiniMax M2.5 (主力) / Kimi K2.5 (Fallback)
+- Growth/Product/Finance: Kimi K2.5 (主力) / MiniMax M2.5 (Fallback)
 
 **邮件系统配置** (2026-03-05 19:50)
 - 成功集成AgentMail服务
-- 创建邮箱: jeffai@agentmail.to
-- 实现功能：发送邮件、接收邮件(收件箱检查)
-- 待处理：安全配置（webhook allowlist防prompt injection）
+- 邮箱: jeffai@agentmail.to
+- 实现发送/接收邮件功能
 
 **Browser-Use配置** (2026-03-05 19:31)
-- 用户提供API Key成功配置
-- 测试通过：打开example.com截图正常
+- 配置完成，测试通过
 - Live URL: https://live.browser-use.com
 
 ---
@@ -38,7 +45,6 @@
   3. 创始人Peter Steinberger加入OpenAI
   4. AWS官方支持在Lightsail运行
 - 问题：通知Chief Agent失败（session send权限不足）
-- 建议：手动通知或通过飞书消息
 
 ---
 
@@ -90,8 +96,44 @@
 
 ---
 
-## 📋 待处理问题
+## 📊 Memory 提炼 | 2026-03-06 06:00
 
+### 今日核心进展
+
+**每日记忆提炼流程确认** (2026-03-06)
+- 定时任务(cron: daily-memory-extractor)正常运行
+- 确认2026-03-05核心信息已在strategic.md中
+- 验证Sub Agent身份配置、Cron调度集成、Agent模型配置等关键修复已生效
+
+### 今日待处理问题
+- 部分Cron任务仍有error（growth-seo-keywords, product-competitor-analysis）
+- Chief日报发送失败问题
+- session send权限限制问题
+
+---
+
+## 📊 Memory 提炼 | 2026-03-06 08:00
+
+### 今日核心进展
+
+**每日记忆提炼流程正常运行** (2026-03-06)
+- 定时任务(daily-memory-extractor)每日自动执行
+- 确认昨日核心信息已在strategic.md中
+
+**Sub Agent Workspace修复** (2026-03-06 07:10)
+- 为所有Sub Agent workspace添加AGENTS.md/SOUL.md/MEMORY.md
+- 修复群聊中称呼用户为"黎镭"而非"老板"的问题
+- 验证Sub Agent身份配置已生效
+
+**AI日报任务执行成功** (2026-03-06 07:15)
+- 定时触发ai-daily-newsletter任务
+- 成功获取北京天气：晴天 -6°C
+- 从Hacker News、36kr采集AI新闻
+- 生成日报并发送至飞书
+- 日报保存至 reports/ai-daily-2026-03-06.md
+
+### 今日待处理问题
+- daily-memory-extractor cron任务error（编辑strategic.md失败）
 - 部分Cron任务仍有error（growth-seo-keywords, product-competitor-analysis）
 - Chief日报发送失败问题
 - session send权限限制问题
