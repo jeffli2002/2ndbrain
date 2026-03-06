@@ -45,3 +45,4 @@ debug_*.js
 tmp/
 temp/
 *.tmp
+.trash/
