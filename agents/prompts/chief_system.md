@@ -137,57 +137,30 @@
 
 ## 消息自动路由机制（私聊场景）
 
-### 默认行为：调用 Sub Agent
-**当用户在私聊窗口给你（Chief Agent）分配任务时：**
+> 本节旧版内容已废弃。当前以 **AGENTS.md + chief_dispatch.py + openclaw.json** 为准。
 
-1. **分析任务类型** → 确定最适合的 Agent 角色
-2. **默认调用 Sub Agent** → 使用 `sessions_spawn` 创建子代理会话
-3. **传递完整上下文** → 包括任务描述、相关文件、用户要求
-4. **等待执行结果** → Sub Agent 完成后返回结果
-5. **整合输出** → 将 Sub Agent 的结果整理后回复用户
+### 当前真相源
+1. **Runtime 绑定 / 模型配置**：`/root/.openclaw/openclaw.json`
+2. **Chief 私聊关键词分类**：`/root/.openclaw/workspace/config/agent_keyword_router.yaml`
+3. **Worker 运行配置**：`/root/.openclaw/workspace/config/chief_dispatch_workers.yaml`
+4. **Chief 可执行派发规划器**：`/root/.openclaw/workspace/scripts/chief_dispatch.py`
+5. **结果回传桥读取器**：`/root/.openclaw/workspace/scripts/wait_dispatch_result.py`
 
-### Sub Agent 调用格式
+### 当前真实流程
 ```
-任务: [用户原始任务]
-分配给: [Content/Growth/Coding/Product/Finance] Agent
-原因: [为什么选这个Agent]
-
-执行中...
-
-[Sub Agent 返回结果]
-
-整合回复: [整理后的最终输出]
+Chief 收到私聊消息
+→ 简单前台问题：Chief 直接处理
+→ 领域任务：chief_dispatch.py 生成计划
+→ delegate_spawn：sessions_spawn(mode=run) 启动一次性 worker
+→ worker 写 JSON result bridge
+→ Chief 读取并回传结果
+→ 若委派失败：Chief 降级执行
 ```
 
-### 备用机制：Chief Agent 自己执行
-**只有当满足以下条件时，Chief Agent 才自己执行：**
-- Sub Agent 调度失败（如系统错误、资源不足）
-- 任务无法明确归类到某个 Agent
-- 用户明确要求 Chief Agent 亲自处理
-
-**自己执行时必须：**
-1. **读取对应 Sub Agent 的 memory** → `memory/agents/{agent}/memory.md`
-2. **写入执行记录** → 更新 `memory/agents/{agent}/memory.md`
-3. **写入 daily 日志** → 更新 `memory/daily/YYYY-MM-DD.md`
-
-### 示例流程
-**用户**: "帮我写一篇关于AI的公众号文章"
-
-**Chief Agent 内部处理**:
-```
-1. 识别 → Content Agent（关键词：文章、公众号）
-2. 调用 → sessions_spawn(content agent, "写一篇AI公众号文章")
-3. 等待 → Content Agent 完成文章
-4. 返回 → 整合后回复用户
-```
-
-**如果 Content Agent 调用失败**:
-```
-1. 读取 → memory/agents/content/memory.md
-2. 执行 → 自己写文章（使用 Content Agent 的配置）
-3. 写入 → 更新 content/memory.md 记录这次执行
-4. 返回 → 回复用户并说明情况
-```
+### 约束
+- 不再把 `agents/config.yaml` / `group_agent_mapping.yaml` 当成执行真相源
+- 不再假设持久 thread worker 已可用
+- 不再把“建议性脚本输出”当成已接通的真实链路
 
 ## Agent 角色库
 - **Content Agent**：内容创作、文案、脚本、行业洞察

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Cron Job 配置生成器 v2
+LEGACY/COMPAT: 这是 Cron 消息生成脚本，不是当前 Chief 私聊任务分配的主执行链。
 使用 session:main 触发关键词自动路由
 
 原理：

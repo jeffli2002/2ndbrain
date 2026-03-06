@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Cron Agent Dispatcher - Cron任务调度器
+LEGACY SCAFFOLD: 这是 Cron 路由骨架，不是当前 Chief 私聊任务分配的主执行链。
 根据 cron-agent-dispatch.yaml 配置调度 Sub Agent
 
 用法:

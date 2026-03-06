@@ -35,7 +35,7 @@ except Exception:
 class ChiefAgent:
     """Chief Agent - AI CEO 助理和调度中枢"""
 
-    def __init__(self, config_path: str = "agents/config.yaml"):
+    def __init__(self, config_path: str | None = None):
         self.active_agent: Optional[str] = None
         self.config_path = config_path
         self.router = AgentKeywordRouter() if AgentKeywordRouter else None
@@ -261,7 +261,8 @@ class ChiefAgent:
             "config_source": {
                 "runtime": "/root/.openclaw/openclaw.json",
                 "router": "/root/.openclaw/workspace/config/agent_keyword_router.yaml",
-                "legacy": self.config_path,
+                "workers": "/root/.openclaw/workspace/config/chief_dispatch_workers.yaml",
+                "planner": "/root/.openclaw/workspace/scripts/chief_dispatch.py",
             },
         }
 
@@ -274,4 +275,4 @@ if __name__ == "__main__":
         "设计一个用户增长策略",
         "你现在在干什么",
     ]:
-        print(json.dumps(chief.dispatch(task), ensure_ascii=False, indent=2))
+        print(json.dumps(chief.plan_dispatch(task), ensure_ascii=False, indent=2))

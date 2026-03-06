@@ -1,0 +1,302 @@
+# AI 一人公司 Agent 配置文件
+# 位置: /root/.openclaw/workspace/agents/config.yaml
+# 版本: v1.1 - 修正版
+#
+# ⚠️ 废弃说明（2026-03-06）：
+# - 当前真实 runtime Agent 模型/绑定以 `/root/.openclaw/openclaw.json` 为准
+# - 当前 Chief 私聊关键词分类以 `/root/.openclaw/workspace/config/agent_keyword_router.yaml` 为准
+# - 本文件历史上出现过过时值与格式损坏，保留仅用于历史参考，不应再作为执行真相源
+
+# ============================================
+# 全局配置
+# ============================================
+global:
+  name: "Jeff AI One-Person Company"
+  version: "1.2.0"
+  
+  # 核心原则
+  principles:
+    - "只有1个真正运行的Agent"
+    - "通过system prompt + memory namespace切换角色"
+    - "Chief Agent负责任务调度和角色分配"
+    - "禁止自动多线程"
+    - "Product和Coding Agent禁止并行执行"
+    - "MVP聚焦角色分离和协同"
+
+# ============================================
+# Chief Agent 配置（主调度）
+# ============================================
+chief_agent:
+  name: "Chief Agent"
+  role: "AI CEO 助理 + 调度系统"
+  
+ primary: "min  model:
+   imax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
+    fallbacks:
+      - "kimi-coding/k2p5"                    # Fallback 1: Kimi K2.5
+    thinking: "high"
+    reasoning: true
+  
+  memory_namespace: "chief"
+  memory_sources:
+    - "chief/tasks"      # 任务队列和状态
+    - "chief/decisions"  # 决策记录
+    - "chief/schedule"   # 调度日志
+  
+  system_prompt_file: "agents/prompts/chief_system.md"
+  
+  # 调度规则
+  dispatch_rules:
+    content_keywords: ["内容", "日报", "脚本", "社交媒体", "文案", "文章"]
+    growth_keywords: ["增长", "SEO", "关键词", "转化", "漏斗", "获客"]
+    coding_keywords: ["代码", "编程", "API", "Bug", "重构", "架构", "开发"]
+    product_keywords: ["产品", "PRD", "Roadmap", "用户", "功能", "MVP"]
+    finance_keywords: ["财务", "成本", "定价", "收入", "现金流", "ROI"]
+
+# ============================================
+# Content Agent 配置
+# ============================================
+content_agent:
+  name: "Content Agent"
+  role: "内容创作专家"
+  
+  model:
+    primary: "minimax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
+    fallbacks:
+      - "kimi-coding/k2p5"                 # Fallback 1: Kimi K2.5
+    thinking: "medium"
+  
+  memory_namespace: "content"
+  memory_sources:
+    - "content/daily"      # AI 日报历史
+    - "content/kol"        # KOL 追踪记录
+    - "content/scripts"    # 视频脚本库
+    - "content/insights"   # 行业洞察
+  
+  system_prompt_file: "agents/prompts/content_system.md"
+  
+  tools:
+    - "web_search"
+    - "youtube"
+    - "feishu_doc"
+    - "message"
+
+# ============================================
+# Growth Agent 配置
+# ============================================
+growth_agent:
+  name: "Growth Agent"
+  role: "增长黑客"
+  
+  model:
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
+    fallbacks:
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
+    thinking: "medium"
+  
+  memory_namespace: "growth"
+  memory_sources:
+    - "growth/seo"         # SEO 策略和关键词
+    - "growth/experiments" # 增长实验记录
+    - "growth/funnel"      # 转化漏斗
+    - "growth/landing"     # Landing Page
+  
+  system_prompt_file: "agents/prompts/growth_system.md"
+  
+  tools:
+    - "web_search"
+    - "browser"
+    - "canvas"
+
+# ============================================
+# Coding Agent 配置
+# ============================================
+coding_agent:
+  name: "Coding Agent"
+  role: "全栈工程师"
+  
+  model:
+    primary: "minimax-cn/MiniMax-M2.5"    # ✅ 主力: MiniMax M2.5
+    fallbacks:
+      - "kimi-coding/k2p5"                 # Fallback 1: Kimi K2.5
+    thinking: "high"
+    reasoning: true
+  
+  memory_namespace: "coding"
+  memory_sources:
+    - "coding/projects"     # 项目代码库
+    - "coding/snippets"     # 代码片段
+    - "coding/architecture" # 架构设计
+    - "coding/debug"        # Bug 修复记录
+  
+  system_prompt_file: "agents/prompts/coding_system.md"
+  
+  tools:
+    - "exec"
+    - "write"
+    - "edit"
+    - "browser"
+    - "canvas"
+  
+  # 重要：禁止与 Product Agent 并行执行
+  execution_constraints:
+    - "禁止与 product_agent 同时运行"
+    - "执行前检查 product_agent 状态"
+
+# ============================================
+# Product Agent 配置
+# ============================================
+product_agent:
+  name: "Product Agent"
+  role: "产品经理"
+  
+  model:
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
+    fallbacks:
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
+    thinking: "high"
+  
+  memory_namespace: "product"
+  memory_sources:
+    - "product/prd"        # PRD 文档库
+    - "product/roadmap"    # 产品路线图
+    - "product/users"      # 用户画像
+    - "product/mvp"        # MVP 规划
+  
+  system_prompt_file: "agents/prompts/product_system.md"
+  
+  tools:
+    - "feishu_doc"
+    - "web_search"
+  
+  # 重要：禁止与 Coding Agent 并行执行
+  execution_constraints:
+    - "禁止与 coding_agent 同时运行"
+    - "执行前检查 coding_agent 状态"
+
+# ============================================
+# Finance Agent 配置
+# ============================================
+finance_agent:
+  name: "Finance Agent"
+  role: "财务分析师"
+  
+  model:
+    primary: "kimi-coding/k2p5"               # ✅ 主力: Kimi K2.5
+    fallbacks:
+      - "minimax-cn/MiniMax-M2.5"            # Fallback 1: MiniMax M2.5
+    thinking: "medium"
+  
+  memory_namespace: "finance"
+  memory_sources:
+    - "finance/models"      # 财务模型
+    - "finance/pricing"     # 定价策略
+    - "finance/forecast"    # 预测数据
+    - "finance/roi"         # ROI 分析
+  
+  system_prompt_file: "agents/prompts/finance_system.md"
+  
+  tools:
+    - "web_search"
+    - "canvas"
+
+# ============================================
+# System Agent 配置（健康检查等系统任务）
+# ============================================
+system_agent:
+  name: "System Agent"
+  description: "系统任务执行者（健康检查、定时任务等）"
+  
+  # 系统任务由 Chief Agent 执行
+  handler: "chief_agent"
+  
+  tasks:
+    - "cron-health-check"
+    - "daily-memory-extractor"
+    - "openclaw-news-monitor"
+
+# ============================================
+# 调度配置
+# ============================================
+scheduler:
+  # 执行模式
+  mode: "single"  # 单 Agent 模式，禁止多线程
+  
+  # 互斥规则（禁止同时执行的Agent对）
+  mutex_pairs:
+    - ["coding_agent", "product_agent"]
+  
+  # 状态检查
+  state_check:
+    before_switch: true   # 切换前检查当前Agent状态
+    after_completion: true # 完成后记录状态
+  
+  # 上下文传递
+  context_handoff:
+    enabled: true
+    max_context_length: 4000  # 最大上下文长度
+    include_memory_summary: true
+
+# ============================================
+# Memory 配置
+# ============================================
+memory:
+  base_path: "/root/.openclaw/workspace/memory/global"
+  
+  # 每个 Agent 的内存空间
+  namespaces:
+    chief: "chief/"
+    content: "content/"
+    growth: "growth/"
+    coding: "coding/"
+    product: "product/"
+    finance: "finance/"
+  
+  # 自动保存策略
+  auto_save:
+    on_completion: true
+    on_error: true
+    interval_minutes: 5
+
+# ============================================
+# MVP 限制（明确不做的事）
+# ============================================
+constraints:
+  # 明确禁止的功能
+  disabled_features:
+    - "自动多线程"
+    - "tool orchestration"
+    - "agent 并行执行"
+    - "复杂的 workflow 编排"
+  
+  # MVP 范围
+  mvp_scope:
+    - "角色分离（6个Agent）"
+    - "system prompt 切换"
+    - "memory namespace 隔离"
+    - "单 Agent 执行"
+    - "简单的任务调度"
+    - "模型 fallback 机制"
+
+# ============================================
+# 版本记录
+# ============================================
+changelog:
+  v1.3.0:
+    - "更新: Chief Agent 模型 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Content Agent 模型 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Coding Agent 模型改为 MiniMax M2.5 → Kimi K2.5"
+    - "更新: Growth Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "更新: Product Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "更新: Finance Agent 模型改为 Kimi K2.5 → MiniMax M2.5"
+    - "新增: System Agent 配置，系统任务由 Chief Agent 执行"
+  v1.2.0:
+    - "更新: Coding Agent 主力模型改为 Qwen 3.5 Pro"
+    - "更新: 所有 Agent Fallback 链中 Qwen Coder 替换为 Qwen 3.5 Pro"
+    - "优化: Coding Agent fallback 链为 Qwen 3.5 Pro → MiniMax M2.5 → Kimi K2.5"
+  v1.1.0:
+    - "修正: Chief Agent 主力模型改为 MiniMax 2.5"
+    - "修正: Coding Agent 主力模型改为 MiniMax 2.5"
+    - "统一: 所有 Agent 的 Fallback 链配置"
+  v1.0.0:
+    - "初始版本"
