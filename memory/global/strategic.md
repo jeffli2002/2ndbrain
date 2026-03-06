@@ -1,5 +1,42 @@
 # 战略记忆 - 虾仔的长期记忆
 
+> 最后更新: 2026-03-06 12:00
+
+---
+
+## 📊 Memory 提炼 | 2026-03-06 12:00
+
+### 今日核心进展
+
+**微信公众号API发布经验** (2026-03-06)
+- 凭据配置：写入 `skills/content-factory/.env`，不要在命令行临时设置
+- 发布命令：`python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
+- ⚠️ 必须加 `-X utf8` 参数，否则中文变编码
+- API限制：提交预览需更高权限，草稿创建后需手动在后台发布
+
+**重大教训：禁止编造数据** (2026-03-06)
+- 错误：撰写GPT-5.4文章时编造API价格 $30/M（实际$2.5/M）
+- 正确流程：先查证官方数据 → 再写作 → 完成后再次核实
+- 规则：价格/参数/排名等信息必须来自官方或权威来源，不确定时标注"待核实"
+
+### 昨日核心进展 (2026-03-05)
+
+**Sub Agent身份配置修复**
+- 问题：Agent在群聊中喊用户"黎镭"而非"老板"
+- 修复：更新6个Agent的system prompt + sub_agents.yaml
+- 要求：永远称呼用户为"老板"或"Jeff"
+
+**Cron任务调度集成**
+- 创建 config/cron-agent-dispatch.yaml：10个任务→Agent映射
+- 创建 scripts/cron_dispatcher.py 调度器
+- 完成8个主要Cron任务迁移
+
+**Agent模型配置**
+- Chief/Content/Coding: MiniMax M2.5
+- Growth/Product/Finance: Kimi K2.5
+
+---
+
 > 最后更新: 2026-03-06 10:00
 
 ---
@@ -242,3 +279,66 @@ openclaw gateway restart
 - 部分Cron任务仍有error（growth-seo-keywords, product-competitor-analysis）
 - Chief日报发送失败问题
 - session send权限限制问题
+
+---
+
+## 📊 Memory 提炼 | 2026-03-06 14:10
+
+### 近2日战略级结论（2026-03-05 ~ 2026-03-06）
+
+**1. 内容生产进入“半自动发布”阶段**
+- 微信公众号链路已跑通到“创建草稿”这一步，凭据应写入 `skills/content-factory/.env`，发布命令固定为：`python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
+- 当前API权限不足以完成preview/最终发布，因此现实可用流程是：**AI生成内容 → 脚本创建草稿 → 人工后台确认发布**
+- 这意味着内容自动化已经能显著提效，但最后一步仍需人工把关，适合作为当前稳定工作流
+
+**2. 建立“先核实、后写作”的硬规则**
+- 已出现一次严重质量事故：GPT-5.4文章中错误编造API价格
+- 战略上必须把“数据核实”前置到写作前，尤其是**价格、参数、榜单、基准测试、订阅方案**这类高风险信息
+- 后续所有对外内容默认执行：**官网/权威来源核实 → 写作 → 发布前复核**；若无法确认，则明确标注“待核实”
+
+**3. 多Agent基础设施已形成可复用框架**
+- Sub Agent身份问题已修复：所有Agent必须称呼用户为“老板”或“Jeff”，不能直呼姓名
+- 已形成可复制的多Agent配置模板：**独立workspace + 独立记忆 + 群聊bindings + 明确system prompt约束**
+- 对Jeff的长期价值是：后续新增Agent或新群聊时，可以按同一模板快速扩展，而不是每次从零调试身份与上下文
+
+**4. Cron → Agent调度体系已经成型，但稳定性仍需补强**
+- 已完成 `config/cron-agent-dispatch.yaml` + `scripts/cron_dispatcher.py` 的调度骨架，并迁移8个主要Cron任务
+- 这标志着日常运营任务开始从“单点脚本执行”升级为“按职能分发给对应Agent执行”
+- 当前主要瓶颈集中在：`strategic.md`编辑失败、部分Cron报错、Chief日报发送失败、session send权限限制
+- 下一阶段重点不是继续扩任务数量，而是**先补稳定性和可观测性**，把已有自动化跑稳
+
+**5. Agent模型分工已更新，已正式引入 GPT-5.4**
+- Main / Coding：GPT-5.4 主力，Minimax M2.5 第一Fallback，Kimi 2.5 第二Fallback
+- 其他 Sub Agent（Content / Growth / Product / Finance）：Minimax M2.5 主力，Kimi 2.5 Fallback
+- 这代表系统已从“MiniMax/Kimi 二选一”升级为“主Agent高能力模型 + 其他Agent性价比模型”的分层策略
+- 后续优化原则：主Agent与Coding优先保证推理/编码质量，其余Sub Agent优先平衡速度、成本与稳定性
+
+**6. 飞书语音播放链路已沉淀为可复用 Skill**
+- 已验证可行链路：**Edge TTS → ffmpeg 转 Ogg/Opus → 飞书语音消息播放条**
+- 结论：飞书里若想展示可播放/暂停的原生播放条，不能停留在 raw mp3 文件，必须走 Opus/Ogg 方向
+- 已封装为可分享技能：`skills/feishu-voice-reply/`
+- 已打包产物：`dist/skills/feishu-voice-reply.skill`
+- 默认能力形态：用户说“语音播放一下……”，系统同时返回**文字回复 + 飞书语音播放条**
+
+### 当前应持续坚持的方向
+- **对外内容**：先保证真实性，再追求爆款效率
+- **系统建设**：先保证现有Cron/Agent链路稳定，再扩更多自动化场景
+- **组织方式**：继续强化Chief统筹 + 专业Sub Agent执行的分工模式
+- **人工介入点**：保留在“最终发布、重大策略、敏感外发”这些高风险环节
+
+## 📊 Memory 提炼 | 2026-03-06 14:30
+
+### 今日新增固化能力
+
+**飞书语音播放 Skill 已完成封装** (2026-03-06)
+- 新建 Skill：`skills/feishu-voice-reply/`
+- 统一安装路径：`/root/.openclaw/workspace/skills/feishu-voice-reply`
+- 已打包产物：`/root/.openclaw/workspace/dist/skills/feishu-voice-reply.skill`
+- 能力链路：Edge TTS → ffmpeg 转 Ogg/Opus → Feishu 语音消息（可播放/暂停）
+- 使用约定：用户说“语音播放一下……”时，默认同时返回文字 + 飞书语音播放条
+- 安全结论：Skill 内未写入私人凭据、Token、Secret，可对外分享
+
+**模型分工记忆已修正** (2026-03-06)
+- Main / Coding：GPT-5.4 → Minimax M2.5 → Kimi 2.5
+- 其他 Sub Agent 默认：Minimax M2.5 → Kimi 2.5
+- 旧记忆中关于 Chief/Content/Coding 与 Growth/Product/Finance 的模型分工已过期，后续以本条为准
