@@ -342,3 +342,38 @@ openclaw gateway restart
 - Main / Coding：GPT-5.4 → Minimax M2.5 → Kimi 2.5
 - 其他 Sub Agent 默认：Minimax M2.5 → Kimi 2.5
 - 旧记忆中关于 Chief/Content/Coding 与 Growth/Product/Finance 的模型分工已过期，后续以本条为准
+
+## 📊 Memory 提炼 | 2026-03-06 16:00
+
+### 近2日应沉淀为长期规则的信息（2026-03-05 ~ 2026-03-06）
+
+**1. 内容自动化的稳定形态已经明确：生成草稿自动化，最终发布人工把关**
+- 微信公众号发布链路已经验证可用，但当前最稳妥的工作流不是“全自动发布”，而是 **AI生成内容 → 脚本创建草稿 → 人工在公众号后台确认发布**
+- 凭据应固化在 `skills/content-factory/.env`，发布命令固定使用 `python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
+- 这条经验值得长期保留，因为它定义了内容业务当前“可规模化但不过度冒险”的运营边界
+
+**2. 对外内容必须执行“先核实、后写作、发布前复核”**
+- GPT-5.4 价格数据编造事故说明：只要涉及 **价格、参数、排行榜、基准测试、订阅方案**，就必须先查官方或权威来源
+- 该规则不是内容写作细节，而是品牌可信度的底线规则
+- 后续若信息无法确认，默认明确标注“待核实”，而不是靠猜测补齐
+
+**3. 多 Agent 体系已经从“能跑”进入“可复制”阶段**
+- Sub Agent 身份与称呼问题已修复，统一要求称呼用户为“老板”或“Jeff”
+- 已形成一套可复用模板：**独立 workspace + 独立记忆 + 群聊 bindings + system prompt 强约束**
+- 这意味着后续扩 Agent、扩群聊、扩任务，不需要重新摸索基础设施，重点转向复用与规范化
+
+**4. Cron 调度的下一阶段重点不是扩数量，而是补稳定性**
+- `config/cron-agent-dispatch.yaml` 与 `scripts/cron_dispatcher.py` 已经把“任务 → Agent”的分发骨架搭起来
+- 已迁移的主要任务说明方向正确，但当前暴露的问题也很明确：`strategic.md` 编辑失败、部分 Cron 报错、Chief 日报发送失败、session send 权限限制
+- 战略上应优先投入到 **稳定性、错误恢复、可观测性**，而不是继续增加新自动化任务数量
+
+**5. 模型与能力分层已经成型，可作为现阶段默认配置**
+- Main / Coding：`GPT-5.4 → Minimax M2.5 → Kimi 2.5`
+- 其他 Sub Agent：`Minimax M2.5 → Kimi 2.5`
+- 飞书语音能力已沉淀为可复用 Skill：`skills/feishu-voice-reply/`，标准链路为 **Edge TTS → ffmpeg → Ogg/Opus → 飞书原生语音播放条**
+- 这代表系统建设已不止于“完成任务”，而是在积累可复制、可分享、可安装的能力资产
+
+### 当前阶段的总判断
+- **业务侧**：内容生产已经具备稳定提效条件，但最终发布与事实核查仍应保留人工把关
+- **系统侧**：多 Agent + Cron + Skill 封装这条路已经验证可行，接下来应从“堆功能”转到“跑稳定”
+- **组织侧**：Chief 统筹、Sub Agent 专业执行的分工继续成立，且开始产生复利效应
