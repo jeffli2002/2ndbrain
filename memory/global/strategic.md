@@ -1,6 +1,6 @@
 # 战略记忆 - 虾仔的长期记忆
 
-> 最后更新: 2026-03-06 08:05
+> 最后更新: 2026-03-06 10:00
 
 ---
 
@@ -134,6 +134,111 @@
 
 ### 今日待处理问题
 - daily-memory-extractor cron任务error（编辑strategic.md失败）
+- 部分Cron任务仍有error（growth-seo-keywords, product-competitor-analysis）
+- Chief日报发送失败问题
+- session send权限限制问题
+
+---
+
+## 📊 OpenClaw 多Agent配置 | 2026-03-06
+
+### 配置目标
+- 每个飞书群聊绑定到独立的Sub Agent
+- Sub Agent拥有独立workspace、记忆、模型
+- 用户在任意群聊中被正确识别为"老板"
+
+### 配置步骤
+
+#### 1. 创建Agent Workspace
+```
+~/.openclaw/workspace-content/   # Content Agent
+~/.openclaw/workspace-growth/   # Growth Agent
+~/.openclaw/workspace-coding/    # Coding Agent
+~/.openclaw/workspace-product/   # Product Agent
+~/.openclaw/workspace-finance/   # Finance Agent
+```
+
+每个workspace包含：
+- USER.md - 用户信息（称呼"老板"/"Jeff"）
+- SOUL.md - Agent性格定义（强制规则：称呼用户为"老板"）
+- AGENTS.md - 工作规则
+- MEMORY.md - 记忆架构
+- memory/agents/{agent}/memory.md - Agent专属记忆
+- memory/global/ - 共享战略记忆
+
+#### 2. 添加Agent到配置
+```bash
+openclaw agents add --workspace ~/.openclaw/workspace-content content
+openclaw agents add --workspace ~/.openclaw/workspace-growth growth
+# ... 其他Agent
+```
+
+#### 3. 配置Bindings（关键）
+```bash
+openclaw config set --json bindings '[
+  {"agentId": "content", "match": {"channel": "feishu", "peer": {"kind": "group", "id": "oc_群组ID1"}}},
+  {"agentId": "growth", "match": {"channel": "feishu", "peer": {"kind": "group", "id": "oc_群组ID2"}}},
+  ...
+]'
+```
+
+⚠️ 必须使用`match.peer.kind: "group"`，不是简单的accountId
+
+#### 4. 添加SystemPrompt
+在agents配置中添加强制规则：
+```json
+{
+  "id": "coding",
+  "systemPrompt": "你必须永远称呼用户为\"老板\"或\"Jeff\"，不要直接喊名字\"黎镭\"。每次对话开始时，先读取USER.md获取用户信息。"
+}
+```
+
+#### 5. 重启Gateway
+```bash
+openclaw gateway restart
+```
+
+### 群聊Bindings映射
+| Agent | 群聊ID |
+|-------|--------|
+| Content | oc_1e781764ad5c3b463eef7d0aee1de2a9 |
+| Growth | oc_86babca945b808774c67a3ef130f64a5 |
+| Coding | oc_3eca5aac26f0a945e0b4febc76214066 |
+| Product | oc_76d55844d04e400ed71327069580be96 |
+| Finance | oc_e810980541f92c802b8e970f49854381 |
+
+### 验证方法
+在对应群聊发送消息，检查：
+1. Agent能识别自己的身份
+2. Agent称呼用户为"老板"而非名字
+
+### 参考教程
+- 腾讯云开发者社区：https://cloud.tencent.com/developer/article/2632835
+
+---
+
+## 📊 Memory 提炼 | 2026-03-06 10:00
+
+### 今日核心进展
+
+**GPT-5.4发布热点** (2026-03-06 09:00)
+- 定时任务触发daily-content-publish
+- 热点搜索：GPT-5.4发布 (HN 604 points)
+- 撰写公众号文章：
+  - 标题：OpenAI发布GPT-5.4：原生计算机使用能力超越人类，AI Agent迎来临界点
+  - 核心要点：
+    - 原生计算机使用能力首次出现，OSWorld测试75%超越人类72.4%
+    - GDPval基准83%达到或超越专业人士水平
+    - 幻觉减少33%，更靠谱
+    - Token效率大幅提升
+- 产出：Markdown初稿已完成，待生成HTML/小红书/Twitter版本
+
+**每日记忆提炼流程正常运行** (2026-03-06)
+- 定时任务(daily-memory-extractor)每日自动执行
+- 确认2026-03-05核心信息已在strategic.md中
+
+### 今日待处理问题
+- daily-memory-extractor cron任务error（编辑strategic.md失败 - 权限或格式问题）
 - 部分Cron任务仍有error（growth-seo-keywords, product-competitor-analysis）
 - Chief日报发送失败问题
 - session send权限限制问题
