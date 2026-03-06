@@ -21,7 +21,7 @@ import re
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import yaml
 
@@ -64,29 +64,53 @@ class ChiefDispatchPlanner:
     def _build_result_bridge(self, agent: str) -> Dict[str, Any]:
         bridge_cfg = (self.workers_config.get("runtime") or {}).get("result_bridge") or {}
         result_dir = Path(bridge_cfg.get("result_dir", "/root/.openclaw/workspace/output/dispatch_results"))
+        bridge_format = str(bridge_cfg.get("format", "json")).lower()
         dispatch_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{agent}-{uuid.uuid4().hex[:8]}"
-        result_file = result_dir / f"{dispatch_id}.md"
+        ext = ".json" if bridge_format == "json" else ".md"
+        result_file = result_dir / f"{dispatch_id}{ext}"
         return {
             "enabled": bool(bridge_cfg.get("enabled", True)),
+            "format": bridge_format,
             "dispatch_id": dispatch_id,
             "result_file": str(result_file),
             "allowed_dir": str(result_dir),
             "wait_timeout_seconds": int(bridge_cfg.get("wait_timeout_seconds", 180)),
         }
 
-    def _worker_prompt(self, agent: str, worker_cfg: Dict[str, Any], user_message: str, route: Dict[str, Any], bridge: Dict[str, Any]) -> str:
-        role = worker_cfg.get("role", f"{agent.title()} Agent")
-        scope = worker_cfg.get("scope", [])
-        scope_text = "、".join(scope) if scope else "对应领域任务"
-        matched_keywords = ", ".join(route.get("matched_keywords", [])) or "无"
-        secondary_agents = ", ".join(route.get("secondary_agents", [])) or "无"
+    def _bridge_instruction_json(self, agent: str, model: str, bridge: Dict[str, Any]) -> str:
+        example_obj = {
+            "protocol": "chief_result_bridge/v1",
+            "status": "ok",
+            "route_debug": f"route={agent};dispatch=spawn;model={model}",
+            "dispatch_id": bridge["dispatch_id"],
+            "agent": agent,
+            "body": "<your final answer here>",
+        }
+        example_json = json.dumps(example_obj, ensure_ascii=False, indent=2)
+        return f"""
+Explicit return bridge (mandatory, JSON protocol):
+- When you finish, use the write tool to create this exact JSON file: {bridge['result_file']}
+- The file must be valid JSON object with these keys:
+  - protocol: "chief_result_bridge/v1"
+  - status: "ok" | "misrouted" | "error"
+  - route_debug: "route={agent};dispatch=spawn;model={model}"
+  - dispatch_id: "{bridge['dispatch_id']}"
+  - agent: "{agent}"
+  - body: string, your final answer
+- Example JSON:
+{example_json}
+- If clearly misrouted, set status to "misrouted" and explain briefly in body
+- If you hit a blocking failure, set status to "error" and explain briefly in body
+- Do not skip writing this JSON file; this is the delivery bridge back to Chief
+"""
 
-        bridge_text = f"""
+    def _bridge_instruction_text(self, agent: str, model: str, bridge: Dict[str, Any]) -> str:
+        return f"""
 Explicit return bridge (mandatory):
 - When you finish, use the write tool to create this exact file: {bridge['result_file']}
 - File format must be exactly:
   STATUS: ok
-  ROUTE_DEBUG: route={agent};dispatch=spawn;model={worker_cfg.get('model')}
+  ROUTE_DEBUG: route={agent};dispatch=spawn;model={model}
   DISPATCH_ID: {bridge['dispatch_id']}
   AGENT: {agent}
 
@@ -94,7 +118,23 @@ Explicit return bridge (mandatory):
 - If clearly misrouted, write STATUS: misrouted and explain briefly in the body
 - If you hit a blocking failure, write STATUS: error and explain briefly in the body
 - Do not skip writing this file; this is the delivery bridge back to Chief
-""" if bridge.get("enabled") else ""
+"""
+
+    def _worker_prompt(self, agent: str, worker_cfg: Dict[str, Any], user_message: str, route: Dict[str, Any], bridge: Dict[str, Any]) -> str:
+        role = worker_cfg.get("role", f"{agent.title()} Agent")
+        scope = worker_cfg.get("scope", [])
+        scope_text = "、".join(scope) if scope else "对应领域任务"
+        matched_keywords = ", ".join(route.get("matched_keywords", [])) or "无"
+        secondary_agents = ", ".join(route.get("secondary_agents", [])) or "无"
+        model = worker_cfg.get("model")
+
+        if bridge.get("enabled"):
+            if bridge.get("format") == "json":
+                bridge_text = self._bridge_instruction_json(agent, model, bridge)
+            else:
+                bridge_text = self._bridge_instruction_text(agent, model, bridge)
+        else:
+            bridge_text = ""
 
         return f"""You are a one-shot {role} worker delegated by Chief.
 
@@ -120,7 +160,7 @@ Routing context from Chief:
 - target_agent: {agent}
 - matched_keywords: {matched_keywords}
 - secondary_agents: {secondary_agents}
-- route_debug: route={agent};dispatch=spawn;model={worker_cfg.get('model')}
+- route_debug: route={agent};dispatch=spawn;model={model}
 
 User task:
 {user_message}
@@ -196,7 +236,7 @@ User task:
             "route": route,
             "spawn_request": spawn_request,
             "result_bridge": bridge,
-            "next_step": "使用 sessions_spawn(mode=run) 拉起一次性 worker；然后等待 result_bridge 文件并把结果回传给用户。",
+            "next_step": "使用 sessions_spawn(mode=run) 拉起一次性 worker；然后等待 JSON result_bridge 文件并把结果回传给用户。",
             "route_debug": f"route={target_agent};dispatch=spawn;model={worker_cfg.get('model')}",
         }
 

@@ -136,8 +136,8 @@ Chief 私聊的关键词分类以 `config/agent_keyword_router.yaml` 为准：
 1. 分析任务类型（Content / Growth / Coding / Product / Finance / Chief）
 2. 先调用 `python3 /root/.openclaw/workspace/scripts/chief_dispatch.py --json "<用户消息>"` 生成真实执行计划
 3. 若计划结果为 `delegate_spawn`，则按返回的 `spawn_request` 调用 `sessions_spawn(mode="run")` 即时创建一次性 worker
-4. 若 `result_bridge.enabled=true`，则使用 `python3 /root/.openclaw/workspace/scripts/wait_dispatch_result.py <result_file> --allowed-dir <allowed_dir> --expected-dispatch-id <dispatch_id> --expected-agent <agent> --expected-route-debug <route_debug> --json` 等待 worker 回传文件
-5. 读取回传文件内容，再由 Chief 整理后回复用户
+4. 若 `result_bridge.enabled=true`，则使用 `python3 /root/.openclaw/workspace/scripts/wait_dispatch_result.py <result_file> --allowed-dir <allowed_dir> --expected-dispatch-id <dispatch_id> --expected-agent <agent> --expected-route-debug <route_debug> --json` 等待 worker 回传 JSON 文件
+5. 读取回传 JSON 内容，再由 Chief 整理后回复用户
 6. 如果未来存在稳定目标 Agent session，再优先切到 `sessions_send`
 7. 如果未来通道支持 thread worker，再升级为持久委派
 8. 如果当前 runtime 没有可用 spawn 权限，或 planner 返回 fallback，则进入降级模式，由 Chief 按对应领域规则执行

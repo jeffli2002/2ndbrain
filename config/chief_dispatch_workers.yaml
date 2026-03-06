@@ -16,6 +16,7 @@ runtime:
   fallback: chief_degraded_mode
   result_bridge:
     enabled: true
+    format: json
     result_dir: /root/.openclaw/workspace/output/dispatch_results
     wait_timeout_seconds: 180
 
