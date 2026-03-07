@@ -13,14 +13,16 @@ import json
 import os
 import re
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from supabase import Client, create_client
 
-# Supabase 配置
-SUPABASE_URL = 'https://njxjuvxosvwvluxefrzg.supabase.co'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTgyOTI1NSwiZXhwIjoyMDg3NDA1MjU1fQ.hNxgmLO2OOG75jmRKcFmddDq0fF21C0Uqh8XFFqydDU'
+CREDENTIALS_PATH = '/root/.openclaw/credentials/supabase.json'
+with open(CREDENTIALS_PATH, 'r', encoding='utf-8') as f:
+    _creds = json.load(f)
+SUPABASE_URL = _creds['url']
+SUPABASE_KEY = _creds['service_key']
 
 TASK_MAPPINGS = [
     {'task_id': 'task-ai-daily', 'job_name': 'ai-daily-newsletter', 'schedule': '07:30 每天'},
@@ -198,7 +200,7 @@ class SupabaseSync:
     def ms_to_iso(ms: Optional[int]) -> Optional[str]:
         if not ms:
             return None
-        return datetime.fromtimestamp(ms / 1000).isoformat()
+        return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat()
 
     @staticmethod
     def ms_to_duration(ms: Optional[int]) -> Optional[str]:

@@ -1,11 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-
-const supabaseUrl = 'https://njxjuvxosvwvluxefrzg.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTgyOTI1NSwiZXhwIjoyMDg3NDA1MjU1fQ.hNxgmLO2OOG75jmRKcFmddDq0fF21C0Uqh8XFFqydDU';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseAdmin as supabase } from './supabase';
 
 const workspace = '/root/.openclaw/workspace';
 const jobsPath = '/root/.openclaw/cron/jobs.json';

@@ -16,6 +16,7 @@
 | GitHub | `credentials/github.json` | ✅ 已配置 |
 | 微信公众号 | `credentials/wechat.json` | ✅ 已配置 |
 | YouTube | `credentials/youtube.json` | ⚠️ 需填入API Key |
+| Supabase | `credentials/supabase.json` | ✅ 已配置 |
 
 ### 读取凭据
 
@@ -84,6 +85,11 @@ bash /root/.openclaw/workspace/scripts/check-credentials.sh
 - **配置位置:** `credentials/youtube.json`
 - **变量:** `$YOUTUBE_API_KEY`
 - **状态:** ⚠️ 需要填入 API Key
+
+### Supabase
+- **配置位置:** `credentials/supabase.json`
+- **变量:** `$SUPABASE_URL`, `$SUPABASE_ANON_KEY`, `$SUPABASE_SERVICE_KEY`
+- **用途:** Second Brain 项目数据与任务 token 使用量同步
 
 ### 小红书
 - **配置位置:** `credentials/xiaohongshu.json`

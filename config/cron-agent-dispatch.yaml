@@ -337,12 +337,13 @@ task_agent_mapping:
     notify_policy: "failure_only"
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
-      - "确认 Supabase 同步结果，并在失败时输出可定位的错误信息。"
+      - "必须执行 `/root/.openclaw/workspace/scripts/supabase/sync_supabase.py`，不要再用 mock 任务状态代替真实同步。"
+      - "同步后必须核对 Supabase `tasks` 表中的 token_usage / status / last_run 是否来自真实 cron run usage。"
       - "默认不要逐次向老板发送常规同步消息；成功/失败摘要由 Chief 每日汇报统一汇总。"
-      - "如果同步失败、连续异常或需要老板确认，必须立刻通知老板。"
+      - "如果同步失败、凭据缺失、数据异常或需要老板确认，必须立刻通知老板。"
     workflow:
       - step: "sync"
-        description: "同步数据到 Supabase"
+        description: "执行真实 Supabase 同步脚本并校验结果"
         tools: ["exec"]
 
 # ============================================
