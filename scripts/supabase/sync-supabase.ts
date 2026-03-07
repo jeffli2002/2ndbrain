@@ -1,36 +1,86 @@
 import { createClient } from '@supabase/supabase-js';
+import * as fs from 'fs';
+import * as path from 'path';
+import { execFileSync } from 'child_process';
 
 const supabaseUrl = 'https://njxjuvxosvwvluxefrzg.supabase.co';
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qeGp1dnhvc3Z3dmx1eGVmcnpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTgyOTI1NSwiZXhwIjoyMDg3NDA1MjU1fQ.hNxgmLO2OOG75jmRKcFmddDq0fF21C0Uqh8XFFqydDU';
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-import * as fs from 'fs';
-import * as path from 'path';
+const workspace = '/root/.openclaw/workspace';
+const jobsPath = '/root/.openclaw/cron/jobs.json';
+
+const TASK_MAPPINGS = [
+  { task_id: 'task-ai-daily', job_name: 'ai-daily-newsletter', schedule: '07:30 每天' },
+  { task_id: 'task-content-publish', job_name: 'daily-content-publish', schedule: '09:00 每天' },
+  { task_id: 'task-kol', job_name: 'ai-kol-daily-newsletter', schedule: '11:00 每天' },
+  { task_id: 'task-seo', job_name: 'openclaw-news-monitor', schedule: '每2小时' },
+  { task_id: 'task-chief', job_name: 'chief-daily-report', schedule: '19:30 每天' },
+  { task_id: 'task-evolution', job_name: 'daily-skill-evolution', schedule: '22:00 每天' },
+  { task_id: 'task-product', job_name: 'product-competitor-analysis', schedule: '14:00 每天' },
+  { task_id: 'task-health', job_name: 'cron-health-check', schedule: '每2小时' },
+];
+
+type CronJob = {
+  id: string;
+  name: string;
+  enabled?: boolean;
+  state?: {
+    nextRunAtMs?: number;
+    lastRunAtMs?: number;
+    lastStatus?: string;
+    lastDurationMs?: number;
+    consecutiveErrors?: number;
+  };
+};
 
 function getFiles(dir: string, ext: string): string[] {
   const files: string[] = [];
   if (!fs.existsSync(dir)) return files;
-  fs.readdirSync(dir).forEach(f => {
+  fs.readdirSync(dir).forEach((f) => {
     const p = path.join(dir, f);
-    if (fs.statSync(p).isDirectory()) {
-      files.push(...getFiles(p, ext));
-    } else if (f.endsWith(ext)) {
-      files.push(p);
-    }
+    if (fs.statSync(p).isDirectory()) files.push(...getFiles(p, ext));
+    else if (f.endsWith(ext)) files.push(p);
   });
   return files;
 }
 
+function loadCronJobs(): Record<string, CronJob> {
+  if (!fs.existsSync(jobsPath)) return {};
+  const raw = JSON.parse(fs.readFileSync(jobsPath, 'utf-8'));
+  const jobs = raw.jobs || [];
+  return Object.fromEntries(jobs.map((job: CronJob) => [job.name, job]));
+}
+
+function getLatestRun(jobId: string): any | null {
+  try {
+    const raw = execFileSync('openclaw', ['cron', 'runs', '--id', jobId, '--limit', '1'], {
+      encoding: 'utf-8',
+      timeout: 15000,
+    });
+    const payload = JSON.parse(raw || '{}');
+    return payload.entries?.[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+function msToIso(ms?: number | null): string | null {
+  if (!ms) return null;
+  return new Date(ms).toISOString();
+}
+
+function msToDuration(ms?: number | null): string | null {
+  if (ms == null) return null;
+  return `${Math.max(0, Math.round(ms / 1000))}s`;
+}
+
 async function syncData() {
   console.log('Starting data sync...');
-  
-  const workspace = '/root/.openclaw/workspace';
-  
+  const now = new Date().toISOString();
+
   // 1. Sync Memories
   const memories: any[] = [];
-  
-  // MEMORY.md
   const memoryPath = path.join(workspace, 'MEMORY.md');
   if (fs.existsSync(memoryPath)) {
     const content = fs.readFileSync(memoryPath, 'utf-8');
@@ -38,90 +88,111 @@ async function syncData() {
       id: 'mem-long-term',
       title: 'MEMORY.md - 长期记忆',
       content: content.substring(0, 5000),
-      date: new Date().toISOString().split('T')[0],
-      type: 'long-term'
+      date: now.split('T')[0],
+      type: 'long-term',
     });
   }
-  
-  // Daily memory files
-  const memoryDir = path.join(workspace, 'memory');
-  const dailyFiles = getFiles(memoryDir, '.md').filter(f => f.includes('daily_report') || f.match(/\d{8}/));
-  const seenIds = new Set(['mem-long-term']); // Prevent duplicates
-  dailyFiles.forEach(f => {
-    const content = fs.readFileSync(f, 'utf-8');
-    const dateMatch = f.match(/(\d{8})/);
-    const date = dateMatch ? dateMatch[1].replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') : 'unknown';
-    // Use filename-based ID to ensure uniqueness
-    const baseName = path.basename(f, '.md');
-    const id = `mem-${baseName}`;
-    
-    if (!seenIds.has(id)) {
-      seenIds.add(id);
+
+  const dailyDir = path.join(workspace, 'memory', 'daily');
+  if (fs.existsSync(dailyDir)) {
+    const seen = new Set(['mem-long-term']);
+    for (const f of getFiles(dailyDir, '.md')) {
+      const filename = path.basename(f);
+      if (filename.includes('report') || filename.includes('lessons') || filename.includes('morning')) continue;
+      const content = fs.readFileSync(f, 'utf-8');
+      const dateMatch = filename.match(/(\d{4}-\d{2}-\d{2})/);
+      const date = dateMatch ? dateMatch[1] : 'unknown';
+      const baseName = path.basename(f, '.md');
+      const id = `mem-${baseName}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
       memories.push({
-        id: id,
+        id,
         title: `工作日志 ${baseName}`,
         content: content.substring(0, 3000),
-        date: date,
-        type: 'daily'
+        date,
+        type: 'daily',
       });
     }
-  });
-  
+  }
+
+  const agentsDir = path.join(workspace, 'memory', 'agents');
+  if (fs.existsSync(agentsDir)) {
+    for (const agentName of fs.readdirSync(agentsDir)) {
+      const agentPath = path.join(agentsDir, agentName);
+      if (!fs.statSync(agentPath).isDirectory()) continue;
+      for (const file of getFiles(agentPath, '.md')) {
+        const filename = path.basename(file);
+        const content = fs.readFileSync(file, 'utf-8');
+        memories.push({
+          id: `mem-${agentName}-${filename.replace('.md', '')}`,
+          title: `${agentName} Agent - ${filename}`,
+          content: content.substring(0, 3000),
+          date: now.split('T')[0],
+          type: `agent-${agentName}`,
+        });
+      }
+    }
+  }
+
   // 2. Sync Documents
   const docs: any[] = [];
-  const docFiles = [
-    { path: 'MEMORY.md', type: 'memory' },
-    { path: 'ai-one-person-company-agent-architecture.md', type: 'plan' },
-  ];
-  
-  docFiles.forEach(d => {
-    const fullPath = path.join(workspace, d.path);
-    if (fs.existsSync(fullPath)) {
-      const stats = fs.statSync(fullPath);
-      docs.push({
-        id: `doc-${d.path.replace('.md', '')}`,
-        title: d.path,
-        path: `/${workspace}/${d.path}`,
-        type: d.type,
-        date: stats.mtime.toISOString().split('T')[0],
-        size: stats.size
-      });
-    }
+  const docFiles = ['MEMORY.md', 'AGENTS.md', 'SOUL.md', 'USER.md', 'TOOLS.md', 'HEARTBEAT.md'];
+  for (const docFile of docFiles) {
+    const fullPath = path.join(workspace, docFile);
+    if (!fs.existsSync(fullPath)) continue;
+    const stats = fs.statSync(fullPath);
+    docs.push({
+      id: `doc-${docFile.replace('.md', '')}`,
+      title: docFile,
+      path: `/${workspace}/${docFile}`,
+      type: 'config',
+      date: new Date(stats.mtimeMs).toISOString().split('T')[0],
+      size: stats.size,
+    });
+  }
+
+  // 3. Sync Tasks with real cron usage
+  const jobsByName = loadCronJobs();
+  const existingTasksRes = await supabase.from('tasks').select('*');
+  const existingTasks = Object.fromEntries((existingTasksRes.data || []).map((row: any) => [row.id, row]));
+
+  const tasks = TASK_MAPPINGS.map((mapping) => {
+    const job = jobsByName[mapping.job_name];
+    const existing = existingTasks[mapping.task_id] || {};
+    const latestRun = job ? getLatestRun(job.id) : null;
+    const usage = latestRun?.usage || {};
+
+    return {
+      id: mapping.task_id,
+      name: mapping.job_name,
+      schedule: mapping.schedule,
+      status: latestRun?.status || job?.state?.lastStatus || (job?.enabled === false ? 'disabled' : 'idle'),
+      last_run: msToIso(latestRun?.runAtMs || job?.state?.lastRunAtMs),
+      next_run: msToIso(latestRun?.nextRunAtMs || job?.state?.nextRunAtMs),
+      last_duration: msToDuration(latestRun?.durationMs || job?.state?.lastDurationMs),
+      error_count: job?.state?.consecutiveErrors ?? 0,
+      token_usage: usage.total_tokens ?? existing.token_usage ?? 0,
+      updated_at: now,
+    };
   });
-  
-  // 3. Get current tasks from cron (mock - in real would query cron API)
-  const tasks = [
-    { id: 'task-ai-daily', name: 'ai-daily-newsletter', schedule: '7:30 每天', status: 'ok' },
-    { id: 'task-content', name: 'daily-content-publish', schedule: '9:00 每天', status: 'ok' },
-    { id: 'task-seo', name: 'growth-seo-keywords', schedule: '10:00 每天', status: 'ok' },
-    { id: 'task-kol', name: 'ai-kol-daily', schedule: '11:00 每天', status: 'ok' },
-    { id: 'task-chief', name: 'chief-daily-report', schedule: '19:30 每天', status: 'ok' },
-    { id: 'task-evolution', name: 'daily-skill-evolution', schedule: '22:00 每天', status: 'ok' },
-  ];
-  
-  // Upsert to Supabase
-  const now = new Date().toISOString();
-  
+
   if (memories.length > 0) {
-    const { error } = await supabase.from('memories').upsert(memories.map(m => ({...m, updated_at: now})));
+    const { error } = await supabase.from('memories').upsert(memories.map((m) => ({ ...m, updated_at: now })));
     console.log('Memories sync:', error ? error.message : 'OK');
   }
-  
+
   if (docs.length > 0) {
-    const { error } = await supabase.from('documents').upsert(docs.map(d => ({...d, updated_at: now})));
+    const { error } = await supabase.from('documents').upsert(docs.map((d) => ({ ...d, updated_at: now })));
     console.log('Documents sync:', error ? error.message : 'OK');
   }
-  
-  // Update task status
-  const { error: taskError } = await supabase.from('tasks').upsert(tasks.map(t => ({
-    ...t,
-    last_run: now,
-    next_run: now,
-    error_count: 0,
-    updated_at: now
-  })));
+
+  const { error: taskError } = await supabase.from('tasks').upsert(tasks);
   console.log('Tasks sync:', taskError ? taskError.message : 'OK');
-  
+  tasks.forEach((task) => {
+    console.log(`  - ${task.id}: status=${task.status}, token=${task.token_usage}, last_run=${task.last_run}`);
+  });
+
   console.log('Sync complete at', new Date().toISOString());
 }
 
