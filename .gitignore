@@ -3,6 +3,7 @@ node_modules/
 package-lock.json
 
 # Build outputs
+.next/
 dist/
 build/
 *.log
@@ -29,6 +30,7 @@ xiaohongshu-data/
 # Credentials/Auth
 *.json
 !package.json
+!vercel.json
 xhs_*.json
 xhs_*.txt
 *_auth*.json
