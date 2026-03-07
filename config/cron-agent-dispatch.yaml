@@ -120,6 +120,10 @@ task_agent_mapping:
     priority: P1
     dispatch_mode: "direct_agent"
     session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Growth Agent，不需要再经 Chief 二次分流。"
+      - "重点关注 OpenClaw 官方 release、文档、博客和社区动态，不要只盯安全漏洞。"
+      - "如果发现需要升级、修复或值得同步给老板的重要更新，明确汇总结论。"
     workflow:
       - step: "search_news"
         description: "搜索安全相关新闻"
@@ -140,6 +144,9 @@ task_agent_mapping:
     priority: P1
     dispatch_mode: "direct_agent"
     session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Product Agent，不需要再经 Chief 二次分流。"
+      - "输出应聚焦竞品功能、定位、差异点与产品决策启发。"
     workflow:
       - step: "collect_competitor_info"
         description: "收集竞品信息"
@@ -161,6 +168,9 @@ task_agent_mapping:
     priority: P2
     dispatch_mode: "direct_agent"
     session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
+      - "重点关注 skill 演进、依赖更新、自动化机会与技术债。"
     workflow:
       - step: "check_updates"
         description: "检查Skill更新"
@@ -176,6 +186,11 @@ task_agent_mapping:
     description: "每日记忆提取"
     schedule: "0 */2 * * *"
     priority: P2
+    session_target: "main"
+    message_instructions:
+      - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
+      - "读取最近两天的 daily memory，提炼长期有效的信息后再写入 global memory。"
+      - "避免把短期噪音直接写进 strategic memory。"
     workflow:
       - step: "extract_daily"
         description: "提取每日要点"
@@ -200,11 +215,16 @@ task_agent_mapping:
         tools: ["message"]
 
   cron-health-check:
-    agent: "system"
-    agent_name: "System"
+    agent: "chief"
+    agent_name: "Chief Agent (虾仔)"
     description: "Cron健康检查"
     schedule: "0 */2 * * *"
     priority: P0
+    session_target: "main"
+    message_instructions:
+      - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
+      - "检查所有 cron job 的 lastStatus、nextRunAtMs 和 delivery 情况。"
+      - "如果发现失败、漏发、时间异常或重复任务，优先修复并汇报。"
     workflow:
       - step: "check_all_jobs"
         description: "检查所有任务状态"
@@ -215,6 +235,22 @@ task_agent_mapping:
 
   # ===== 同步类任务 =====
 
+  github-daily-backup:
+    agent: "coding"
+    agent_name: "Coding Agent (代码)"
+    description: "GitHub每日备份"
+    schedule: "0 0 * * *"
+    priority: P1
+    dispatch_mode: "direct_agent"
+    session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
+      - "执行备份前先检查 git 状态；备份完成后明确记录是否 push 成功。"
+    workflow:
+      - step: "backup"
+        description: "备份核心文件到 GitHub"
+        tools: ["exec"]
+
   sync-github-*-*:
     agent: "coding"
     agent_name: "Coding Agent (代码)"
@@ -223,9 +259,28 @@ task_agent_mapping:
     priority: P2
     dispatch_mode: "direct_agent"
     session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
+      - "同步前先检查是否有需要提交的变更，再执行 GitHub 同步。"
     workflow:
       - step: "sync"
         description: "同步代码"
+        tools: ["exec"]
+
+  sync-supabase-*-*:
+    agent: "coding"
+    agent_name: "Coding Agent (代码)"
+    description: "Supabase同步"
+    schedule: "0 */3 * * *"
+    priority: P2
+    dispatch_mode: "direct_agent"
+    session_target: "isolated"
+    message_instructions:
+      - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
+      - "确认 Supabase 同步结果，并在失败时输出可定位的错误信息。"
+    workflow:
+      - step: "sync"
+        description: "同步数据到 Supabase"
         tools: ["exec"]
 
 # ============================================
