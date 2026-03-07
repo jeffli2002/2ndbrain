@@ -61,6 +61,10 @@ interface TokenTrendPoint {
   taskBreakdown: Record<string, number>;
 }
 
+interface TokenTrendRangePoint extends TokenTrendPoint {
+  agentBreakdown: Record<string, number>;
+}
+
 // 认证检查组件
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -177,6 +181,7 @@ const mockTasks: Task[] = [
     lastDuration: "159s",
     nextRun: "2026-02-24 07:30",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "2",
@@ -187,6 +192,7 @@ const mockTasks: Task[] = [
     lastDuration: "44s",
     nextRun: "2026-02-24 09:00",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "3",
@@ -197,6 +203,7 @@ const mockTasks: Task[] = [
     lastDuration: "114s",
     nextRun: "2026-02-24 10:00",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "4",
@@ -207,6 +214,7 @@ const mockTasks: Task[] = [
     lastDuration: "122s",
     nextRun: "2026-02-24 11:00",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "5",
@@ -217,6 +225,7 @@ const mockTasks: Task[] = [
     lastDuration: "110s",
     nextRun: "2026-02-24 14:00",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "6",
@@ -227,6 +236,7 @@ const mockTasks: Task[] = [
     lastDuration: "59s",
     nextRun: "2026-02-23 19:30",
     errorCount: 4,
+    tokenUsage: 0,
   },
   {
     id: "7",
@@ -237,6 +247,7 @@ const mockTasks: Task[] = [
     lastDuration: "50s",
     nextRun: "2026-02-23 22:00",
     errorCount: 0,
+    tokenUsage: 0,
   },
   {
     id: "8",
@@ -247,6 +258,7 @@ const mockTasks: Task[] = [
     lastDuration: "29s",
     nextRun: "2026-02-23 15:55",
     errorCount: 23,
+    tokenUsage: 0,
   },
 ];
 
@@ -255,7 +267,7 @@ interface Agent {
   id: string;
   name: string;
   description: string;
-  status: "ok" | "error" | "running";
+  status: "ok" | "error" | "running" | "idle" | "disabled";
   model: string;
   tasks: number;
   completedTasks: number;
@@ -328,6 +340,15 @@ const normalizeTask = (row: any): Task => ({
   tokenUsage: row.token_usage || 0,
 });
 
+const agentColorMap: Record<string, string> = {
+  total: "#facc15",
+  content: "#60a5fa",
+  growth: "#34d399",
+  product: "#f97316",
+  chief: "#a78bfa",
+  evo: "#f472b6",
+};
+
 type TabType = "home" | "memories" | "documents" | "tasks" | "agents";
 
 export default function SecondBrain() {
@@ -345,6 +366,7 @@ export default function SecondBrain() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tokenTrend, setTokenTrend] = useState<TokenTrendPoint[]>([]);
+  const [trendRange, setTrendRange] = useState<7 | 14 | 30>(14);
 
   // 从Supabase获取数据
   useEffect(() => {
@@ -445,8 +467,35 @@ export default function SecondBrain() {
     };
   });
 
-  const tokenTrend14 = tokenTrend.slice(-14);
-  const tokenTrendMax = Math.max(...tokenTrend14.map((point) => point.totalTokens), 1);
+  const taskToAgent = Object.fromEntries(
+    agentDefinitions.flatMap((agent) => agent.taskIds.map((taskId) => [taskId, agent.id]))
+  ) as Record<string, string>;
+
+  const trendData: TokenTrendRangePoint[] = tokenTrend.map((point) => {
+    const agentBreakdown: Record<string, number> = {};
+    Object.entries(point.taskBreakdown || {}).forEach(([taskId, value]) => {
+      const agentId = taskToAgent[taskId] || "unknown";
+      agentBreakdown[agentId] = (agentBreakdown[agentId] || 0) + value;
+    });
+    return { ...point, agentBreakdown };
+  });
+
+  const displayTrend = trendData.slice(-trendRange);
+  const tokenTrendMax = Math.max(...displayTrend.map((point) => point.totalTokens), 1);
+  const lineSeries = [
+    {
+      key: "total",
+      label: "总Token",
+      color: agentColorMap.total,
+      values: displayTrend.map((point) => point.totalTokens),
+    },
+    ...agentDefinitions.map((agent) => ({
+      key: agent.id,
+      label: agent.name,
+      color: agentColorMap[agent.id] || "#94a3b8",
+      values: displayTrend.map((point) => point.agentBreakdown[agent.id] || 0),
+    })),
+  ];
 
   // 获取状态图标
   const getStatusIcon = (status: string) => {
@@ -941,7 +990,7 @@ export default function SecondBrain() {
   );
 
   const renderTokenTrendChart = () => {
-    if (!tokenTrend14.length) {
+    if (!displayTrend.length) {
       return (
         <div className="bg-[#141416] rounded-xl border border-[#27272a] p-6 mb-6">
           <div className="flex items-center gap-2 mb-2">
@@ -953,40 +1002,105 @@ export default function SecondBrain() {
       );
     }
 
+    const chartWidth = 920;
+    const chartHeight = 280;
+    const paddingX = 28;
+    const paddingY = 20;
+    const innerWidth = chartWidth - paddingX * 2;
+    const innerHeight = chartHeight - paddingY * 2;
+    const totalRangeTokens = displayTrend.reduce((sum, point) => sum + point.totalTokens, 0);
+    const xFor = (index: number) =>
+      displayTrend.length === 1 ? chartWidth / 2 : paddingX + (index / (displayTrend.length - 1)) * innerWidth;
+    const yFor = (value: number) => paddingY + innerHeight - (value / tokenTrendMax) * innerHeight;
+    const buildPolyline = (values: number[]) =>
+      values.map((value, index) => `${xFor(index)},${yFor(value)}`).join(" ");
+
     return (
       <div className="bg-[#141416] rounded-xl border border-[#27272a] p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
             <h3 className="font-semibold flex items-center gap-2">
               <Zap className="w-5 h-5 text-yellow-400" />
               Token 日趋势
             </h3>
-            <p className="text-xs text-[#71717a] mt-1">按天累计各任务真实 token 消耗（近 {tokenTrend14.length} 天）</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-[#71717a]">近 {tokenTrend14.length} 天总量</p>
-            <p className="text-xl font-bold text-yellow-400">
-              {(tokenTrend14.reduce((sum, point) => sum + point.totalTokens, 0) / 1000).toFixed(1)}k
+            <p className="text-xs text-[#71717a] mt-1">
+              按日查看总 Token 折线与各 Agent 消耗拆解（近 {displayTrend.length} 天）
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-xs text-[#71717a]">近 {displayTrend.length} 天总量</p>
+              <p className="text-xl font-bold text-yellow-400">{(totalRangeTokens / 1000).toFixed(1)}k</p>
+            </div>
+            <div className="flex bg-[#0f0f10] border border-[#27272a] rounded-lg p-1">
+              {[7, 14, 30].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTrendRange(range as 7 | 14 | 30)}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                    trendRange === range ? "bg-yellow-500/20 text-yellow-300" : "text-[#a1a1aa] hover:text-white"
+                  }`}
+                >
+                  {range}天
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-14 gap-2 items-end h-48">
-          {tokenTrend14.map((point) => (
-            <div key={point.date} className="flex flex-col items-center justify-end h-full gap-2">
-              <div className="text-[10px] text-[#71717a] whitespace-nowrap rotate-[-45deg] translate-y-3 origin-left">
-                {(point.totalTokens / 1000).toFixed(1)}k
-              </div>
-              <div className="w-full flex-1 flex items-end">
-                <div
-                  className="w-full rounded-t bg-gradient-to-t from-yellow-500/80 to-orange-400/80 hover:from-yellow-400 hover:to-orange-300 transition-colors"
-                  style={{ height: `${Math.max((point.totalTokens / tokenTrendMax) * 100, 6)}%` }}
-                  title={`${point.date} · ${point.totalTokens.toLocaleString()} tokens`}
+        <div className="bg-[#0f0f10] rounded-xl border border-[#27272a] p-4">
+          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-[320px] overflow-visible">
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+              const y = paddingY + innerHeight - innerHeight * ratio;
+              return (
+                <g key={ratio}>
+                  <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="#27272a" strokeWidth="1" strokeDasharray="4 4" />
+                  <text x={6} y={y + 4} fill="#71717a" fontSize="10">
+                    {Math.round((tokenTrendMax * ratio) / 1000)}k
+                  </text>
+                </g>
+              );
+            })}
+
+            {displayTrend.map((point, index) => (
+              <text key={point.date} x={xFor(index)} y={chartHeight - 4} textAnchor="middle" fill="#a1a1aa" fontSize="10">
+                {point.date.slice(5)}
+              </text>
+            ))}
+
+            {lineSeries.map((series) => (
+              <g key={series.key}>
+                <polyline
+                  fill="none"
+                  stroke={series.color}
+                  strokeWidth={series.key === "total" ? 3 : 2}
+                  points={buildPolyline(series.values)}
+                  opacity={series.key === "total" ? 1 : 0.85}
                 />
+                {series.values.map((value, index) => (
+                  <circle
+                    key={`${series.key}-${index}`}
+                    cx={xFor(index)}
+                    cy={yFor(value)}
+                    r={series.key === "total" ? 4 : 2.5}
+                    fill={series.color}
+                  >
+                    <title>{`${series.label} · ${displayTrend[index].date} · ${value.toLocaleString()} tokens`}</title>
+                  </circle>
+                ))}
+              </g>
+            ))}
+          </svg>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            {lineSeries.map((series) => (
+              <div key={series.key} className="flex items-center gap-2 text-xs text-[#d4d4d8] bg-[#141416] rounded-lg px-3 py-1.5 border border-[#27272a]">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: series.color }} />
+                <span>{series.label}</span>
+                <span className="text-[#71717a]">{(series.values.reduce((sum, value) => sum + value, 0) / 1000).toFixed(1)}k</span>
               </div>
-              <div className="text-[10px] text-[#a1a1aa]">{point.date.slice(5)}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
