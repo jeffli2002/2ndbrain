@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "xiaohongshu-mcp": {
+      "command": "npx",
+      "args": [
+        "xiaohongshu-mcp-steve"
+      ],
+      "env": {
+        "XIAOHONGSHU_COOKIE": "1998b735bc86usjitlrcg7zc8fzsiyja0niwf4cey50000428069;abRequestId=b0777b24-1eca-5241-9ab7-7d39e3328cc9;access-token-creator.xiaohongshu.com=customer.creator.AT-68c517607315150799126528lpklodmdscrcy04s;acw_tc=0a00db8717726814496293499e5b04a4a9bb8b7c139f424643c32ecdbff490;customerClientId=868192953787938;galaxy_creator_session_id=u44WC1j56etaLtr9JgAwsFbe5xSR4H3uRo0z;galaxy.creator.beaker.session.id=1771216083276032153704;gid=yjjYDWq04q88yjjYDWq2DI4SSYK7MV391FSk3dvWuSYiuE28M3vV0i8884JY8Kj88jYJ20Y4;id_token=VjEAAJ7RXiSX7jXqF4J5/Kvb1zGdaY13VSXOsDzjTZOlQUNRIqIoOk4xkW1SyVHSNFxzaVEAoJBUiMMOjL2uzdHY0T9/esa11PnUO942YceUizlj9S3p8HTrBTYpPp8AZBwjYeHI;loadts=1772681452648;sec_poison_id=580bbdf1-5770-4d9c-8c52-e899d1c308cb;unread={%22ub%22:%2269a6db3f000000002203be67%22%2C%22ue%22:%2269a8f60a000000002203ac8f%22%2C%22uc%22:29};web_session=0400698d4372254709ca6cb19d3b4b85370d7e;webBuild=5.13.1;webId=fc1d5c092e11d056bb0bdc54894fde8e;websectiga=984412fef754c018e472127b8effd174be8a5d51061c991aadd200c69a2801d6;x-user-id-creator.xiaohongshu.com=5c37316d000000000501599c;xsecappid=xhs-pc-web"
+      }
+    },
+    "xiaohongshu-base": {
+      "command": "npx",
+      "args": [
+        "xiaohongshu-mcp"
+      ]
+    },
+    "xiaohongshu-pub": {
+      "command": "/root/.openclaw/workspace/start_xhs_mcp.sh"
+    }
+  },
+  "imports": []
+}

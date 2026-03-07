@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.4; padding: 16px; }
+h1 { font-size: 20px; font-weight: bold; margin: 16px 0 8px; color: #fff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 10px 14px; border-radius: 6px; border-left: 5px solid #fff; }
+h2 { font-size: 18px; font-weight: bold; margin: 14px 0 6px; color: #333; background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); padding: 8px 12px; border-radius: 5px; border-left: 4px solid #ff6b6b; }
+h3 { font-size: 16px; font-weight: bold; margin: 12px 0 4px; color: #fff; background: linear-gradient(120deg, #4facfe 0%, #00f2fe 100%); padding: 6px 10px; border-radius: 4px; border-left: 3px solid #fff; }
+p { margin: 4px 0; line-height: 1.4; }
+ul, ol { margin: 4px 0; padding-left: 18px; }
+li { margin: 2px 0; line-height: 1.4; }
+blockquote { border-left: 3px solid #ddd; padding-left: 10px; margin: 8px 0; color: #666; font-style: italic; }
+code { background: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-size: 14px; }
+.key-point { background: linear-gradient(120deg, #fff3cd 0%, #fff8e1 100%); padding: 2px 6px; border-radius: 3px; }
+.important { border-bottom: 2px dotted #ff6b6b; padding-bottom: 2px; }
+.cta-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 10px; text-align: center; color: #fff; margin: 16px 0; }
+.cta-box p { margin: 6px 0; color: #fff; }
+hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
+</style>
+</head>
+<body>
+<h1>没有浏览器，AI Agent 就是个摆设</h1>
+<p>你是否遇到过这种情况？</p>
+<p>让AI帮你查资料，它能回答。让AI帮你操作网页，它傻眼了。</p>
+<blockquote>
+<p>"抱歉，我无法做到。"
+"这个我做不到。"</p>
+</blockquote>
+<p>这就是大多数AI Agent的真相——它们没有<span class="key-point">眼睛</span>和<span class="key-point">手</span>。</p>
+<p>一个只能聊天，一个可以干活。</p>
+<h2>我们开始搭建AI Agent时，信心满满。</h2>
+<p>结果：❌ 让它查最新AI新闻，它说"抱歉，我知识截止到2024年"
+❌ 让它自动填表，它说"我做不到"
+❌ 让它帮我抢票，它说"无法访问外部网站"</p>
+<p><span class="important">就像雇了个超级聪明的助手，但这个助手是个盲人。</span></p>
+<p>你用AI时，是不是也遇到过这种无力感？</p>
+<h2>我们实测了市面上主流方案，分三类：</h2>
+<h3>一、付费企业方案</h3>
+<p><span class="key-point">Browser-use</span>：功能全、AI集成好，开箱即用。付费，需要配置API。适合企业级自动化。</p>
+<p><span class="key-point">Playwright</span>：强大灵活，社区活跃。需自己写代码，学习成本高。适合开发者。</p>
+<p><span class="key-point">Selenium</span>：老牌稳定，支持多语言。维护麻烦、速度慢。</p>
+<h3>二、免费开源方案</h3>
+<p><span class="key-point">Agent-Reach</span>：YouTube/Twitter/GitHub/RSS/小红书/抖音通吃。需要登录Cookie。适合个人开发者。</p>
+<p><span class="key-point">Jina Reader</span>：读取任意网页、API简单。只能读、不能操作。适合快速获取内容。</p>
+<p><span class="key-point">Puppeteer</span>：Node.js生态、灵活用。需自己写代码。</p>
+<h3>三、本地/远程方案</h3>
+<p><span class="key-point">agent-browser</span>：本地有GUI时使用。</p>
+<p><span class="key-point">browser-use remote</span>：沙盒/云端环境。</p>
+<h2>这是最关键的部分。<span class="important">不同场景用错工具等于白忙活。</span></h2>
+<h3>场景1：查YouTube/B站视频信息</h3>
+<p>推荐 Agent-Reach + yt-dlp。提取视频字幕，获取视频信息。适用做视频内容分析、提取教程要点。</p>
+<h3>场景2：搜Twitter/X热点</h3>
+<p>推荐 Agent-Reach（需要Cookie）。搜索特定话题，获取某个账号的最新推文。适用追热点，做舆情监控。</p>
+<h3>场景3：读任意网页内容</h3>
+<p>推荐 Jina Reader（免费）。读取网页内容。适用快速获取文章内容，做竞品分析。</p>
+<h3>场景4：刷小红书</h3>
+<p>推荐 Agent-Reach。读取小红书笔记。适用看小红书口碑，做种草笔记分析。<span class="important">注意需要小红书Cookie，建议用小号防封号。</span></p>
+<h3>场景5：看抖音</h3>
+<p>推荐 Agent-Reach。解析抖音视频、获取无水印下载链接。适用短视频内容分析。</p>
+<h3>场景6：搜全网</h3>
+<p>推荐 Exa（通过mcporter MCP）。AI语义搜索。适用全网搜索、结果比Google更精准。</p>
+<h3>场景7：读GitHub仓库</h3>
+<p>推荐 gh CLI。查看仓库信息、搜索仓库、查看Issue。适用代码调研，做技术选型。</p>
+<h3>场景8：订阅RSS</h3>
+<p>推荐 feedparser。解析RSS。适用追踪技术博客、新闻源。</p>
+<h3>场景9：搜微信公众号文章</h3>
+<p>推荐 Jina Reader。读取公众号文章。适用公众号内容分析，知识收集。</p>
+<h3>场景10：需要登录才能操作</h3>
+<p>推荐 Browser-use。自动填表、自动登录。适用自动化填表、批量注册、定时操作。<span class="important">代价是付费但省心。</span></p>
+<h3>场景11：简单爬虫只要数据</h3>
+<p>推荐 Python requests + BeautifulSoup。适用一次性爬取，结构简单的页面。</p>
+<h3>场景12：企业级自动化</h3>
+<p>推荐 Playwright + 自建服务。适用大规模自动化、CI/CD集成、复杂工作流。</p>
+<h2>我们的方案：智能路由</h2>
+<p>核心思路：让AI自动选择最佳工具。</p>
+<p>"搜YouTube视频" → Agent-Reach（免费）
+"搜Twitter热点" → Agent-Reach（免费）
+"刷小红书" → Agent-Reach（免费）
+"看抖音视频" → Agent-Reach（免费）
+"打开网页登录" → Browser-Use
+"填个表单" → Browser-Use
+"读这个网页" → Jina Reader</p>
+<p><span class="important">实测效果：一条命令搞定原来10分钟的工作。</span></p>
+<h2>用了一圈下来，我的建议是：</h2>
+<h3>1. 先用免费的</h3>
+<p>Agent-Reach + Jina Reader 足够满足80%的场景</p>
+<h3>2. 再考虑付费的</h3>
+<p>Browser-use 是付费里性价比最高的</p>
+<h3>3. 最后才定制</h3>
+<p>Playwright 是最后的选择，除非你有特殊需求</p>
+<p><span class="important">不要一上来就搞复杂的。简单来说：能用免费的搞定，就别花冤枉钱。</span></p>
+<h2>常见问题</h2>
+<h3>Q1: 免费方案稳定吗？</h3>
+<p>免费方案适合个人使用和小规模自动化。企业级应用建议用付费方案。</p>
+<h3>Q2: 需要技术背景吗？</h3>
+<p>Agent-Reach / Jina Reader：不需要，会复制粘贴命令就行。
+Browser-use：不需要，配置好就能用。
+Playwright：需要，需要写代码。</p>
+<h3>Q3: 会被网站封吗？</h3>
+<p>建议降低请求频率、使用代理IP、遵守网站robots.txt。用Cookie登录的平台建议用小号。</p>
+<h3>Q4: Agent-Reach 是什么？</h3>
+<p>一个免费开源的"脚手架"，帮你一键安装各种网页读取工具。</p>
+<p><span class="important">没有浏览器能力的AI Agent，就是个chatbot，干不了实事。</span></p>
+<p><span class="important">2026年，选对浏览器方案，比选对AI模型更重要。</span></p>
+<hr />
+<div class="cta-box">
+<p>如果你觉得这篇文章有帮助，欢迎关注我们</p>
+<p>📱 微信公众号：搜索「AI进化社」</p>
+<p>🔗 官网：https://example.com</p>
+<p>💬 评论区聊聊：你用的是什么方案？</p>
+</div>
+</body>
+</html>

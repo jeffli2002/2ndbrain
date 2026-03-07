@@ -1,2 +1,17 @@
 .next/
 node_modules/
+.git/
+chrome-profile/
+tmp/
+.trash/
+.xiaohongshu_cookie.txt
+xhs_auth.json
+xhs_cookie.txt
+xiaohongshu-data/
+skills/xiaohongshu-skills/
+tools/wechat-article-for-ai/
+dist/
+*.log
+.DS_Store
+credentials/
+*.env
