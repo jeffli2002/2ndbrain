@@ -54,35 +54,35 @@
 - `product-competitor-analysis` 失败原因：消息投递失败 (⚠️ ✉️ Message failed)
 - 大部分 Cron 任务正常，但需要持续监控失败率和 fallback 是否生效
 
-**1. Chief 私聊委派链路已从“概念路由”升级为“真实闭环”**
+**1. Chief 私聊委派链路已从"概念路由"升级为"真实闭环"**
 - 已完成真相源收敛：Chief 读取 `openclaw.json` bindings + `config/agent_keyword_router.yaml` 做分类与执行规划，不再依赖伪 session_key / 旧路由配置。
 - 当前 Feishu 通道下，稳定委派方式已明确为：`sessions_spawn(runtime="subagent", mode="run")` 按任务即时拉起 worker，而不是假设存在持久 thread worker。
 - 已跑通 content / coding / growth / product / finance 五类 worker 的完整闭环：**分类 → delegate_spawn → worker执行 → JSON结果桥回传 → Chief消费结果**。
 - 已加固 `scripts/wait_dispatch_result.py` 与 `scripts/chief_dispatch.py`：结果桥默认走 JSON 协议，并强校验 `allowed_dir + expected_dispatch_id + expected_agent + expected_route_debug`，降低误读旧文件或脏结果的风险。
-- 已归档 legacy 路由文件并补充 `docs/chief-dispatch-truth-sources.md`，避免再次出现“双真相源”与“看起来能派活、实际没派”的配置幻觉。
+- 已归档 legacy 路由文件并补充 `docs/chief-dispatch-truth-sources.md`，避免再次出现"双真相源"与"看起来能派活、实际没派"的配置幻觉。
 - **战略含义**：Chief 的私聊分发现在已经具备真实执行能力，下一阶段重点应放在稳定性、观测性和交互体验，而不是继续堆抽象路由设计。
 
-**2. 小红书发布路径已从“登录受阻”推进到“可复用登录态 + 半自动发布验证”**
+**2. 小红书发布路径已从"登录受阻"推进到"可复用登录态 + 半自动发布验证"**
 - 03-06 暴露的核心阻塞点是：纯服务器 Headless 环境无法完成小红书登录验证；滑块/验证链路不适合无 GUI 的纯自动登录。
 - 03-07 在老板提供关键 cookies 后，已通过 CDP `Network.setCookies` 将登录态注入远端 Chrome，并验证可直接进入 creator 发布页：`https://creator.xiaohongshu.com/publish/publish?source=official`。
 - 发布页上传区域与创作者相关元素已可见，说明后续可继续做图文发布半链路测试。
 - 当前登录态已备份到：`/root/.openclaw/credentials/xiaohongshu.json`。
-- **战略含义**：小红书现阶段的现实可行方案不是“纯自动登录”，而是**可复用 cookies/登录态备份 + 浏览器会话注入**。这条路径比继续死磕 Headless 登录更稳。
+- **战略含义**：小红书现阶段的现实可行方案不是"纯自动登录"，而是**可复用 cookies/登录态备份 + 浏览器会话注入**。这条路径比继续死磕 Headless 登录更稳。
 
-**3. 小红书发布 Skill 已从临时脚本升级为“前置校验 + 资产兜底”的可复用流程**
+**3. 小红书发布 Skill 已从临时脚本升级为"前置校验 + 资产兜底"的可复用流程**
 - 已把内容规则固化进 `skills/xiaohongshu-skills/skills/xhs-publish/SKILL.md`：标题≤20、正文≤1000（建议 800~1000）、首句不重复标题、开头带 emoji、结尾带 #tag。
 - 已新增 `skills/xiaohongshu-skills/scripts/content_rules.py`，把内容校验与轻量规范化提前到发布前，而不是等浏览器流程里才报错。
 - 已修改 `skills/xiaohongshu-skills/scripts/cli.py` 与 `scripts/publish_pipeline.py`：未提供图片时自动尝试 fallback 封面。
 - 已沉淀稳定 fallback 资源：`skills/xiaohongshu-skills/assets/fallback-cover.png`。
-- **战略含义**：内容合规、基础素材与失败兜底已经前移，后续小红书发布失败会更多暴露在“平台交互/风控”层，而不是文案规则或素材缺失这类低级问题。
+- **战略含义**：内容合规、基础素材与失败兜底已经前移，后续小红书发布失败会更多暴露在"平台交互/风控"层，而不是文案规则或素材缺失这类低级问题。
 
 **4. GitHub 备份与工作区同步机制继续有效**
 - 已检查 workspace 仓库状态：工作区干净，本地 `main` 一度领先远端 4 个提交。
 - 已成功执行 `git push origin main`，把小红书登录态备份流程、发布规则固化等关键工作同步到 GitHub 仓库 `jeffli2002/openclaw`。
-- **战略含义**：与发布链路、技能固化相关的关键资产已完成远端留档，降低“只存在本机会话里”的单点风险。
+- **战略含义**：与发布链路、技能固化相关的关键资产已完成远端留档，降低"只存在本机会话里"的单点风险。
 
 ### 当前应持续坚持的方向
-- **外部内容与发布**：继续坚持“前置规则校验 + 自动化到草稿/半链路 + 人工把关最终发布”的稳妥策略。
+- **外部内容与发布**：继续坚持"前置规则校验 + 自动化到草稿/半链路 + 人工把关最终发布"的稳妥策略。
 - **系统建设**：Chief→Worker 真实闭环已经具备，现阶段优先补稳定性、日志、失败恢复与用户可见状态反馈。
 - **平台攻坚**：遇到小红书这类强风控平台，优先利用已验证的登录态复用与浏览器注入方案，不再把纯 Headless 登录当主路径。
 
@@ -407,31 +407,31 @@ openclaw gateway restart
 
 ### 近2日战略级结论（2026-03-05 ~ 2026-03-06）
 
-**1. 内容生产进入“半自动发布”阶段**
-- 微信公众号链路已跑通到“创建草稿”这一步，凭据应写入 `skills/content-factory/.env`，发布命令固定为：`python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
+**1. 内容生产进入"半自动发布"阶段**
+- 微信公众号链路已跑通到"创建草稿"这一步，凭据应写入 `skills/content-factory/.env`，发布命令固定为：`python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
 - 当前API权限不足以完成preview/最终发布，因此现实可用流程是：**AI生成内容 → 脚本创建草稿 → 人工后台确认发布**
 - 这意味着内容自动化已经能显著提效，但最后一步仍需人工把关，适合作为当前稳定工作流
 
-**2. 建立“先核实、后写作”的硬规则**
+**2. 建立"先核实、后写作"的硬规则**
 - 已出现一次严重质量事故：GPT-5.4文章中错误编造API价格
-- 战略上必须把“数据核实”前置到写作前，尤其是**价格、参数、榜单、基准测试、订阅方案**这类高风险信息
-- 后续所有对外内容默认执行：**官网/权威来源核实 → 写作 → 发布前复核**；若无法确认，则明确标注“待核实”
+- 战略上必须把"数据核实"前置到写作前，尤其是**价格、参数、榜单、基准测试、订阅方案**这类高风险信息
+- 后续所有对外内容默认执行：**官网/权威来源核实 → 写作 → 发布前复核**；若无法确认，则明确标注"待核实"
 
 **3. 多Agent基础设施已形成可复用框架**
-- Sub Agent身份问题已修复：所有Agent必须称呼用户为“老板”或“Jeff”，不能直呼姓名
+- Sub Agent身份问题已修复：所有Agent必须称呼用户为"老板"或"Jeff"，不能直呼姓名
 - 已形成可复制的多Agent配置模板：**独立workspace + 独立记忆 + 群聊bindings + 明确system prompt约束**
 - 对Jeff的长期价值是：后续新增Agent或新群聊时，可以按同一模板快速扩展，而不是每次从零调试身份与上下文
 
 **4. Cron → Agent调度体系已经成型，但稳定性仍需补强**
 - 已完成 `config/cron-agent-dispatch.yaml` + `scripts/cron_dispatcher.py` 的调度骨架，并迁移8个主要Cron任务
-- 这标志着日常运营任务开始从“单点脚本执行”升级为“按职能分发给对应Agent执行”
+- 这标志着日常运营任务开始从"单点脚本执行"升级为"按职能分发给对应Agent执行"
 - 当前主要瓶颈集中在：`strategic.md`编辑失败、部分Cron报错、Chief日报发送失败、session send权限限制
 - 下一阶段重点不是继续扩任务数量，而是**先补稳定性和可观测性**，把已有自动化跑稳
 
 **5. Agent模型分工已更新，已正式引入 GPT-5.4**
 - Main / Coding：GPT-5.4 主力，Minimax M2.5 第一Fallback，Kimi 2.5 第二Fallback
 - 其他 Sub Agent（Content / Growth / Product / Finance）：Minimax M2.5 主力，Kimi 2.5 Fallback
-- 这代表系统已从“MiniMax/Kimi 二选一”升级为“主Agent高能力模型 + 其他Agent性价比模型”的分层策略
+- 这代表系统已从"MiniMax/Kimi 二选一"升级为"主Agent高能力模型 + 其他Agent性价比模型"的分层策略
 - 后续优化原则：主Agent与Coding优先保证推理/编码质量，其余Sub Agent优先平衡速度、成本与稳定性
 
 **6. 飞书语音播放链路已沉淀为可复用 Skill**
@@ -439,13 +439,13 @@ openclaw gateway restart
 - 结论：飞书里若想展示可播放/暂停的原生播放条，不能停留在 raw mp3 文件，必须走 Opus/Ogg 方向
 - 已封装为可分享技能：`skills/feishu-voice-reply/`
 - 已打包产物：`dist/skills/feishu-voice-reply.skill`
-- 默认能力形态：用户说“语音播放一下……”，系统同时返回**文字回复 + 飞书语音播放条**
+- 默认能力形态：用户说"语音播放一下……"，系统同时返回**文字回复 + 飞书语音播放条**
 
 ### 当前应持续坚持的方向
 - **对外内容**：先保证真实性，再追求爆款效率
 - **系统建设**：先保证现有Cron/Agent链路稳定，再扩更多自动化场景
 - **组织方式**：继续强化Chief统筹 + 专业Sub Agent执行的分工模式
-- **人工介入点**：保留在“最终发布、重大策略、敏感外发”这些高风险环节
+- **人工介入点**：保留在"最终发布、重大策略、敏感外发"这些高风险环节
 
 ## 📊 Memory 提炼 | 2026-03-06 14:30
 
@@ -456,7 +456,7 @@ openclaw gateway restart
 - 统一安装路径：`/root/.openclaw/workspace/skills/feishu-voice-reply`
 - 已打包产物：`/root/.openclaw/workspace/dist/skills/feishu-voice-reply.skill`
 - 能力链路：Edge TTS → ffmpeg 转 Ogg/Opus → Feishu 语音消息（可播放/暂停）
-- 使用约定：用户说“语音播放一下……”时，默认同时返回文字 + 飞书语音播放条
+- 使用约定：用户说"语音播放一下……"时，默认同时返回文字 + 飞书语音播放条
 - 安全结论：Skill 内未写入私人凭据、Token、Secret，可对外分享
 
 **模型分工记忆已修正** (2026-03-06)
@@ -469,22 +469,22 @@ openclaw gateway restart
 ### 近2日应沉淀为长期规则的信息（2026-03-05 ~ 2026-03-06）
 
 **1. 内容自动化的稳定形态已经明确：生成草稿自动化，最终发布人工把关**
-- 微信公众号发布链路已经验证可用，但当前最稳妥的工作流不是“全自动发布”，而是 **AI生成内容 → 脚本创建草稿 → 人工在公众号后台确认发布**
+- 微信公众号发布链路已经验证可用，但当前最稳妥的工作流不是"全自动发布"，而是 **AI生成内容 → 脚本创建草稿 → 人工在公众号后台确认发布**
 - 凭据应固化在 `skills/content-factory/.env`，发布命令固定使用 `python3 -X utf8 scripts/wechat_publish.py --html "path/to/article.html"`
-- 这条经验值得长期保留，因为它定义了内容业务当前“可规模化但不过度冒险”的运营边界
+- 这条经验值得长期保留，因为它定义了内容业务当前"可规模化但不过度冒险"的运营边界
 
-**2. 对外内容必须执行“先核实、后写作、发布前复核”**
+**2. 对外内容必须执行"先核实、后写作、发布前复核"**
 - GPT-5.4 价格数据编造事故说明：只要涉及 **价格、参数、排行榜、基准测试、订阅方案**，就必须先查官方或权威来源
 - 该规则不是内容写作细节，而是品牌可信度的底线规则
-- 后续若信息无法确认，默认明确标注“待核实”，而不是靠猜测补齐
+- 后续若信息无法确认，默认明确标注"待核实"，而不是靠猜测补齐
 
-**3. 多 Agent 体系已经从“能跑”进入“可复制”阶段**
-- Sub Agent 身份与称呼问题已修复，统一要求称呼用户为“老板”或“Jeff”
+**3. 多 Agent 体系已经从"能跑"进入"可复制"阶段**
+- Sub Agent 身份与称呼问题已修复，统一要求称呼用户为"老板"或"Jeff"
 - 已形成一套可复用模板：**独立 workspace + 独立记忆 + 群聊 bindings + system prompt 强约束**
 - 这意味着后续扩 Agent、扩群聊、扩任务，不需要重新摸索基础设施，重点转向复用与规范化
 
 **4. Cron 调度的下一阶段重点不是扩数量，而是补稳定性**
-- `config/cron-agent-dispatch.yaml` 与 `scripts/cron_dispatcher.py` 已经把“任务 → Agent”的分发骨架搭起来
+- `config/cron-agent-dispatch.yaml` 与 `scripts/cron_dispatcher.py` 已经把"任务 → Agent"的分发骨架搭起来
 - 已迁移的主要任务说明方向正确，但当前暴露的问题也很明确：`strategic.md` 编辑失败、部分 Cron 报错、Chief 日报发送失败、session send 权限限制
 - 战略上应优先投入到 **稳定性、错误恢复、可观测性**，而不是继续增加新自动化任务数量
 
@@ -492,39 +492,71 @@ openclaw gateway restart
 - Main / Coding：`GPT-5.4 → Minimax M2.5 → Kimi 2.5`
 - 其他 Sub Agent：`Minimax M2.5 → Kimi 2.5`
 - 飞书语音能力已沉淀为可复用 Skill：`skills/feishu-voice-reply/`，标准链路为 **Edge TTS → ffmpeg → Ogg/Opus → 飞书原生语音播放条**
-- 这代表系统建设已不止于“完成任务”，而是在积累可复制、可分享、可安装的能力资产
+- 这代表系统建设已不止于"完成任务"，而是在积累可复制、可分享、可安装的能力资产
 
 ### 当前阶段的总判断
 - **业务侧**：内容生产已经具备稳定提效条件，但最终发布与事实核查仍应保留人工把关
-- **系统侧**：多 Agent + Cron + Skill 封装这条路已经验证可行，接下来应从“堆功能”转到“跑稳定”
+- **系统侧**：多 Agent + Cron + Skill 封装这条路已经验证可行，接下来应从"堆功能"转到"跑稳定"
 - **组织侧**：Chief 统筹、Sub Agent 专业执行的分工继续成立，且开始产生复利效应
 
 ## 📊 Memory 提炼 | 2026-03-07 08:00
 
 ### 近2日新增应固化的战略信息（2026-03-06 ~ 2026-03-07）
 
-**1. AI 竞争判断应从“模型参数战”升级为“平台系统战”**
+**1. AI 竞争判断应从"模型参数战"升级为"平台系统战"**
 - 结合 2026-03-07 AI 日报整理的 6 条主线：OpenAI 超大额融资、Anthropic 与 Pentagon 冲突升级、Google Gemini 3 Deep Think、Nvidia FY2026 Q4 财报、华为 Atlas 950 SuperPoD、Cursor 异步 AI coding agents。
 - 当前更关键的判断不是单点模型谁更强，而是竞争重心正在转向：**模型能力 + 算力供给 + 分发入口 + 合规渠道** 的平台级组合能力。
-- **战略含义**：Jeff 的产品与内容布局不能只追模型榜单，要优先捕捉“谁掌握入口、算力、企业落地与 Agent 工作流”这类更高层信号。
+- **战略含义**：Jeff 的产品与内容布局不能只追模型榜单，要优先捕捉"谁掌握入口、算力、企业落地与 Agent 工作流"这类更高层信号。
 
-**2. Agent 产品趋势已明确进入“异步并行执行”阶段**
+**2. Agent 产品趋势已明确进入"异步并行执行"阶段**
 - 03-07 日报已把 Cursor 的异步 AI coding agents 更新列为核心观察点。
 - 结合 Chief 在 03-06 已跑通的 worker 委派闭环，内部能力演进方向与外部产品趋势已经对齐：不是让单个 Agent 在前台长时间独占，而是把复杂任务拆给后台 worker 并行处理，再回传结果。
 - **战略含义**：后续应继续强化 Chief 的任务编排、状态回传、失败恢复与用户可见进度，而不是把主会话做成单线程长阻塞执行器。
 
-**3. 小红书现阶段最稳路径已收敛为“登录态复用 + 发布前强校验 + 素材兜底”**
+**3. 小红书现阶段最稳路径已收敛为"登录态复用 + 发布前强校验 + 素材兜底"**
 - 03-06 暴露出 Headless + 滑块验证不可行；03-07 已通过注入 cookies 成功进入 creator 发布页，确认登录态复用是现实路径。
 - 同时已把文案规则前置到 `content_rules.py`，并加入 fallback 封面机制，意味着低级失败点已被前移拦截。
 - **战略含义**：小红书后续优化重点应转向平台交互稳定性、发布动作成功率和风控兼容，而不是继续消耗时间在纯自动登录上。
 
 **4. 内容自动化的长期底线规则进一步明确：先核实，再生成，再沉淀为可复用资产**
 - 03-06 的价格编造事故已经形成硬规则；03-07 又把小红书规则、脚本校验、fallback 资源、登录态备份都沉淀为文件化资产，并完成 GitHub 远端备份。
-- 说明当前最优工作方式不是“临场拼一把”，而是把每次验证过的流程尽快固化成：**规则文件 + 校验脚本 + 凭据备份 + 远端留档**。
+- 说明当前最优工作方式不是"临场拼一把"，而是把每次验证过的流程尽快固化成：**规则文件 + 校验脚本 + 凭据备份 + 远端留档**。
 - **战略含义**：对外内容必须坚持真实性优先；对内流程必须坚持资产化沉淀，减少关键能力只存在于单次会话里的风险。
 
 ### 当前阶段建议继续坚持
 - **外部判断**：内容选题继续围绕平台级 AI 竞争、Agent 工作流、企业落地与算力格局，不陷入纯模型参数比较。
 - **内部建设**：优先补强 Chief/Worker 的状态展示、失败恢复、日志和观测性。
-- **平台运营**：小红书采用“可复用登录态 + 发布规则前置校验 + fallback 素材”作为默认工作流。
+- **平台运营**：小红书采用"可复用登录态 + 发布规则前置校验 + fallback 素材"作为默认工作流。
 - **资产管理**：凡是跑通的链路，都要同步做到本地固化 + GitHub 备份，防止知识和流程只留在临时上下文里。
+
+## 📊 Memory 提炼 | 2026-03-07 18:05
+
+### 今日新增应固化的操作信息（2026-03-07）
+
+**1. Sub Agent 必须读取飞书语音 Skill 规则**
+- 问题：Sub Agent 在飞书群聊里使用语音自我介绍时，显示的是 MP3 文件而不是播放条
+- 根因：飞书语音 Skill 规则没有同步到各 Sub Agent 的 workspace
+- 修复方案：
+  - 更新 `AGENTS.md`：Sub Agent 启动时必须读取 `skills/feishu-voice-reply/SKILL.md`
+  - 更新各 `SOUL.md`：强制写入飞书语音规则 Sub Agent 的
+  - 同步所有 workspace：`cp -r workspace/* workspace-{content,growth,coding,product,finance}/`
+- 关键规则：
+  - **语音文件必须存放在 Workspace 下**：`/root/.openclaw/workspace/temp/voice/`，禁止用 /tmp
+  - 必须用 feishu-voice-reply Skill，不能直接用 tts 工具
+
+**2. 小红书发布规则已固化**
+- 标题：≤20 字符
+- 正文：≤1000 字符（建议 800~1000）
+- 首句不能重复标题
+- 开头带 emoji
+- 结尾带 #tag
+- 脚本位置：`skills/xiaohongshu-skills/scripts/content_rules.py`
+- fallback 封面：`skills/xiaohongshu-skills/assets/fallback-cover.png`
+
+**3. 今日 Cron 异常**
+- `product-competitor-analysis` (14:00) 执行失败，状态 error
+- 需要后续调查 Product Agent 问题
+
+**4. 今日完成 Chief 每日汇报**
+- 已于 19:30 成功发送每日汇报到飞书
+- 包含：各 Agent 进展、GitHub 同步、Supabase 同步、OpenClaw 动态、需要确认事项
