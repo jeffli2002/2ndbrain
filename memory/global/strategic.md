@@ -1,5 +1,48 @@
 # 战略记忆 - 虾仔的长期记忆
 
+> 最后更新: 2026-03-07 22:05
+
+---
+
+## 📊 Memory 提炼 | 2026-03-07 22:05
+
+### 近2日应沉淀的长期信息（2026-03-06 ~ 2026-03-07）
+
+**1. 飞书语音回复必须使用专用 Skill**
+- 语音文件必须存放在 Workspace 下：`/root/.openclaw/workspace/temp/voice/`，禁止用 /tmp
+- 必须使用 feishu-voice-reply Skill，不能直接用 tts 工具
+- 技术链路：Edge TTS → ffmpeg 转 Ogg/Opus → Feishu asVoice 发送
+- 所有 Sub Agent 启动时必须读取 `skills/feishu-voice-reply/SKILL.md`
+
+**2. 小红书运营最佳实践**
+- cookies 注入方案验证通过：通过 CDP Network.setCookies 注入远端 Chrome
+- 登录态备份位置：`/root/.openclaw/credentials/xiaohongshu.json`
+- 内容规则：标题≤20字、正文≤1000字（建议800~1000）、首句不重复标题、开头emoji、结尾#tag
+- fallback 封面：`skills/xiaohongshu-skills/assets/fallback-cover.png`
+
+**3. 数据核实硬规则（持续强调）**
+- 禁止在对外内容中编造任何数据
+- 价格、参数、排名等信息必须来自官方或权威来源
+- 正确流程：先查证 → 写作 → 发布前复核
+- 不确定时明确标注"待核实"
+
+**4. Chief 私聊委派已具备真实执行能力**
+- 分类方式：`config/agent_keyword_router.yaml`
+- 委派方式：`sessions_spawn(runtime="subagent", mode="run")` 即时拉起 worker
+- 回传协议：JSON 格式，结果写入 `/output/dispatch_results/`
+- 强校验参数：allowed_dir + expected_dispatch_id + expected_agent + expected_route_debug
+
+**5. 模型配置**
+- Main / Coding：GPT-5.4 → MiniMax M2.5 → Kimi 2.5
+- 其他 Sub Agent：MiniMax M2.5 → Kimi 2.5
+
+**6. 微信公众号发布**
+- 凭据位置：`skills/content-factory/.env`
+python3 -X- 发布命令：` utf8 scripts/wechat_publish.py --html "path/to/article.html"`
+- 必须加 `-X utf8` 参数
+
+---
+
 > 最后更新: 2026-03-07 16:05
 
 ---
