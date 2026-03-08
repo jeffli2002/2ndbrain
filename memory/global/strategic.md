@@ -2,6 +2,28 @@
 
 ---
 
+## 📊 重要经验沉淀 | 2026-03-08
+
+### 1. Skill 路径管理机制（重要）
+- **问题**：isolated session 中的 agent 无法自动找到已注册的 skill
+- **解决方案**：在 AGENTS.md 中建立 Skill Catalog，所有 Sub Agent 启动时必读
+- **配置要求**：所有调用 skill 的 cron 任务，必须在配置中添加 `skill_path` 字段
+- **文件位置**：
+  - AGENTS.md - Skill Catalog（真相源）
+  - cron-agent-dispatch.yaml - 任务级配置
+  - memory/agents/{agent}/memory.md - Agent 私有记忆
+
+### 2. 飞书凭据配置
+- **状态**：飞书多维表格凭据未完整配置（缺少 feishu.json）
+- **临时方案**：优先使用飞书云文档（feishu-doc）代替多维表格
+- **待配置**：需要在 credentials/ 目录添加飞书应用凭据
+
+### 3. 模型切换
+- 当前主力模型：openai-code/gpt-5.4
+- Fallback 链：minimax-cn/MiniMax-M2.5 → kimi-coding/k2p5
+
+---
+
 ## 📊 工具映射表 | 2026-03-08
 
 ### 微信公众号抓取
