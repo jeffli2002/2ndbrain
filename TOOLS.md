@@ -17,6 +17,7 @@
 | 微信公众号 | `credentials/wechat.json` | ✅ 已配置 |
 | YouTube | `credentials/youtube.json` | ⚠️ 需填入API Key |
 | Supabase | `credentials/supabase.json` | ✅ 已配置 |
+| KIE AI | `credentials/kie.json` | ✅ 已配置 |
 
 ### 读取凭据
 
@@ -90,6 +91,15 @@ bash /root/.openclaw/workspace/scripts/check-credentials.sh
 - **配置位置:** `credentials/supabase.json`
 - **变量:** `$SUPABASE_URL`, `$SUPABASE_ANON_KEY`, `$SUPABASE_SERVICE_KEY`
 - **用途:** Second Brain 项目数据与任务 token 使用量同步
+
+### KIE AI
+- **配置位置:** `credentials/kie.json`
+- **变量:** `$KIE_API_KEY`
+- **默认模型:** `nano-banana-2`
+- **默认分辨率:** `1K`
+- **默认宽高比:** `16:9`
+- **默认输出格式:** `PNG`
+- **说明:** KIE 生图任务支持 `callBackUrl` 回调；请求结构为 `{ model, callBackUrl?, input }`
 
 ### 小红书
 - **配置位置:** `credentials/xiaohongshu.json`
