@@ -59,10 +59,11 @@ task_agent_mapping:
     exact: true
     timeout_seconds: 900
     required_skill: "/root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md"
+    skill_path: "/root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md"
     required_format: "/root/.openclaw/workspace/config/ai-daily-format.md"
     message_instructions:
       - "该任务已由 cron 直接分配给 Content Agent，不需要再经 Chief 二次分流。"
-      - "必须先读取 /root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md，并严格按该 skill 执行。"
+      - "【关键】必须先读取 /root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md，理解 skill 工作流程后再执行。"
       - "必须严格遵循 /root/.openclaw/workspace/config/ai-daily-format.md 的格式要求。"
       - "不要用 content-factory 或其它 skill 替代 AI Daily Newsletter skill。"
       - "发送前先确认内容是过去24小时内、链接真实、没有编造。"
@@ -131,8 +132,10 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
+    skill_path: "/root/.openclaw/workspace/skills/youtube/SKILL.md"
     message_instructions:
       - "该任务已由 cron 直接分配给 Content Agent，不需要再经 Chief 二次分流。"
+      - "【关键】如需使用 YouTube 研究 KOL 内容，必须先读取 youtube skill 了解使用方法。"
       - "KOL 日报属于每日应直达老板的内容任务，常规运行也必须正常发送，不要只放进 Chief 每日汇报。"
       - "如果发现重大机会、异常风险，或需要老板确认方向，必须立刻通知老板。"
     workflow:
@@ -253,8 +256,10 @@ task_agent_mapping:
     notify_policy: "deliver_and_alert"
     exact: true
     timeout_seconds: 600
+    skill_path: "/root/.openclaw/workspace/skills/chief-agent-report/SKILL.md"
     message_instructions:
       - "这是每天必须直达老板的总汇报任务。"
+      - "【关键】必须先读取 /root/.openclaw/workspace/skills/chief-agent-report/SKILL.md，理解汇报格式要求后再执行。"
       - "必须汇总今日各 Agent 的关键进展、失败告警、修复动作与待办。"
       - "必须单独包含 GitHub 同步/备份摘要（成功次数、失败次数、最后一次结果、是否需要老板关注）。"
       - "必须单独包含 Supabase 同步摘要、OpenClaw 动态监控摘要，以及所有需要老板确认的事项。"
