@@ -26,6 +26,22 @@
   - ✅ `{"案例名称": "值"}`
 - **结论**：飞书 Bitable API 需要使用人类可读的中文字段名，不是内部 ID
 
+### 4. 飞书文档权限问题
+- **现象**：创建文档时无法自动添加用户权限
+- **原因**：runtime 以 app 模式运行，无法获取用户 identity
+- **错误信息**：`trusted requester identity unavailable`
+- **临时方案**：需要手动在飞书中添加编辑权限
+- **长期方案**：需要配置 user_access_token 或使用用户授权模式
+
+### 5. 飞书文档权限添加成功 (10:52)
+- 使用 Python 脚本直接调用飞书 API 成功添加编辑权限
+- API 端点：`POST /drive/v1/permissions/{token}/members`
+- 参数：`type=docx/bitable`, `member_type=openid`, `member_id`, `perm=edit`
+- 已添加权限的文档：
+  - ✅ 案例清单 (docx)
+  - ✅ 价格对比 (docx)
+  - ✅ 多维表格 (bitable)
+
 ### 3. 模型切换
 - 当前主力模型：openai-code/gpt-5.4
 - Fallback 链：minimax-cn/MiniMax-M2.5 → kimi-coding/k2p5
