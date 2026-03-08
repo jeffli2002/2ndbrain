@@ -53,6 +53,7 @@ interface Task {
   nextRun: string | null;
   errorCount: number;
   tokenUsage: number;
+  updatedAt: string | null;
 }
 
 interface TokenTrendPoint {
@@ -328,6 +329,21 @@ const formatDateTime = (value?: string | null) => {
   }).format(date);
 };
 
+const formatFullDateTime = (value?: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(date);
+};
+
 const safeText = (value: unknown) => (typeof value === "string" ? value : "");
 const matchesQuery = (query: string, ...fields: unknown[]) => {
   const normalizedQuery = query.trim().toLowerCase();
@@ -345,6 +361,7 @@ const normalizeTask = (row: any): Task => ({
   nextRun: row.next_run || null,
   errorCount: row.error_count || 0,
   tokenUsage: row.token_usage || 0,
+  updatedAt: row.updated_at || null,
 });
 
 const agentColorMap: Record<string, string> = {
@@ -515,6 +532,11 @@ export default function SecondBrain() {
     .sort((a, b) => b.value - a.value);
 
   const tokenDistributionMax = Math.max(...tokenDistribution.map((item) => item.value), 1);
+  const latestSupabaseSyncAt = tasks.reduce<string | null>((latest, task) => {
+    if (!task.updatedAt) return latest;
+    if (!latest) return task.updatedAt;
+    return new Date(task.updatedAt).getTime() > new Date(latest).getTime() ? task.updatedAt : latest;
+  }, null);
 
   // 获取状态图标
   const getStatusIcon = (status: string) => {
@@ -1045,6 +1067,9 @@ export default function SecondBrain() {
             <p className="text-xs text-[#71717a] mt-1">
               按日查看总 Token 折线与各 Agent 消耗拆解（近 {displayTrend.length} 天）
             </p>
+            <p className="text-xs text-cyan-300 mt-1">
+              Token 数据截止：{formatFullDateTime(latestSupabaseSyncAt)}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
@@ -1262,11 +1287,15 @@ export default function SecondBrain() {
   // 渲染任务中心
   const renderTasks = () => (
     <div className="p-8 animate-fadeIn">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <CheckSquare className="w-7 h-7 text-green-400" />
           任务中心
         </h2>
+        <div className="text-right">
+          <p className="text-xs text-[#71717a]">Supabase 最近同步</p>
+          <p className="text-sm text-cyan-300 font-medium">{formatFullDateTime(latestSupabaseSyncAt)}</p>
+        </div>
       </div>
 
       {/* 搜索 */}
