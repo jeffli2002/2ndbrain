@@ -18,6 +18,14 @@
 - **临时方案**：优先使用飞书云文档（feishu-doc）代替多维表格
 - **待配置**：需要在 credentials/ 目录添加飞书应用凭据
 
+### 3. 飞书多维表格写入格式（重要经验）
+- **问题**：写入记录报错 `FieldNameNotFound`
+- **根因**：错误使用 field_id 作为 key
+- **正确方式**：使用中文字段名作为 key
+  - ❌ `{"fldhqf2zi3": "值"}`
+  - ✅ `{"案例名称": "值"}`
+- **结论**：飞书 Bitable API 需要使用人类可读的中文字段名，不是内部 ID
+
 ### 3. 模型切换
 - 当前主力模型：openai-code/gpt-5.4
 - Fallback 链：minimax-cn/MiniMax-M2.5 → kimi-coding/k2p5
