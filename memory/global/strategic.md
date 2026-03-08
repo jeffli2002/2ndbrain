@@ -72,10 +72,15 @@
 ### 今日新增（2026-03-08 上午）
 
 **1. 图片生成 API 现状**
-- GLM API：已配置 GLM_API_KEY，但只有文本模型（glm-4, glm-5），无图生图能力
-- KIE API (nano-banana-2)：已配置，暂未验证图生图功能
-- 备选方案：需要配置 Replicate 或 OpenAI DALL-E
-- 临时方案：用户在 KIE.ai 控制台手动生成
+- GLM API：已配置并验证 `cogview-3` / `cogview-3-plus` 可用于生图
+- KIE API (nano-banana-2)：已实测跑通异步生图链路
+  - 官方端点：`POST https://api.kie.ai/api/v1/jobs/createTask`
+  - 请求结构：`{ model, callBackUrl?, input }`
+  - 回调字段：`data.resultJson`，解析后读取 `resultUrls[]`
+  - 已验证：本地 callback server + Cloudflare Tunnel + 自动下载结果图
+- KIE 已集成进 PPT 生成 Skill：`/root/.agents/skills/baoyu-slide-deck/`
+- 关键坑位：KIE 图床有时对 `urllib` 返回 403，下载逻辑必须保留 `curl -L` fallback
+- 备选方案：Replicate / OpenAI DALL-E / DashScope
 
 **2. 飞书凭据配置**
 - 飞书应用凭据已添加到 credentials/feishu-default-allowFrom.json
@@ -110,7 +115,7 @@
 
 ---
 
-> 最后更新: 2026-03-08 12:06
+> 最后更新: 2026-03-08 13:42
 
 ---
 
