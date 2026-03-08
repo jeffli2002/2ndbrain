@@ -100,6 +100,8 @@ bash /root/.openclaw/workspace/scripts/check-credentials.sh
 - **默认宽高比:** `16:9`
 - **默认输出格式:** `PNG`
 - **说明:** KIE 生图任务支持 `callBackUrl` 回调；请求结构为 `{ model, callBackUrl?, input }`
+- **提交端点:** `https://api.kie.ai/api/v1/jobs/createTask`
+- **已验证:** 通过 Cloudflare Tunnel 暴露 `https://.../kie-callback` 后，可成功收到 KIE 回调并解析 `resultJson.resultUrls`
 
 ### 小红书
 - **配置位置:** `credentials/xiaohongshu.json`
