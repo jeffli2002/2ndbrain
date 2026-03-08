@@ -718,3 +718,21 @@ openclaw gateway restart
 **4. 今日完成 Chief 每日汇报**
 - 已于 19:30 成功发送每日汇报到飞书
 - 包含：各 Agent 进展、GitHub 同步、Supabase 同步、OpenClaw 动态、需要确认事项
+
+## 📊 Memory 提炼 | 2026-03-08 20:18
+
+### 近2日新增应固化的长期信息（2026-03-07 ~ 2026-03-08 晚）
+
+**1. Cron 的 `summary_only` 任务必须显式区分“常规摘要”与“老板通知”路径**
+- `product-competitor-analysis` 的失败根因已确认：isolated cron 会话里，Agent 在需要老板确认产品方向时尝试发消息，但未显式指定 `channel` / `target`，导致 `⚠️ ✉️ Message failed`。
+- 修复原则：
+  - `summary_only` 任务的常规 delivery 应设为 `none`，不要默认 announce 给老板。
+  - 只有在确实需要老板决策时，Agent 才调用 `message`。
+  - 一旦调用 `message`，必须显式传入 `channel=feishu` 与 `target=user:ou_aeb3984fc66ae7c78e396255f7c7a11b`，不能依赖当前会话上下文。
+- **战略含义**：Cron 任务设计不能只写“需要时通知老板”，必须把“怎么通知”固化到 prompt / config，否则会反复出现 delivery 类假失败。
+
+**2. 2nd Brain 的线上稳定性应优先做“环境差异兜底”而不是只在本地跑通**
+- Vercel 构建修复说明：多 workspace / 多 lockfile 环境下，需要显式固定 Next 的 tracing root（`outputFileTracingRoot: process.cwd()`），否则平台可能误判根目录或依赖边界。
+- 搜索功能修复说明：前端搜索必须对所有可空字段做 null-safe 处理，不能默认任何 Supabase 数据字段都非空。
+- Agents Token 图表修复说明：页面不能只依赖本地 cron runs 文件；在云部署场景下，应提供 Supabase snapshot fallback，确保图表至少有可展示的当前数据。
+- **战略含义**：2nd Brain 后续开发要优先遵循“本地可用 + 云端可用 + 数据缺失可降级”的三层设计，而不是默认生产环境等同于本地环境。

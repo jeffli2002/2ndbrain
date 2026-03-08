@@ -163,6 +163,7 @@ task_agent_mapping:
       - "重点关注 OpenClaw 官方 release、文档、博客和社区动态，不要只盯安全漏洞。"
       - "默认不要逐次向老板发送常规轮询结果；将摘要汇总到 Chief 每日汇报。"
       - "如果发现需要升级、修复或值得同步给老板的重要更新，或需要老板确认动作，必须立刻通知老板。"
+      - "如需主动通知老板，必须使用 message 工具并显式传入 `channel=feishu` 与 `target=user:ou_aeb3984fc66ae7c78e396255f7c7a11b`，不要依赖当前会话上下文。"
     workflow:
       - step: "search_news"
         description: "搜索安全相关新闻"
@@ -189,6 +190,7 @@ task_agent_mapping:
       - "输出应聚焦竞品功能、定位、差异点与产品决策启发。"
       - "默认不要逐次向老板发送常规运行消息；将摘要汇总到 Chief 每日汇报。"
       - "如果分析结果需要老板做产品方向确认，必须立刻通知老板。"
+      - "如需主动通知老板，必须使用 message 工具并显式传入 `channel=feishu` 与 `target=user:ou_aeb3984fc66ae7c78e396255f7c7a11b`，不要依赖当前会话上下文。"
     workflow:
       - step: "collect_competitor_info"
         description: "收集竞品信息"
