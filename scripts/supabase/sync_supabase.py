@@ -124,9 +124,11 @@ class SupabaseSync:
                                 'type': f'agent-{agent_name}',
                             })
 
+        now_iso = datetime.now(timezone.utc).isoformat()
         if memories and self.client:
             try:
-                self.client.table('memories').upsert(memories).execute()
+                payload = [{**row, 'updated_at': now_iso} for row in memories]
+                self.client.table('memories').upsert(payload).execute()
                 print(f'  ✓ 已同步 {len(memories)} 条记忆')
                 return True
             except Exception as e:
@@ -154,9 +156,11 @@ class SupabaseSync:
                     'size': stats.st_size,
                 })
 
+        now_iso = datetime.now(timezone.utc).isoformat()
         if docs and self.client:
             try:
-                self.client.table('documents').upsert(docs).execute()
+                payload = [{**row, 'updated_at': now_iso} for row in docs]
+                self.client.table('documents').upsert(payload).execute()
                 print(f'  ✓ 已同步 {len(docs)} 个文档')
                 return True
             except Exception as e:
