@@ -328,6 +328,13 @@ const formatDateTime = (value?: string | null) => {
   }).format(date);
 };
 
+const safeText = (value: unknown) => (typeof value === "string" ? value : "");
+const matchesQuery = (query: string, ...fields: unknown[]) => {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+  return fields.some((field) => safeText(field).toLowerCase().includes(normalizedQuery));
+};
+
 const normalizeTask = (row: any): Task => ({
   id: row.id,
   name: row.name,
@@ -413,24 +420,24 @@ export default function SecondBrain() {
   // 过滤数据 - 按日期范围筛选 (空范围=显示全部)
   const filteredMemories = memories.filter(
     (m) =>
-      (m.type === "long-term" || 
-       !dateRange.start || !dateRange.end ||
-       (m.date >= dateRange.start && m.date <= dateRange.end)) &&
-      (m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+      (m.type === "long-term" ||
+        !dateRange.start ||
+        !dateRange.end ||
+        (m.date >= dateRange.start && m.date <= dateRange.end)) &&
+      matchesQuery(searchQuery, m.title, m.content)
   );
 
   const filteredDocuments = documents.filter(
     (d) =>
-      (!dateRange.start || !dateRange.end ||
-       (d.date >= dateRange.start && d.date <= dateRange.end)) &&
-      (d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.path.toLowerCase().includes(searchQuery.toLowerCase()))
+      (!dateRange.start || !dateRange.end || (d.date >= dateRange.start && d.date <= dateRange.end)) &&
+      matchesQuery(searchQuery, d.title, d.path, d.type)
   );
 
-  const filteredTasks = tasks.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = tasks.filter((t) => matchesQuery(searchQuery, t.name, t.schedule, t.status));
+
+  const searchedMemories = memories.filter((m) => matchesQuery(searchQuery, m.title, m.content));
+  const searchedDocuments = documents.filter((d) => matchesQuery(searchQuery, d.title, d.path, d.type));
+  const searchedTasks = tasks.filter((t) => matchesQuery(searchQuery, t.name, t.schedule, t.status));
 
   // 统计
   const stats = {
@@ -496,6 +503,18 @@ export default function SecondBrain() {
       values: displayTrend.map((point) => point.agentBreakdown[agent.id] || 0),
     })),
   ];
+
+  const tokenDistribution = agentCards
+    .map((agent) => ({
+      id: agent.id,
+      label: agent.name,
+      value: agent.tokenUsage,
+      color: agentColorMap[agent.id] || "#94a3b8",
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const tokenDistributionMax = Math.max(...tokenDistribution.map((item) => item.value), 1);
 
   // 获取状态图标
   const getStatusIcon = (status: string) => {
@@ -997,7 +1016,7 @@ export default function SecondBrain() {
             <Zap className="w-5 h-5 text-yellow-400" />
             <h3 className="font-semibold">Token 日趋势</h3>
           </div>
-          <p className="text-sm text-[#71717a]">暂无可用的历史 token 数据。</p>
+          <p className="text-sm text-[#71717a]">暂无可用的历史 token 数据，下面仍会显示当前 Agent 的 token 分布。</p>
         </div>
       );
     }
@@ -1106,6 +1125,45 @@ export default function SecondBrain() {
     );
   };
 
+  const renderTokenDistributionChart = () => {
+    return (
+      <div className="bg-[#141416] rounded-xl border border-[#27272a] p-6 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="w-5 h-5 text-orange-400" />
+          <h3 className="font-semibold">当前 Token 分布</h3>
+        </div>
+        <p className="text-xs text-[#71717a] mb-4">基于当前任务中心的最新 token_usage 聚合，避免历史接口不可用时页面空白。</p>
+
+        {!tokenDistribution.length ? (
+          <p className="text-sm text-[#71717a]">暂无可展示的 token 数据。</p>
+        ) : (
+          <div className="space-y-4">
+            {tokenDistribution.map((item) => (
+              <div key={item.id}>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <div className="flex items-center gap-2 text-[#d4d4d8]">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span>{item.label}</span>
+                  </div>
+                  <span className="text-[#f4f4f5] font-medium">{(item.value / 1000).toFixed(1)}k</span>
+                </div>
+                <div className="h-3 bg-[#0f0f10] rounded-full overflow-hidden border border-[#27272a]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max((item.value / tokenDistributionMax) * 100, 6)}%`,
+                      backgroundColor: item.color,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // 渲染Agent中心
   const renderAgents = () => {
     const totalTasks = agentCards.reduce((sum, a) => sum + a.tasks, 0);
@@ -1123,6 +1181,7 @@ export default function SecondBrain() {
         </div>
 
         {renderTokenTrendChart()}
+        {renderTokenDistributionChart()}
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -1313,14 +1372,14 @@ export default function SecondBrain() {
             </div>
 
             {/* 记忆搜索结果 */}
-            {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {searchedMemories.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <Brain className="w-5 h-5" />
-                  记忆 ({memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  记忆 ({searchedMemories.length})
                 </h3>
                 <div className="space-y-3">
-                  {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).map(m => (
+                  {searchedMemories.map((m) => (
                     <div key={m.id} onClick={() => {setSelectedItem(m); setActiveTab("memories");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-purple-500/50 cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         {getMemoryTypeIcon(m.type)}
@@ -1335,14 +1394,14 @@ export default function SecondBrain() {
             )}
 
             {/* 文档搜索结果 */}
-            {documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {searchedDocuments.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5" />
-                  文档 ({documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  文档 ({searchedDocuments.length})
                 </h3>
                 <div className="space-y-3">
-                  {documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).map(d => (
+                  {searchedDocuments.map((d) => (
                     <div key={d.id} onClick={() => {setSelectedItem(d); setActiveTab("documents");}} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-blue-500/50 cursor-pointer">
                       <div className="flex items-center gap-2 mb-2">
                         {getDocumentTypeIcon(d.type)}
@@ -1357,14 +1416,14 @@ export default function SecondBrain() {
             )}
 
             {/* 任务搜索结果 */}
-            {tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+            {searchedTasks.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-[#a1a1aa] mb-4 flex items-center gap-2">
                   <CheckSquare className="w-5 h-5" />
-                  任务 ({tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length})
+                  任务 ({searchedTasks.length})
                 </h3>
                 <div className="space-y-3">
-                  {tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map(t => (
+                  {searchedTasks.map((t) => (
                     <div key={t.id} onClick={() => setActiveTab("tasks")} className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-green-500/50 cursor-pointer">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(t.status)}
@@ -1378,9 +1437,7 @@ export default function SecondBrain() {
             )}
 
             {/* 无结果 */}
-            {memories.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.path.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 &&
-             tasks.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+            {searchedMemories.length === 0 && searchedDocuments.length === 0 && searchedTasks.length === 0 && (
               <div className="text-center py-12">
                 <Search className="w-12 h-12 text-[#3f3f46] mx-auto mb-4" />
                 <p className="text-[#71717a]">未找到相关结果</p>
