@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { supabaseAdmin as supabase } from './supabase';
+import { getSupabaseAdmin } from './supabase';
 
 const workspace = '/root/.openclaw/workspace';
 const cronDir = '/root/.openclaw/cron';
@@ -101,6 +101,7 @@ function msToDuration(ms?: number | null): string | null {
 }
 
 export async function syncSecondBrainData() {
+  const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
   const memories: any[] = [];
   const docs: any[] = [];

@@ -28,6 +28,7 @@ function shanghaiDate(ms: number): string {
 }
 
 function listJobSnapshotFiles(): string[] {
+  if (!fs.existsSync(CRON_DIR)) return [];
   return fs
     .readdirSync(CRON_DIR)
     .filter((name) => name.startsWith('jobs.json'))
