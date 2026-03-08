@@ -378,6 +378,7 @@ type TabType = "home" | "memories" | "documents" | "tasks" | "agents";
 export default function SecondBrain() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [searchQuery, setSearchQuery] = useState("");
+  const [draftSearchQuery, setDraftSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<Memory | Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{start: string; end: string}>({
@@ -537,6 +538,23 @@ export default function SecondBrain() {
     if (!latest) return task.updatedAt;
     return new Date(task.updatedAt).getTime() > new Date(latest).getTime() ? task.updatedAt : latest;
   }, null);
+
+  const handleSearchInputChange = (value: string) => {
+    setDraftSearchQuery(value);
+    if (!value.trim()) {
+      setSearchQuery("");
+    }
+  };
+
+  const commitSearch = () => {
+    setSearchQuery(draftSearchQuery.trim());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      commitSearch();
+    }
+  };
 
   // 获取状态图标
   const getStatusIcon = (status: string) => {
@@ -871,9 +889,10 @@ export default function SecondBrain() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
         <input
           type="text"
-          placeholder="搜索记忆..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="搜索记忆（按回车执行）..."
+          value={draftSearchQuery}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           className="w-full bg-[#141416] border border-[#27272a] rounded-lg pl-12 pr-4 py-3 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-blue-500"
         />
       </div>
@@ -952,9 +971,10 @@ export default function SecondBrain() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
         <input
           type="text"
-          placeholder="搜索文档..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="搜索文档（按回车执行）..."
+          value={draftSearchQuery}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           className="w-full bg-[#141416] border border-[#27272a] rounded-lg pl-12 pr-4 py-3 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-blue-500"
         />
       </div>
@@ -1303,9 +1323,10 @@ export default function SecondBrain() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
         <input
           type="text"
-          placeholder="搜索任务..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="搜索任务（按回车执行）..."
+          value={draftSearchQuery}
+          onChange={(e) => handleSearchInputChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           className="w-full bg-[#141416] border border-[#27272a] rounded-lg pl-12 pr-4 py-3 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-blue-500"
         />
       </div>
