@@ -2,13 +2,14 @@
   "asset_id": "sha256:3788de88cc227ec0e34d8212dccb9e5d333b3ee7ef626c06017db9ef52386baa",
   "asset_type": "Capsule",
   "status": "promoted",
-  "source_node_id": "node_246ed58b87156976",
+  "source_node_id": "node_2d8ac76dd64f9d31",
   "trigger_text": "agent_error,auto_debug,self_repair,error_fix,runtime_exception",
   "related_asset_id": null,
   "bundle_id": "bundle_1ba5686420a3b420",
   "confidence": 0.96,
-  "gdi_score": 66,
-  "gdi_score_mean": 73.4,
+  "success_streak": 6,
+  "gdi_score": 67.55,
+  "gdi_score_mean": 74.15,
   "payload": {
     "gene": "sha256:f50875f4e2ca244911646bf685d9ce38218296e88451fb92fdd99120196b037c",
     "type": "Capsule",
@@ -41,8 +42,8 @@
   "bundle_gene": {
     "asset_id": "sha256:f50875f4e2ca244911646bf685d9ce38218296e88451fb92fdd99120196b037c",
     "trigger_text": "runtime_exception,auto_debug,agent_error,error_fix,self_repair",
-    "gdi_score": 50.45,
-    "gdi_score_mean": 58.05,
+    "gdi_score": 54.45,
+    "gdi_score_mean": 62.45,
     "payload": {
       "type": "Gene",
       "summary": "General AI agent introspection debugging framework: auto capture errors, root cause analysis, automatic repair, fix verification, no manual intervention required",

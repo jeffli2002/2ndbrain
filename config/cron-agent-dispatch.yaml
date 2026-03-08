@@ -21,9 +21,11 @@ task_agent_mapping:
     exact: true
     timeout_seconds: 900
     required_skill: "content-factory"
+    skill_path: "/root/.openclaw/workspace/skills/content-factory/SKILL.md"
     message_instructions:
       - "该任务已由 cron 直接分配给 Content Agent，不需要再经 Chief 二次分流。"
-      - "必须使用 content-factory skill，不要跳过 skill，也不要直接裸写文章。"
+      - "【关键】必须先读取 /root/.openclaw/workspace/skills/content-factory/SKILL.md，理解 skill 的工作流程后再执行。"
+      - "skill 位置已标注在 skill_path 中，请先读取并理解其工作方式。"
       - "如果流程要求用户确认选题，就先给候选主题并等待确认，不要越过交互步骤。"
       - "只要出现需要老板确认选题、补充信息或人工决策的情况，必须立刻通知老板，不要默默等待。"
     workflow:

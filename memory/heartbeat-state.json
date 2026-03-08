@@ -1,12 +1,13 @@
 {
   "lastChecks": {
-    "openclaw_news": 1772788022,
-    "github_releases": 1772788022,
-    "docs": 1772788022
+    "openclaw_news": 1772913840,
+    "github_releases": 1772913840,
+    "docs": 1772913840
   },
   "notes": {
     "latestRelease": "v2026.3.2",
     "installedVersion": "2026.3.2",
-    "status": "no_action_needed"
+    "status": "no_action_needed",
+    "checkedAt": "2026-03-08 04:04 CST"
   }
 }

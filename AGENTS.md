@@ -29,6 +29,34 @@ Before doing anything else:
 9. ✅ `memory/daily/YYYY-MM-DD.md` (yesterday) — 昨日工作记录
 10. ✅ `skills/feishu-voice-reply/SKILL.md` — 飞书语音回复规则（必读）
 
+### 📦 Skill Catalog (Skill 路径清单)
+**所有 Sub Agent 必须通过读取此章节知道可用 Skill 的位置**
+
+| Skill | 路径 | 用途 |
+|-------|------|------|
+| content-factory | `skills/content-factory/SKILL.md` | 公众号文章创作 |
+| wechat-article | `skills/wechat-article/SKILL.md` | 微信公众号抓取 |
+| youtube | `skills/youtube/SKILL.md` | YouTube 视频研究 |
+| xhs-publish | `skills/xiaohongshu-skills/skills/xhs-publish/SKILL.md` | 小红书发布 |
+| xhs-explore | `skills/xiaohongshu-skills/skills/xhs-explore/SKILL.md` | 小红书内容发现 |
+| xhs-interact | `skills/xiaohongshu-skills/skills/xhs-interact/SKILL.md` | 小红书社交互动 |
+| feishu-voice-reply | `skills/feishu-voice-reply/SKILL.md` | 飞书语音回复 |
+| feishu-doc | `skills/feishu-doc/SKILL.md` | 飞书文档操作 |
+| feishu-wiki | `skills/feishu-wiki/SKILL.md` | 飞书知识库 |
+| feishu-drive | `skills/feishu-drive/SKILL.md` | 飞书云空间 |
+| github-ai-trends | `skills/github-ai-trends/SKILL.md` | GitHub AI 趋势 |
+| evomap | `skills/evomap/SKILL.md` | EvoMap 进化市场 |
+| notebooklm | `skills/notebooklm-skill/SKILL.md` | NotebookLM 查询 |
+| smart-search | `skills/smart-search/SKILL.md` | 智能搜索 |
+| coding-agent | `skills/coding-agent/SKILL.md` | 代码任务委派 |
+| agent-orchestrator | `skills/agent-orchestrator/SKILL.md` | Agent 调度中心 |
+| weather | `skills/weather/SKILL.md` | 天气查询 |
+
+**使用规则**：
+- 收到任务时，先判断需要哪个 Skill
+- 读取对应 SKILL.md 理解使用方式
+- 不要跳过 Skill 直接裸做
+
 **必须遵循的规则：**
 - 不要等待用户确认，直接读取这些文件
 - 所有 Sub Agent 共享相同的 USER.md 和 TOOLS.md

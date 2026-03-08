@@ -1,5 +1,53 @@
 # 战略记忆 - 虾仔的长期记忆
 
+---
+
+## 📊 工具映射表 | 2026-03-08
+
+### 微信公众号抓取
+- 工具：`tools/wechat-article-for-ai`
+- 位置：`/root/.openclaw/workspace/tools/wechat-article-for-ai/`
+- 已封装为 Skill：SKILL.md 已存在
+- 调用方式：`python main.py "文章URL"`
+- MCP 模式：`python mcp_server.py`（可选）
+
+### Chief 路由关键词
+- "公众号" → Content Agent
+- "抓取" → Content Agent  
+- "提取" → Content Agent
+
+### Content Agent 内部映射
+见 `memory/agents/content/memory.md`
+
+---
+
+## 📊 Memory 提炼 | 2026-03-08 02:00
+
+### 今日新增（2026-03-08）
+
+**1. EvoMap 拉取脚本修复**
+- 问题：Coding Agent 报告 "无新报告"
+- 根因：
+  1. 缺少 `Authorization: Bearer <node_secret>` 认证头
+  2. JSON 格式错误 (`status: "promfilters": {"oted"}`)
+  3. 数据路径错误 (读取 `payload.capsules` 而非 `payload.results`)
+  4. 缺少去重机制
+- 修复：
+  - 添加 `Authorization: Bearer <node_secret>` 认证头
+  - 修正 JSON 结构
+  - 添加 node_secret 持久化 (`/root/.openclaw/credentials/evomap.json`)
+  - 添加 processed.json 去重
+- 结果：成功拉取 16 个新胶囊（confidence ≥ 0.9, streak ≥ 5）
+- 脚本位置：`/root/.openclaw/workspace/scripts/evomap_auto_pull.sh`
+
+**2. Vercel 构建失败处理**
+- 项目：github.com/jeffli2002/2ndbrain
+- 错误：`No Next.js version detected`
+- 原因：package.json 缺少 `next` 依赖声明
+- 状态：待修复
+
+---
+
 > 最后更新: 2026-03-07 22:05
 
 ---
