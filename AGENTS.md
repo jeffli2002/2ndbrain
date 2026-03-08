@@ -51,6 +51,7 @@ Before doing anything else:
 | coding-agent | `skills/coding-agent/SKILL.md` | 代码任务委派 |
 | agent-orchestrator | `skills/agent-orchestrator/SKILL.md` | Agent 调度中心 |
 | weather | `skills/weather/SKILL.md` | 天气查询 |
+| feishu-doc-with-perm | `skills/feishu-doc-with-perm/SKILL.md` | 飞书文档创建（自动授权版） |
 
 **使用规则**：
 - 收到任务时，先判断需要哪个 Skill
