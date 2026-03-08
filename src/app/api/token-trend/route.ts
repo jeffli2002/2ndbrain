@@ -93,6 +93,37 @@ function buildTrend(): TrendPoint[] {
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
+async function buildTrendFromSupabaseHistory(): Promise<TrendPoint[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('documents')
+    .select('date, content')
+    .eq('type', 'metric-token-daily')
+    .order('date', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.length) return [];
+
+  return data
+    .map((row) => {
+      try {
+        const payload = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
+        return {
+          date: String(payload?.date || row.date),
+          totalTokens: Number(payload?.totalTokens || 0),
+          taskBreakdown: (payload?.taskBreakdown || {}) as Record<string, number>,
+        } satisfies TrendPoint;
+      } catch {
+        return null;
+      }
+    })
+    .filter((point): point is TrendPoint => !!point)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 async function buildTrendFromSupabaseSnapshot(): Promise<TrendPoint[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -125,10 +156,18 @@ async function buildTrendFromSupabaseSnapshot(): Promise<TrendPoint[]> {
 
 export async function GET() {
   try {
-    let trend = buildTrend();
+    const localTrend = buildTrend();
+    let trend = localTrend;
+    let source: 'cron-runs' | 'supabase-history' | 'supabase-snapshot' = 'cron-runs';
+
+    if (!trend.length) {
+      trend = await buildTrendFromSupabaseHistory();
+      source = 'supabase-history';
+    }
 
     if (!trend.length) {
       trend = await buildTrendFromSupabaseSnapshot();
+      source = 'supabase-snapshot';
     }
 
     const latest14 = trend.slice(-14);
@@ -140,7 +179,7 @@ export async function GET() {
       latest14,
       totalTokens,
       taskMeta: TASK_MAPPINGS,
-      source: buildTrend().length ? 'cron-runs' : 'supabase-snapshot',
+      source,
     });
   } catch (error) {
     console.error('token-trend error:', error);
