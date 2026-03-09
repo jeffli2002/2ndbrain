@@ -2,6 +2,30 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-09 10:05
+
+### 今日新增（2026-03-09 上午）
+
+**1. TrustMRR双人对谈播客技术方案**
+- 角色定义：小李(男声-Yunxi) vs 老王(女声-Xiaoxiao)
+- Edge TTS分角色生成独立ogg片段
+- ffmpeg合并关键：必须用 `-c:a libopus` 编码（vorbis飞书不兼容）
+- 飞书发送：asVoice=true + mimeType=audio/ogg
+- Skill位置：/workspace/skills/trustmrr-podcast/SKILL.md
+
+**2. OpenClaw v2026.3.7 动态**
+- ContextEngine 插件接口
+- 生命周期钩子支持 (bootstrap, ingest, assemble, compact等)
+- scoped subagent runtime
+- sessions.get 网关方法
+- 为 lossless-claw 等插件提供支持
+
+---
+
+> 最后更新: 2026-03-09 10:05
+
+---
+
 ## 📊 Memory 提炼 | 2026-03-09 04:05
 
 ### 今日新增（2026-03-09）

@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """
-小米蒸锅控制脚本
-需要设备IP和Token才能使用
+小米蒸锅控制脚本 v1.0
+已配置设备信息，等待Token后启用
 """
 
 import sys
 import argparse
 from miio import Device
 
-# 蒸锅设备信息（需要用户配置）
-DEVICE_IP = "192.168.x.x"  # 设备IP地址
-DEVICE_TOKEN = "xxxxxxxxxxxxxxxx"  # 设备Token
+# ============ 已配置信息 ============
+DEVICE_IP = "192.168.0.100"      # 固定IP地址
+DEVICE_TOKEN = "REPLACE_WITH_TOKEN"  # ⚠️ 请填入Token
+# ==================================
 
 def turn_on():
     """打开蒸锅"""
+    if DEVICE_TOKEN == "REPLACE_WITH_TOKEN":
+        print("❌ 请先配置Token！")
+        return False
+    
     try:
         dev = Device(DEVICE_IP, DEVICE_TOKEN)
-        # 发送电源开启命令
         result = dev.send("set_power", ["on"])
         print(f"✅ 蒸锅已开启: {result}")
         return True
@@ -26,6 +30,10 @@ def turn_on():
 
 def turn_off():
     """关闭蒸锅"""
+    if DEVICE_TOKEN == "REPLACE_WITH_TOKEN":
+        print("❌ 请先配置Token！")
+        return False
+    
     try:
         dev = Device(DEVICE_IP, DEVICE_TOKEN)
         result = dev.send("set_power", ["off"])
@@ -37,6 +45,10 @@ def turn_off():
 
 def status():
     """查看状态"""
+    if DEVICE_TOKEN == "REPLACE_WITH_TOKEN":
+        print("❌ 请先配置Token！")
+        return False
+    
     try:
         dev = Device(DEVICE_IP, DEVICE_TOKEN)
         result = dev.send("get_status")
@@ -48,7 +60,8 @@ def status():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="小米蒸锅控制")
-    parser.add_argument("action", choices=["on", "off", "status"], help="操作: on/off/status")
+    parser.add_argument("action", choices=["on", "off", "status"], 
+                        help="操作: on=开启, off=关闭, status=查看状态")
     
     args = parser.parse_args()
     
