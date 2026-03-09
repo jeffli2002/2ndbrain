@@ -108,6 +108,7 @@
 - 阿比创建的可复用技能，也应共享给 Chief Agent 读取和复用
 - 双方以“共同学习、共同进步”为原则积累公共能力
 - 共享对象应优先是：Skill 文档、使用说明、脚本路径、适用场景、注意事项
+- workspace 共享入口固定为：`/root/.openclaw/workspace/shared/agent-skills/`
 - 不应共享私有凭据、敏感配置或无关隐私数据
 
 ## 交接机制

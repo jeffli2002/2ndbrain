@@ -52,7 +52,11 @@
 - 差旅细节偏好
 - 健身安排原则
 - 提醒方式偏好
-- 技能共享的固定入口或目录规范
+
+## 技能共享固定入口
+- workspace 路径：`/root/.openclaw/workspace/shared/agent-skills/`
+- 当前说明文件：`shared/agent-skills/README.md`
+- 约定：双方新增可复用技能时，都应在这里留下共享说明
 
 ## 使用建议
 任何新的协作 Bot 接入时，建议优先读取：
