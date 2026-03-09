@@ -1,0 +1,30 @@
+{
+  "repo": "agent-shared-skills",
+  "updatedAt": "2026-03-09",
+  "syncPolicy": {
+    "recommendedPull": "daily",
+    "pullCommand": "git pull --ff-only",
+    "loadStrategy": "index-and-manifest-first"
+  },
+  "skills": [
+    {
+      "name": "chief-abi-handoff",
+      "owner": "chief",
+      "scope": "shared",
+      "version": "0.1.0",
+      "updatedAt": "2026-03-09",
+      "entry": "shared/chief-abi-handoff/SKILL.md",
+      "status": "draft",
+      "useFor": [
+        "chief-to-abi-handoff",
+        "mixed-domain-collaboration",
+        "task-bridge"
+      ],
+      "requires": [
+        "openclaw",
+        "feishu"
+      ],
+      "notes": "First shared skill skeleton for Chief ↔ Abi collaboration."
+    }
+  ]
+}
