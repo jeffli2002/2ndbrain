@@ -2,6 +2,27 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-10 04:08
+
+### 近两日新增应固化的系统规则（2026-03-09 ~ 2026-03-10）
+
+**1. Chief 的 system-event cron 不能只看 `status=ok`，必须防“假绿灯”**
+- 已确认 `cron-health-check`、`daily-memory-extractor`、`ai-daily-delivery-guard`、`daily-content-publish-guard` 曾出现 run history 显示 `ok`，但 summary 只是回显提醒词的情况。
+- 长期修复原则：Chief 守护类 cron prompt 必须强制写明 **执行路径 + 实际检查/补发/写入动作 + 结构化结果**，并明确禁止只复述任务说明。
+- **战略含义**：后续评估 cron 质量时，不能只看表面状态，还要看 summary 是否证明“真的做了事”。
+
+**2. `sessionTarget=isolated` + `payload.kind=agentTurn` 的 cron 必须显式设置 `agentId`**
+- 新发现：`trustmrr-daily-analysis` 在待首跑前缺少 `agentId`，容易让任务在默认路由下产生执行歧义。
+- 长期规则：凡是 isolated agentTurn 任务，都要把 `agentId` 当成必填项检查，不要依赖默认 agent 或隐式推断。
+- **战略含义**：这能降低首跑异常、错路由和“配置看起来完整、实际有歧义”的隐性风险。
+
+**3. 判断 cron 时间异常时，必须把 `staggerMs` 计入容差**
+- 04:00 档任务出现 `nextRunAtMs` 略早于当前时间的现象，经核对属于 `staggerMs=300000` 的 5 分钟错峰窗口，不是真异常。
+- 长期规则：Cron 健康检查不能只拿裸 `nextRunAtMs` 与当前时间硬比较，而要按 `nextRunAtMs + staggerMs` 判断是否真的漏调度。
+- **战略含义**：这能减少误报，让巡检结果更接近真实运行状态。
+
+---
+
 ## 📊 Memory 提炼 | 2026-03-09 10:05
 
 ### 今日新增（2026-03-09 上午）
