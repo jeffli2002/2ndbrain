@@ -2,6 +2,34 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-09 04:05
+
+### 今日新增（2026-03-09）
+
+**1. 飞书多维表格写入格式已验证**
+- 写入 Bitable 必须使用中文字段名，不能用 field_id
+- ❌ `{"fldhqf2zi3": "值"}` → 报错 FieldNameNotFound
+- ✅ `{"案例名称": "值"}` → 成功写入
+
+**2. KIE AI 生图异步链路已跑通**
+- 官方端点：`POST https://api.kie.ai/api/v1/jobs/createTask`
+- 请求结构：`{ model, callBackUrl?, input }`
+- 回调字段：`data.resultJson.resultUrls[]`
+- 关键坑位：KIE 图床有时返回 403，下载必须用 `curl -L` fallback
+- 已集成到 baoyu-slide-deck skill
+
+**3. 2nd Brain 云端稳定性三层设计**
+- 本地可用 + 云端可用 + 数据缺失可降级
+- Next.js 多 workspace 需显式 `outputFileTracingRoot: process.cwd()`
+- 前端搜索必须 null-safe 处理
+- 图表/API 数据必须有 Supabase fallback
+
+---
+
+> 最后更新: 2026-03-09 04:05
+
+---
+
 ## 📊 重要经验沉淀 | 2026-03-08
 
 ### 1. Skill 路径管理机制（重要）

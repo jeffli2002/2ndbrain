@@ -262,6 +262,14 @@ Always inform user of tool status:
 
 - Load `references/wechat_viral_frameworks.md` to diversify angles and hooks.
 - Generate 3-5 potential article topics based on **multi-source web research** (YouTube, blogs, reports, discussions).
+
+**🚨 CRITICAL: Topic Freshness Requirement (2026-03-09)**
+- **MUST only select topics from past 24-48 hours**
+- **For AI/Tech topics: Must verify the news date, no outdated热点**
+- Use search with time filter: `after:2026-03-08` or similar
+- If researching DeepSeek, OpenAI, Anthropic etc - check the LATEST developments
+- **Reject any topic where the news is older than 48 hours**
+
 - For each topic, provide:
   - Title (Chinese by default)
   - Target reader
