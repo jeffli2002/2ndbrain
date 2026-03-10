@@ -1,0 +1,11 @@
+Tested all 7 major Claw products in China: OpenClaw, MaxClaw, Kimi Claw, CoPaw, QClaw, WorkBuddy, ArkClaw.
+
+Key findings:
+- ArkClaw: fastest setup (30 sec), best for "just work"
+- OpenClaw + CoPaw: most powerful, best for developers
+- WorkBuddy: enterprise WeChat integration, best for teams
+- Kimi Claw: best for long document analysis
+
+No single "best" product - choose based on your use case.
+
+#AI #Agent #OpenClaw #ChinaTech
