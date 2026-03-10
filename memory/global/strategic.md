@@ -2,6 +2,28 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-10 17:44
+
+### Kie.ai 生图 API 回调模式（避免再次踩坑）
+
+**问题描述**：
+- Kie.ai API 是**异步任务 + 回调模式**，不是同步返回图片
+- 创建任务成功返回 `taskId`，但状态查询端点 `/api/v1/jobs/{id}` 返回 404
+- 直接轮询查询会失败
+
+**解决方案**：
+1. 启动本地回调服务器：`python3 scripts/kie_callback_server.py`（端口 8787）
+2. 通过 Cloudflare Quick Tunnel 暴露到公网：`cloudflared tunnel --url http://localhost:8787`
+3. 创建任务时带上 `callBackUrl` 参数
+4. 回调收到后解析 `data.resultJson.resultUrls[]` 获取图片 URL
+5. 用 `curl -L` 下载图片（不能用 urllib，会遇到 403）
+
+**关键经验**：
+- 每次使用前需要确保回调服务器和 Tunnel 正常运行
+- 可以把 Tunnel PID 写入文件，方便后续检查和清理
+
+---
+
 ## 📊 Memory 提炼 | 2026-03-10 08:12
 
 ### 近两日新增应固化的系统规则（2026-03-09 ~ 2026-03-10）
