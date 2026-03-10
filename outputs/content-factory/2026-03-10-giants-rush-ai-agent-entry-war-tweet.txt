@@ -1,0 +1,18 @@
+Tencent QClaw, Tencent WorkBuddy, Alibaba CoPaw, and ByteDance ArkClaw are not “yet another AI app” story. They signal that China’s AI battle is shifting from model quality to default entry points.
+
+What changed:
+• QClaw packages OpenClaw into a one-click local installer and connects WeChat + QQ.
+• WorkBuddy moved from internal beta to launch; Tencent News said 2,000+ internal employees had already used it across data analysis, local knowledge bases, copywriting, posters, and office automation.
+• CoPaw was open-sourced as a customizable desktop agent workstation with local/cloud deployment, modular Memory/Tools/Hooks, and scheduled tasks.
+• ArkClaw launched as a cloud SaaS version and deeply adapted the Feishu OpenClaw plugin.
+• Feishu also raised free API quota from 10k/month to 1M/month and shipped the official plugin beta.
+
+This is an entry war: chat entry, workflow entry, execution entry.
+
+For startups, the danger is not “losing on models.” The danger is building a generic assistant while giants own messaging, identity, permissions, and distribution.
+
+The opportunity: vertical workflows, cross-platform orchestration, private deployment, audit/memory middleware, and result-driven products.
+
+The next winners won’t be the smartest chatbots. They’ll be the teams closest to real work, real data, and measurable outcomes.
+
+#AI #AIAgents #OpenClaw #EnterpriseAI #Automation #FutureOfWork #Feishu #Tencent
