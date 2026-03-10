@@ -2,6 +2,37 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-10 08:12
+
+### 近两日新增应固化的系统规则（2026-03-09 ~ 2026-03-10）
+
+**1. 守护/维护类 `isolated + agentTurn` cron 必须显式设置 `delivery.mode=none`，不要吃默认 announce**
+- 2026-03-10 08:03 二次巡检确认：4 条 Chief 守护任务在改成 `sessionTarget=isolated + payload.kind=agentTurn + agentId=main` 后，被默认带成了 `delivery.mode=announce`。
+- 这类任务的职责是巡检、提炼、守卫，不应每次常规主动投递；否则会制造无谓打扰，也会让“任务执行”与“消息投递”耦合得过紧。
+- 长期规则：凡是守护、巡检、记忆提炼、补发判定这类后台维护任务，若无明确对外通知需求，必须显式写 `delivery.mode=none`；只有真正需要提醒老板时，再单独配置通知路径。
+- **战略含义**：把后台维护任务默认设为静默执行，能降低噪音、减少隐式投递副作用，也能让 cron 配置语义更清晰。
+
+**2. 看 cron 健康度时，必须区分“主任务成功”与“消息投递失败”两层状态**
+- 2026-03-09 当日汇总已出现典型案例：GitHub / Supabase / OpenClaw 监控若干 run 的 `error` 实际都是 `⚠️ ✉️ Message failed`，主任务本身并未中断。
+- 长期规则：对 cron 做稳定性评估时，至少分成两层统计：
+  - **执行层**：抓取 / 生成 / 同步 / 写入是否完成；
+  - **投递层**：消息、announce、reply 是否成功送达。
+- **战略含义**：只有把执行失败和投递失败拆开看，才能避免误判系统可靠性，也更容易把优化重点放到真正的薄弱环节。
+
+## 📊 Memory 提炼 | 2026-03-10 06:05
+
+### 近两日新增应固化的系统规则（2026-03-09 ~ 2026-03-10）
+
+**1. Chief 守护类 cron 若需要可验证的执行摘要，应优先采用 `sessionTarget=isolated + payload.kind=agentTurn + agentId=main`，不要继续依赖 `main + systemEvent`**
+- 已验证：仅靠强化 prompt 文案，仍不足以解决 run summary 只回显提醒文本的“假绿灯”问题。
+- 2026-03-10 06:01 已完成结构性修复：将 `cron-health-check`、`daily-memory-extractor`、`ai-daily-delivery-guard`、`daily-content-publish-guard` 统一切到 isolated agentTurn，并显式指定 `agentId=main`。
+- **战略含义**：Chief 守护任务的可观测性不能只靠提示词优化，必要时要直接调整执行形态，让 run history 更容易沉淀真实结果，而不是只留下提醒文本。
+
+**2. 任何任务声称“已生成报告 / 已写入文件”时，必须把目标文件真实存在纳入成功判定**
+- 近两日已出现两类证据：Product 任务 summary 声称产出 `memory/reports/competitor-analysis-2026-03-09.md`，但实际文件不存在；多项任务声称已写入 `memory/daily/2026-03-09.md`，但晚间核查时该日志仍缺失，最终需要 Chief 补建。
+- 长期规则：对涉及落盘产物的任务，不能只看 `status` 或 summary 文案，还要抽样核对目标文件是否真实存在、路径是否正确、内容是否落盘。
+- **战略含义**：这条规则能减少“看起来完成、实际上没落盘”的隐性失败，避免后续记忆提炼、报告归档和复盘建立在不存在的产物上。
+
 ## 📊 Memory 提炼 | 2026-03-10 04:08
 
 ### 近两日新增应固化的系统规则（2026-03-09 ~ 2026-03-10）
