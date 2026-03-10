@@ -1,0 +1,41 @@
+{
+  "provider": "feishu",
+  "space": "Abi Shared Memory",
+  "docs": {
+    "strategic": {
+      "title": "Abi Shared Memory - 01 Strategic Memory",
+      "doc_token": "Fsy4dVM3BokwSVxlXy2cKbn0n4b",
+      "url": "https://feishu.cn/docx/Fsy4dVM3BokwSVxlXy2cKbn0n4b"
+    },
+    "rules": {
+      "title": "Abi Shared Memory - 02 Global Rules",
+      "doc_token": "YHkQdbIvVoGWG8xXv1McuRl3n8b",
+      "url": "https://feishu.cn/docx/YHkQdbIvVoGWG8xXv1McuRl3n8b"
+    },
+    "vision": {
+      "title": "Abi Shared Memory - 03 Vision",
+      "doc_token": "G1CedMUqSo5vYux78u5cCi07nbh",
+      "url": "https://feishu.cn/docx/G1CedMUqSo5vYux78u5cCi07nbh"
+    },
+    "project_status": {
+      "title": "Abi Shared Memory - 04 Project Status",
+      "doc_token": "D7AldjIBAoXA3axeIZ1ckSJanRb",
+      "url": "https://feishu.cn/docx/D7AldjIBAoXA3axeIZ1ckSJanRb"
+    },
+    "chief_to_abi_handoff": {
+      "title": "Abi Shared Memory - 05 Chief to Abi Handoff",
+      "doc_token": "Kx6WdbICfoHQI0xmjIvcJM2rn4f",
+      "url": "https://feishu.cn/docx/Kx6WdbICfoHQI0xmjIvcJM2rn4f"
+    },
+    "abi_to_chief_handoff": {
+      "title": "Abi Shared Memory - 06 Abi to Chief Handoff",
+      "doc_token": "Rv0MdtNVdoTBUhxjokHcGxwNnVe",
+      "url": "https://feishu.cn/docx/Rv0MdtNVdoTBUhxjokHcGxwNnVe"
+    },
+    "abi_agent_memory": {
+      "title": "Abi Shared Memory - 07 Abi Agent Memory",
+      "doc_token": "XY0kdnVhKo35kdxwrGKciuhunNc",
+      "url": "https://feishu.cn/docx/XY0kdnVhKo35kdxwrGKciuhunNc"
+    }
+  }
+}
