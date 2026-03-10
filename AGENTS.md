@@ -134,6 +134,12 @@ Chief 私聊的关键词分类以 `config/agent_keyword_router.yaml` 为准：
 - `openclaw.json` 是 **runtime 绑定和模型配置** 的真相源
 - `config/agent_keyword_router.yaml` 是 **Chief 私聊分类** 的真相源
 - `AGENTS.md` 负责记录行为规则，**不要再伪造固定 session_key 示例当成真实已接通链路**
+- **硬闸门（2026-03-10）**：私聊中的非前台任务，Chief **禁止跳过 dispatch planner 直接开工**。必须先执行 `chief_dispatch.py`（或完全等价的分类/规划），再决定：
+  - `chief_direct` → Chief 自己做
+  - `delegate_spawn` → 先真实调用 `sessions_spawn` 派活，再整合结果
+  - `chief_fallback` / 委派失败 → 才允许降级执行
+- **禁止伪委派**：如果没有真实发生 `sessions_spawn` / `sessions_send`，就不能口头上把任务说成“已切给对应 Agent”。
+- `config/chief_dispatch_workers.yaml` 里的 `runtime.agent_id=main` 是**当前 one-shot worker 设计**，表示由 Chief 拉起一次性 worker、角色由 prompt 决定；这**不是**“没有配置 sub-agent”。
 
 ### 私聊窗口任务分配（原有）
 **当用户在私聊窗口向 Chief Agent 分配任务时，默认行为如下：**
@@ -166,13 +172,14 @@ Chief 私聊的关键词分类以 `config/agent_keyword_router.yaml` 为准：
 **流程：**
 1. 分析任务类型（Content / Growth / Coding / Product / Finance / Chief）
 2. 先调用 `python3 /root/.openclaw/workspace/scripts/chief_dispatch.py --json "<用户消息>"` 生成真实执行计划
-3. 若计划结果为 `delegate_spawn`，则按返回的 `spawn_request` 调用 `sessions_spawn(mode="run")` 即时创建一次性 worker
-4. 若 `result_bridge.enabled=true`，则使用 `python3 /root/.openclaw/workspace/scripts/wait_dispatch_result.py <result_file> --allowed-dir <allowed_dir> --expected-dispatch-id <dispatch_id> --expected-agent <agent> --expected-route-debug <route_debug> --json` 等待 worker 回传 JSON 文件
-5. 读取回传 JSON 内容，再由 Chief 整理后回复用户
-6. 如果未来存在稳定目标 Agent session，再优先切到 `sessions_send`
-7. 如果未来通道支持 thread worker，再升级为持久委派
-8. 如果当前 runtime 没有可用 spawn 权限，或 planner 返回 fallback，则进入降级模式，由 Chief 按对应领域规则执行
-9. 整合后回复用户
+3. **未完成第 2 步前，Chief 不得直接处理任何领域任务**（内容 / 增长 / 代码 / 产品 / 财务）
+4. 若计划结果为 `delegate_spawn`，则按返回的 `spawn_request` 调用 `sessions_spawn(mode="run")` 即时创建一次性 worker
+5. 若 `result_bridge.enabled=true`，则使用 `python3 /root/.openclaw/workspace/scripts/wait_dispatch_result.py <result_file> --allowed-dir <allowed_dir> --expected-dispatch-id <dispatch_id> --expected-agent <agent> --expected-route-debug <route_debug> --json` 等待 worker 回传 JSON 文件
+6. 读取回传 JSON 内容，再由 Chief 整理后回复用户
+7. 如果未来存在稳定目标 Agent session，再优先切到 `sessions_send`
+8. 如果未来通道支持 thread worker，再升级为持久委派
+9. 如果当前 runtime 没有可用 spawn 权限，或 planner 返回 fallback，则进入降级模式，由 Chief 按对应领域规则执行
+10. 整合后回复用户
 
 #### 2. 降级执行：Chief Agent 自己执行
 **只有当以下情况发生时，Chief Agent 才自己降级执行：**
@@ -187,7 +194,8 @@ Chief 私聊的关键词分类以 `config/agent_keyword_router.yaml` 为准：
 2. **执行** 任务（使用该领域的配置和风格）
 3. **写入** 执行记录到 `memory/agents/{agent}/memory.md`
 4. **更新** `memory/daily/YYYY-MM-DD.md` — 记录工作日志
-5. **如有必要**，明确告诉用户这是“降级执行”，避免误以为已真实切到对应 Agent 会话
+5. **明确告诉用户**这是“降级执行”，避免误以为已真实切到对应 Agent 会话
+6. **补记失败原因**：在 daily log 里写明为什么没能委派（如 spawn 权限缺失 / 委派超时 / 用户明确要求 Chief 亲自处理）
 
 ### 示例
 **用户**: "写一篇AI日报"
