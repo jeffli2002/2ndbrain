@@ -46,6 +46,7 @@ Before doing anything else:
 | feishu-drive | `skills/feishu-drive/SKILL.md` | 飞书云空间 |
 | github-ai-trends | `skills/github-ai-trends/SKILL.md` | GitHub AI 趋势 |
 | evomap | `skills/evomap/SKILL.md` | EvoMap 进化市场 |
+| skill-creator | `skills/skill-creator/SKILL.md` | 创建、评估、优化和打磨 Agent Skill |
 | notebooklm | `skills/notebooklm-skill/SKILL.md` | NotebookLM 查询 |
 | smart-search | `skills/smart-search/SKILL.md` | 智能搜索 |
 | coding-agent | `skills/coding-agent/SKILL.md` | 代码任务委派 |
