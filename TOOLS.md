@@ -131,6 +131,12 @@ bash /root/.openclaw/workspace/scripts/check-credentials.sh
 ### YouTube
 - yt-dlp: 已安装
 
+### Feishu 群聊路由
+- **铿锵三人行**
+  - `chat_id`: `oc_80766d1386e90240e5706495dcac1d4f`
+  - message 工具 target 写法：`chat:oc_80766d1386e90240e5706495dcac1d4f`
+  - 说明：需要往该群发经验总结、通知或操作说明时，直接使用 chat_id，不要依赖群名解析
+
 ---
 
 > ⚠️ 注意：此文件为脱敏版本，仅包含变量引用。完整凭据请查看 credentials/ 目录
