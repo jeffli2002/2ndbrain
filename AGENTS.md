@@ -52,6 +52,7 @@ Before doing anything else:
 | agent-orchestrator | `skills/agent-orchestrator/SKILL.md` | Agent 调度中心 |
 | weather | `skills/weather/SKILL.md` | 天气查询 |
 | feishu-doc-with-perm | `skills/feishu-doc-with-perm/SKILL.md` | 飞书文档创建（自动授权版） |
+| feishu-calendar-invite | `skills/feishu-calendar-invite/SKILL.md` | 飞书日历创建/邀请（主日历直写或共享日历回退） |
 
 **使用规则**：
 - 收到任务时，先判断需要哪个 Skill
