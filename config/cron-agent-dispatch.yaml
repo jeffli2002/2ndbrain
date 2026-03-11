@@ -67,6 +67,9 @@ task_agent_mapping:
       - "必须严格遵循 /root/.openclaw/workspace/config/ai-daily-format.md 的格式要求。"
       - "不要用 content-factory 或其它 skill 替代 AI Daily Newsletter skill。"
       - "发送前先确认内容是过去24小时内、链接真实、没有编造。"
+      - "【硬规则】每天 07:30 发给老板的飞书消息必须是完整版正文，包含当天全部入选新闻；禁止只发 3 条重磅摘要替代全文。"
+      - "如需摘要，只能放在最前面的 1-2 句导语里，后面仍必须完整展开全部条目。"
+      - "本地 Markdown、飞书云文档、飞书最终消息三者必须保持同一批入选新闻，不得缩水投递。"
     workflow:
       - step: "collect_news"
         description: "收集AI行业新闻"
