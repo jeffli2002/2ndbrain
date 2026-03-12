@@ -19,7 +19,8 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 900
+    timeout_seconds: 1800
+    model: "openai-code/gpt-5.4"
     required_skill: "content-factory"
     skill_path: "/root/.openclaw/workspace/skills/content-factory/SKILL.md"
     message_instructions:
@@ -224,7 +225,8 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "summary_only"
-    timeout_seconds: 900
+    timeout_seconds: 1200
+    model: "openai-code/gpt-5.4"
     light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
@@ -272,7 +274,8 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 1200
+    timeout_seconds: 1800
+    model: "openai-code/gpt-5.4"
     light_context: true
     skill_path: "/root/.openclaw/workspace/skills/chief-agent-report/SKILL.md"
     message_instructions:
@@ -324,7 +327,8 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "summary_only"
-    timeout_seconds: 900
+    timeout_seconds: 1200
+    model: "openai-code/gpt-5.4"
     light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
