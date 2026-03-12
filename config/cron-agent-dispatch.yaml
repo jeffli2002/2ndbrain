@@ -57,7 +57,7 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 900
+    timeout_seconds: 1800
     required_skill: "/root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md"
     skill_path: "/root/.openclaw/workspace/skills/ai-daily-newsletter/SKILL.md"
     required_format: "/root/.openclaw/workspace/config/ai-daily-format.md"
@@ -114,8 +114,10 @@ task_agent_mapping:
     exact: true
     timeout_seconds: 300
     message_instructions:
-      - "检查 ai-daily-newsletter 今天是否已经成功运行并完成投递。"
-      - "如果今天 7:30 的 AI 日报没有成功发送，立刻手动补发，并明确向老板说明是补发。"
+      - "【关键】必须严格按日期检查：只认可今天（Asia/Shanghai 时区）的成功 run，不允许用昨天的成功记录。"
+      - "检查方法：执行 `openclaw cron runs --id 3e36cb70-5b1e-450e-9605-31513fd0509f --limit 5`，过滤出 runAtMs 在今天 00:00-23:59 Asia/Shanghai 且 status=finished 且 deliveryStatus=delivered 的记录。"
+      - "如果找不到今天满足条件的成功记录，立刻手动补发今天的 AI 日报，并明确向老板说明是补发。"
+      - "禁止只看 lastStatus=ok 或 consecutiveErrors=0 就判断成功；必须验证今天的 deliveryStatus。"
       - "补发后继续检查根因，并汇报修复动作。"
     workflow:
       - step: "verify_ai_daily_delivery"
@@ -160,7 +162,9 @@ task_agent_mapping:
     priority: P1
     dispatch_mode: "direct_agent"
     session_target: "isolated"
-    notify_policy: "summary_only"
+    notify_policy: "deliver_and_alert"
+    timeout_seconds: 900
+    light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Growth Agent，不需要再经 Chief 二次分流。"
       - "重点关注 OpenClaw 官方 release、文档、博客和社区动态，不要只盯安全漏洞。"
@@ -216,6 +220,8 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "summary_only"
+    timeout_seconds: 900
+    light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
       - "重点关注 skill 演进、依赖更新、自动化机会与技术债。"
@@ -238,6 +244,8 @@ task_agent_mapping:
     priority: P2
     session_target: "main"
     notify_policy: "failure_only"
+    timeout_seconds: 900
+    light_context: true
     message_instructions:
       - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
       - "读取最近两天的 daily memory，提炼长期有效的信息后再写入 global memory。"
@@ -260,7 +268,8 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 600
+    timeout_seconds: 1200
+    light_context: true
     skill_path: "/root/.openclaw/workspace/skills/chief-agent-report/SKILL.md"
     message_instructions:
       - "这是每天必须直达老板的总汇报任务。"
@@ -286,6 +295,8 @@ task_agent_mapping:
     priority: P0
     session_target: "main"
     notify_policy: "failure_only"
+    timeout_seconds: 900
+    light_context: true
     message_instructions:
       - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
       - "检查所有 cron job 的 lastStatus、nextRunAtMs 和 delivery / failureAlert 配置情况。"
@@ -309,6 +320,8 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "summary_only"
+    timeout_seconds: 900
+    light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
       - "执行备份前先检查 git 状态；备份完成后明确记录是否 push 成功。"
@@ -347,6 +360,8 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "failure_only"
+    timeout_seconds: 300
+    light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
       - "必须执行 `/root/.openclaw/workspace/scripts/supabase/sync_supabase.py`，不要再用 mock 任务状态代替真实同步。"
