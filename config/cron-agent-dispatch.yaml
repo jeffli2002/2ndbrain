@@ -19,8 +19,10 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 1800
+    timeout_seconds: 3600
     model: "openai-code/gpt-5.4"
+    thinking: "off"
+    light_context: true
     required_skill: "content-factory"
     skill_path: "/root/.openclaw/workspace/skills/content-factory/SKILL.md"
     message_instructions:
@@ -142,18 +144,27 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
+    model: "openai-code/gpt-5.4"
+    thinking: "off"
+    light_context: true
     skill_path: "/root/.openclaw/workspace/skills/youtube/SKILL.md"
     message_instructions:
       - "该任务已由 cron 直接分配给 Content Agent，不需要再经 Chief 二次分流。"
-      - "【关键】如需使用 YouTube 研究 KOL 内容，必须先读取 youtube skill 了解使用方法。"
+      - "【关键】必须先读取 /root/.openclaw/workspace/config/ai-kol-watchlist.yaml，严格按其中的 15 个 X/Twitter 账号执行。"
+      - "重点监控 watchlist 中 KOL 在过去24小时内的 X/Twitter 更新；只写有更新的账号，没有更新就明确写无人更新。"
+      - "不要再泛写普通行业新闻，不要把无关资讯冒充 KOL 动态。日报主体必须围绕 KOL 原帖/原观点展开。"
+      - "信息源优先级：先看 X/Twitter；如直接抓取受限，再用 web_search / web_fetch 查找可靠转述或引用，但必须能确认对应 KOL 确有新动态。"
+      - "每条入选内容至少写清：KOL、账号、更新摘要、核心观点/原话、信号判断、对 Jeff 的启发。"
+      - "优先关注高优先级账号：sama、elonmusk、zuck、DarioAmodei、ilyasut、karpathy、ylecun、demishassabis。"
+      - "【关键】如需使用 YouTube 研究 KOL 内容，必须先读取 youtube skill 了解使用方法；但 YouTube 只能作为补充背景，不能替代 X/Twitter 主监控。"
       - "KOL 日报属于每日应直达老板的内容任务，常规运行也必须正常发送，不要只放进 Chief 每日汇报。"
       - "如果发现重大机会、异常风险，或需要老板确认方向，必须立刻通知老板。"
     workflow:
       - step: "monitor_kol"
-        description: "监控KOL动态"
-        tools: ["youtube", "web_search"]
+        description: "监控 watchlist 中 KOL 的 X/Twitter 动态"
+        tools: ["web_search", "web_fetch", "youtube"]
       - step: "compile_insights"
-        description: "编译洞察"
+        description: "按有更新的 KOL 编译洞察"
       - step: "publish"
         description: "发布内容"
 
@@ -225,8 +236,9 @@ task_agent_mapping:
     dispatch_mode: "direct_agent"
     session_target: "isolated"
     notify_policy: "summary_only"
-    timeout_seconds: 1200
+    timeout_seconds: 1800
     model: "openai-code/gpt-5.4"
+    thinking: "off"
     light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"
@@ -251,6 +263,8 @@ task_agent_mapping:
     session_target: "main"
     notify_policy: "failure_only"
     timeout_seconds: 900
+    model: "openai-code/gpt-5.4"
+    thinking: "off"
     light_context: true
     message_instructions:
       - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
@@ -274,8 +288,9 @@ task_agent_mapping:
     session_target: "isolated"
     notify_policy: "deliver_and_alert"
     exact: true
-    timeout_seconds: 1800
+    timeout_seconds: 2700
     model: "openai-code/gpt-5.4"
+    thinking: "off"
     light_context: true
     skill_path: "/root/.openclaw/workspace/skills/chief-agent-report/SKILL.md"
     message_instructions:
@@ -303,6 +318,8 @@ task_agent_mapping:
     session_target: "main"
     notify_policy: "failure_only"
     timeout_seconds: 900
+    model: "openai-code/gpt-5.4"
+    thinking: "off"
     light_context: true
     message_instructions:
       - "该任务归 Chief 直接负责，不需要再分配给其他 Agent。"
@@ -329,6 +346,7 @@ task_agent_mapping:
     notify_policy: "summary_only"
     timeout_seconds: 1200
     model: "openai-code/gpt-5.4"
+    thinking: "off"
     light_context: true
     message_instructions:
       - "该任务已由 cron 直接分配给 Coding Agent，不需要再经 Chief 二次分流。"

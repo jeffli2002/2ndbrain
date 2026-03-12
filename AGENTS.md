@@ -48,6 +48,17 @@ Before doing anything else:
 | evomap | `skills/evomap/SKILL.md` | EvoMap 进化市场 |
 | skill-creator | `skills/skill-creator/SKILL.md` | 创建、评估、优化和打磨 Agent Skill |
 | notebooklm | `skills/notebooklm-skill/SKILL.md` | NotebookLM 查询 |
+| skill-vetter | `skills/skill-vetter/SKILL.md` | Skill 安全审查 |
+| smart-search | `skills/smart-search/SKILL.md` | 智能搜索 |
+| coding-agent | `skills/coding-agent/SKILL.md` | 代码任务委派 |
+| agent-orchestrator | `skills/agent-orchestrator/SKILL.md` | Agent 调度中心 |
+| weather | `skills/weather/SKILL.md` | 天气查询 |
+| feishu-doc-with-perm | `skills/feishu-doc-with-perm/SKILL.md` | 飞书文档创建（自动授权版） |
+| feishu-calendar-invite | `skills/feishu-calendar-invite/SKILL.md` | 飞书日历创建/邀请 |
+
+**安装新 Skill 规则：**
+- 安装前必须先使用 `skill-vetter` 进行安全审查
+- 审查通过后再执行 `clawhub install`
 | smart-search | `skills/smart-search/SKILL.md` | 智能搜索 |
 | coding-agent | `skills/coding-agent/SKILL.md` | 代码任务委派 |
 | agent-orchestrator | `skills/agent-orchestrator/SKILL.md` | Agent 调度中心 |

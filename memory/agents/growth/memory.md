@@ -128,4 +128,16 @@
 
 ---
 
+## 📅 更新日期：2026-03-12
+
+### OpenClaw 最新动态监控（2026-03-12）
+- **最新稳定版**：`v2026.3.8`（GitHub release 发布时间：2026-03-09 07:49 UTC）
+- **核心新增能力**：CLI 备份命令 `openclaw backup create/verify`、Talk 模式 `talk.silenceTimeoutMs`、Brave `llm-context` 搜索模式、ACP provenance 元数据、TUI 在 agent workspace 中自动识别当前 agent
+- **生态热度**：GitHub 仓库约 **303,545 stars / 57,327 forks / 12,374 open issues**，继续保持超高关注度
+- **社区信号**：OpenClaw 近期已成为 GitHub 星标榜首项目；中文社区讨论度继续上升，媒体与资本市场关注度明显增强
+- **需关注风险**：
+  - `#41871`：本地 Ollama 模型在 2026.3.8 仍可能卡死
+  - `#40096`：2026.3.7 的 context-engine registry 分裂问题虽已在 3.8 release notes 中出现修复，但相关插件兼容仍值得继续观察
+  - `#39866`：部分新装用户仍报告 cron/任务掉落问题，说明新手安装稳定性仍是口碑风险点
+
 *持续更新中...*

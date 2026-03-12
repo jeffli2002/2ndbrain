@@ -194,6 +194,7 @@ class CronJobGenerator:
         timeout_seconds = int(task_config.get("timeout_seconds", 300))
         tz = str(task_config.get("tz", "Asia/Shanghai")).strip() or "Asia/Shanghai"
         exact = bool(task_config.get("exact", False))
+        light_context = bool(task_config.get("light_context", False))
         agent = str(task_config.get("agent", "")).strip()
         session_target = self._resolve_session_target(task_name, task_config)
         payload_kind = self._resolve_payload_kind(session_target)
@@ -217,6 +218,9 @@ class CronJobGenerator:
 
         if session_target == "isolated" and agent and agent != "system":
             cmd_lines.append(f"  --agent {shlex.quote(agent)} \\")
+
+        if light_context and payload_kind == "agentTurn":
+            cmd_lines.append("  --light-context \\")
 
         if payload_kind == "agentTurn":
             cmd_lines.append(f"  --message {shlex.quote(payload_text)} \\")

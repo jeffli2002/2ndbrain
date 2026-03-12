@@ -2,6 +2,40 @@
 
 ---
 
+## 📊 Memory 提炼 | 2026-03-12 16:20
+
+### AI KOL 日报必须配置指定 watchlist，禁止泛写行业新闻
+
+**新确认的长期配置规则**：AI KOL 日报（ai-kol-daily-newsletter）必须按老板指定的 15 个 KOL 账号监控 X/Twitter 动态，禁止泛写普通行业新闻。
+
+**应长期保留的配置**：
+- watchlist 配置文件位置：`/root/.openclaw/workspace/config/ai-kol-watchlist.yaml`
+- 15 个指定 KOL：sama, elonmusk, zuck, DarioAmodei, danielaamodei, ilyasut, karpathy, ylecun, demishassabis, jeffdean, AndrewYNg, drfeifei, Thom_Wolf, gdb, steipete
+- 信息源优先级：X/Twitter > web_search/web_fetch > YouTube（仅作补充背景）
+- 每条内容必须包含：KOL、账号、更新摘要、核心观点/原话、信号判断、对 Jeff 的启发
+- 只写过去 24 小时有更新的 KOL，无更新则明确写"无人更新"
+- 禁止把普通行业新闻冒充 KOL 动态
+
+**战略含义**：
+- 这是老板明确的监控范围，后续 KOL 日报必须严格按此名单执行，不能随意扩大或缩小。
+
+---
+
+### 模型额度耗尽时的降级策略
+
+**新确认的系统性问题**：GPT-5.4 和 MiniMax 额度均会耗尽导致任务失败，需要建立额度监控和降级机制。
+
+**应长期保留的应对策略**：
+- 监控信号：任务报错 "400 limit exceeded" 即额度用完
+- 降级路径：GPT-5.4 → MiniMax-M2.5 → Kimi (kimi-coding/k2p5)
+- cron job 配置：优先使用默认模型，不要在 job 中显式指定容易耗尽的模型
+- 关键任务（如 ai-daily-newsletter、ai-kol-daily-newsletter）应配置为使用默认模型的 fallback 链路
+
+**战略含义**：
+- 额度管理是系统性风险，不能依赖单一模型，后续新任务创建时应优先使用默认模型的 fallback。
+
+---
+
 ## 📊 Memory 提炼 | 2026-03-11 10:33
 
 ### 飞书 Calendar API 创建日程的稳定路径已验证：优先写主日历，权限不足时回退到共享日历

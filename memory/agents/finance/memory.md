@@ -46,3 +46,6 @@
 
 **飞书扩展Skills：**
 - feishu-wiki, feishu-doc, feishu-drive, feishu-perm
+
+## 最近工作记录
+- 2026-03-12：完成 TrustMRR 每日盈利项目分析，生成 `/root/.openclaw/workspace/reports/trustmrr-detailed-2026-03-12.md`。本日最值得关注的 4 条线为：高意向获客 Agent、Agentic Social Ops、垂直 ROI 决策 Copilot、Agent Delivery / Agent Ops。

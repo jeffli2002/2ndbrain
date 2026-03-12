@@ -34,3 +34,5 @@
 
 ## 重要笔记
 - 2026-03-07：已将小红书发布规则写入 `skills/xiaohongshu-skills/skills/xhs-publish/SKILL.md`，并在 CLI / publish_pipeline 中增加发布前校验
+- 2026-03-12：`ai-kol-daily-newsletter` 已升级为“严格按 X/Twitter watchlist 出日报”模式；主配置文件为 `config/ai-kol-watchlist.yaml`，默认追踪 15 个 AI KOL（Sam Altman、Elon Musk、Mark Zuckerberg、Dario Amodei、Daniela Amodei、Ilya Sutskever、Andrej Karpathy、Yann LeCun、Demis Hassabis、Jeff Dean、Andrew Ng、Fei-Fei Li、Thomas Wolf、Greg Brockman、Peter Steinberger）。
+- 2026-03-12：KOL 日报硬规则：只写过去24小时内确有 X/Twitter 更新的账号；优先保留 KOL 原观点与一手表达；如果当天无人更新，要明确写“无人更新”，不要拿普通行业新闻硬凑。
