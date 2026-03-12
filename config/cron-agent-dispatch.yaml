@@ -26,12 +26,16 @@ task_agent_mapping:
       - "该任务已由 cron 直接分配给 Content Agent，不需要再经 Chief 二次分流。"
       - "【关键】必须先读取 /root/.openclaw/workspace/skills/content-factory/SKILL.md，理解 skill 的工作流程后再执行。"
       - "skill 位置已标注在 skill_path 中，请先读取并理解其工作方式。"
+      - "从今天起，9 点选题要重点关注 OpenClaw 相关内容：创业机会、版本更新、使用玩法、相关 skill、典型使用场景。"
+      - "研究来源优先级：先抓 YouTube，其次抓 Twitter/X；如 Twitter/X 直接抓取受限，就用 web_search / web_fetch 间接抓取 X 讨论、转述文章和相关页面。"
+      - "生成 3-5 个候选主题时，其中关于 OpenClaw 的候选不少于 3 条；不能只有 1 条或 2 条轻描淡写带过。"
+      - "给老板展示候选时，要明确标注哪些是 OpenClaw 方向，并简写信息来源（YouTube / X / 官方更新 / 社区案例）。"
       - "如果流程要求用户确认选题，就先给候选主题并等待确认，不要越过交互步骤。"
       - "只要出现需要老板确认选题、补充信息或人工决策的情况，必须立刻通知老板，不要默默等待。"
     workflow:
       - step: "research"
-        description: "研究热门AI资讯"
-        tools: ["web_search", "youtube"]
+        description: "研究热门AI资讯（优先 YouTube 与 Twitter/X，并重点关注 OpenClaw）"
+        tools: ["web_search", "web_fetch", "youtube"]
       - step: "generate_topics"
         description: "生成3-5个候选主题"
         tools: ["memory"]
