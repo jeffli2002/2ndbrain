@@ -27,6 +27,7 @@ Create Feishu replies that contain both normal text and a real voice bubble/play
 ## Rules
 
 - **语音文件必须存放在 Workspace 下**：使用 `/root/.openclaw/workspace/temp/voice/` 目录，不要用 /tmp。否则飞书只显示文件路径而不是语音播放条。
+- **Emoji 自动过滤**：脚本会自动过滤 emoji 字符再合成 TTS，显示的文本保留 emoji，但语音不会朗读 emoji（避免杂音）。无需手动处理。
 - Always show the text reply as well; do not send voice-only unless the user explicitly asks for that.
 - Prefer concise spoken text. If the full answer is long, speak a compact summary and keep the full text visible.
 - Use this skill specifically for Feishu playback UX. If the user only wants downloadable audio, normal attachments are fine.
