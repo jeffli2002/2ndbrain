@@ -232,7 +232,53 @@
 
 ---
 
-> 最后更新: 2026-03-09 10:05
+> 最后更新: 2026-03-14 02:05
+
+---
+
+## 📊 Memory 提炼 | 2026-03-14 02:05
+
+### Cron 任务超时问题的系统性修复：任务超时从 1h 调整为 2h
+
+**问题描述**：
+- 多个 cron 任务（daily-content-publish、ai-kol-daily-newsletter、sync-github-18-00）因执行超时被系统强杀
+- 错误信息：`Error: cron: job execution timed out`
+- 超时限制默认为 1 小时，部分长跑任务（如内容生成）无法在时限内完成
+
+**修复方案**：
+- 将任务超时从 3600s (1h) 调整为 7200s (2h)
+- 修复命令：`openclaw cron edit <job-id> --timeout 7200000`
+- 同时补全 ai-kol-daily-newsletter 的飞书投递目标配置
+
+**修复的任务**：
+| 任务 | 修复内容 |
+|------|---------|
+| daily-content-publish | 超时 1h → 2h |
+| ai-kol-daily-newsletter | 超时 1h → 2h + 飞书投递 target |
+| sync-github-18-00 | 超时 1h → 2h |
+
+**战略含义**：
+- Cron 任务超时应根据任务性质差异化配置，不能一刀切
+- 内容生成类任务（需要研究、写作、多格式输出）建议至少配置 2h 超时
+- 后续新增 cron 任务时，应根据任务复杂度预估合理的超时时间
+
+### OpenClaw 2026.3.8 版本新特性
+
+**版本号**：2026.3.8 (3caab92)
+**发布时间**：2026-03-13
+
+**新功能**：
+- 🖥️ Control UI/dashboard-v2：全新模块化仪表盘，支持 command palette、移动端底部标签
+- ⚡ OpenAI GPT-5.4 / Claude Fast Mode：会话级快速切换
+- ☸️ K8s 安装文档上线
+- 💬 Slack Block Kit 支持
+- 🔄 sessions_yield：编排器可提前结束当前 turn 并携带隐藏 payload 进入下一轮
+
+**安全修复**：
+- 🔐 设备配对改为短效 bootstrap token
+- 🔒 禁用 workspace 插件自动加载（防止克隆仓库自动执行恶意代码）
+
+**Bug 修复**：20+ 项，包括 Kimi Coding 工具调用、TUI 重复消息、Cron 投递等
 
 ---
 
