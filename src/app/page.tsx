@@ -542,6 +542,13 @@ export default function SecondBrain() {
   const latestTrendDate = trendData[trendData.length - 1]?.date;
   const trendEndDate = latestTrendDate && latestTrendDate > todayDate ? latestTrendDate : todayDate;
   const displayTrend = buildContinuousTrend(trendData, trendRange, trendEndDate);
+  const totalRangeTokens = displayTrend.reduce((sum, point) => sum + point.totalTokens, 0);
+  const rangeTokenUsageByAgent = Object.fromEntries(
+    agentDefinitions.map((agent) => [
+      agent.id,
+      displayTrend.reduce((sum, point) => sum + (point.agentBreakdown[agent.id] || 0), 0),
+    ])
+  ) as Record<string, number>;
   const tokenTrendMax = Math.max(...displayTrend.map((point) => point.totalTokens), 1);
   const lineSeries = [
     {
@@ -562,7 +569,7 @@ export default function SecondBrain() {
     .map((agent) => ({
       id: agent.id,
       label: agent.name,
-      value: agent.tokenUsage,
+      value: rangeTokenUsageByAgent[agent.id] || 0,
       color: agentColorMap[agent.id] || "#94a3b8",
     }))
     .filter((item) => item.value > 0)
@@ -1105,7 +1112,6 @@ export default function SecondBrain() {
     const paddingY = 20;
     const innerWidth = chartWidth - paddingX * 2;
     const innerHeight = chartHeight - paddingY * 2;
-    const totalRangeTokens = displayTrend.reduce((sum, point) => sum + point.totalTokens, 0);
     const xFor = (index: number) =>
       displayTrend.length === 1 ? chartWidth / 2 : paddingX + (index / (displayTrend.length - 1)) * innerWidth;
     const yFor = (value: number) => paddingY + innerHeight - (value / tokenTrendMax) * innerHeight;
@@ -1211,9 +1217,9 @@ export default function SecondBrain() {
       <div className="bg-[#141416] rounded-xl border border-[#27272a] p-6 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-5 h-5 text-orange-400" />
-          <h3 className="font-semibold">当前 Token 分布</h3>
+          <h3 className="font-semibold">Token 分布（近 {trendRange} 天）</h3>
         </div>
-        <p className="text-xs text-[#71717a] mb-4">基于当前任务中心的最新 token_usage 聚合，避免历史接口不可用时页面空白。</p>
+        <p className="text-xs text-[#71717a] mb-4">基于当前所选时间范围内的历史 Token 聚合，和上方趋势图保持同一时间维度。</p>
 
         {!tokenDistribution.length ? (
           <p className="text-sm text-[#71717a]">暂无可展示的 token 数据。</p>
@@ -1250,7 +1256,7 @@ export default function SecondBrain() {
     const totalTasks = agentCards.reduce((sum, a) => sum + a.tasks, 0);
     const totalCompleted = agentCards.reduce((sum, a) => sum + a.completedTasks, 0);
     const totalFailed = agentCards.reduce((sum, a) => sum + a.failedTasks, 0);
-    const totalTokens = agentCards.reduce((sum, a) => sum + a.tokenUsage, 0);
+    const totalTokens = totalRangeTokens;
 
     return (
       <div className="p-8 animate-fadeIn">
@@ -1290,7 +1296,7 @@ export default function SecondBrain() {
           <div className="bg-[#141416] p-4 rounded-xl border border-[#27272a]">
             <div className="flex items-center gap-3 mb-2">
               <Zap className="w-5 h-5 text-yellow-400" />
-              <span className="text-[#a1a1aa] text-sm">Token消耗</span>
+              <span className="text-[#a1a1aa] text-sm">近{trendRange}天 Token</span>
             </div>
             <p className="text-2xl font-bold text-yellow-400">{(totalTokens / 1000).toFixed(1)}k</p>
           </div>
@@ -1329,8 +1335,8 @@ export default function SecondBrain() {
                   <p className="text-red-400">{agent.failedTasks}</p>
                 </div>
                 <div>
-                  <p className="text-[#71717a] text-xs">Token</p>
-                  <p className="text-yellow-400">{(agent.tokenUsage / 1000).toFixed(1)}k</p>
+                  <p className="text-[#71717a] text-xs">近{trendRange}天 Token</p>
+                  <p className="text-yellow-400">{((rangeTokenUsageByAgent[agent.id] || 0) / 1000).toFixed(1)}k</p>
                 </div>
               </div>
             </div>
