@@ -36,6 +36,7 @@ TASK_MAPPINGS = [
     {'task_id': 'task-product', 'job_name': 'product-competitor-analysis', 'schedule': '14:00 每天'},
     {'task_id': 'task-health', 'job_name': 'cron-health-check', 'schedule': '每2小时'},
 ]
+SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000
 
 
 class SupabaseSync:
@@ -156,12 +157,15 @@ class SupabaseSync:
                     'size': stats.st_size,
                 })
 
+        historical_token_docs = self.build_historical_token_snapshots()
+        docs.extend(historical_token_docs)
+
         now_iso = datetime.now(timezone.utc).isoformat()
         if docs and self.client:
             try:
-                payload = [{**row, 'updated_at': now_iso} for row in docs]
+                payload = [{**row, 'updated_at': row.get('updated_at', now_iso)} for row in docs]
                 self.client.table('documents').upsert(payload).execute()
-                print(f'  ✓ 已同步 {len(docs)} 个文档')
+                print(f'  ✓ 已同步 {len(docs)} 个文档（其中 token 日快照 {len(historical_token_docs)} 条）')
                 return True
             except Exception as e:
                 print(f'  ✗ 同步失败: {e}')
@@ -204,8 +208,7 @@ class SupabaseSync:
                     ids.add(job['id'])
         return sorted(ids)
 
-    def get_latest_historical_run(self, job_name: str) -> Optional[Dict[str, Any]]:
-        latest = None
+    def iter_finished_run_entries(self, job_name: str):
         for job_id in self.get_job_ids_for_name(job_name):
             run_file = os.path.join(self.runs_dir, f'{job_id}.jsonl')
             if not os.path.exists(run_file):
@@ -217,13 +220,63 @@ class SupabaseSync:
                         if not line:
                             continue
                         entry = json.loads(line)
-                        if entry.get('action') != 'finished':
-                            continue
-                        if latest is None or (entry.get('runAtMs') or 0) > (latest.get('runAtMs') or 0):
-                            latest = entry
+                        if entry.get('action') == 'finished':
+                            yield entry
             except Exception:
                 continue
+
+    def get_latest_historical_run(self, job_name: str) -> Optional[Dict[str, Any]]:
+        latest = None
+        for entry in self.iter_finished_run_entries(job_name):
+            if latest is None or (entry.get('runAtMs') or 0) > (latest.get('runAtMs') or 0):
+                latest = entry
         return latest
+
+    @staticmethod
+    def shanghai_date(ms: int) -> str:
+        return datetime.fromtimestamp((ms + SHANGHAI_OFFSET_MS) / 1000, tz=timezone.utc).strftime('%Y-%m-%d')
+
+    def build_historical_token_snapshots(self) -> List[Dict[str, Any]]:
+        by_date: Dict[str, Dict[str, Any]] = {}
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        for mapping in TASK_MAPPINGS:
+            seen_run_keys = set()
+            for entry in self.iter_finished_run_entries(mapping['job_name']):
+                run_at_ms = entry.get('runAtMs')
+                total_tokens = (entry.get('usage') or {}).get('total_tokens')
+                if not run_at_ms or not isinstance(total_tokens, (int, float)):
+                    continue
+
+                run_key = f"{mapping['task_id']}:{run_at_ms}:{total_tokens}"
+                if run_key in seen_run_keys:
+                    continue
+                seen_run_keys.add(run_key)
+
+                date_key = self.shanghai_date(run_at_ms)
+                point = by_date.setdefault(date_key, {
+                    'date': date_key,
+                    'totalTokens': 0,
+                    'taskBreakdown': {},
+                })
+                point['totalTokens'] += total_tokens
+                point['taskBreakdown'][mapping['task_id']] = point['taskBreakdown'].get(mapping['task_id'], 0) + total_tokens
+
+        docs = []
+        for date_key in sorted(by_date.keys()):
+            point = by_date[date_key]
+            content = json.dumps(point, ensure_ascii=False)
+            docs.append({
+                'id': f"doc-token-daily-{date_key}",
+                'title': f"Token Daily Snapshot {date_key}",
+                'path': f"/metrics/token-daily/{date_key}.json",
+                'type': 'metric-token-daily',
+                'date': date_key,
+                'size': len(content),
+                'content': content,
+                'updated_at': now_iso,
+            })
+        return docs
 
     @staticmethod
     def pick_latest_run(*runs: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
