@@ -53,7 +53,7 @@ interface Task {
   nextRun: string | null;
   errorCount: number;
   tokenUsage: number;
-  updatedAt: string | null;
+  updatedAt?: string | null;
 }
 
 interface TokenTrendPoint {
@@ -64,6 +64,39 @@ interface TokenTrendPoint {
 
 interface TokenTrendRangePoint extends TokenTrendPoint {
   agentBreakdown: Record<string, number>;
+}
+
+function addDaysToDateKey(dateKey: string, delta: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + delta);
+  return date.toISOString().split('T')[0];
+}
+
+function buildContinuousTrend(
+  points: TokenTrendRangePoint[],
+  range: 7 | 14 | 30,
+  endDate?: string
+): TokenTrendRangePoint[] {
+  if (!points.length) return [];
+
+  const finalDate = endDate || points[points.length - 1]?.date;
+  if (!finalDate) return [];
+
+  const byDate = new Map(points.map((point) => [point.date, point]));
+  const startDate = addDaysToDateKey(finalDate, -(range - 1));
+
+  return Array.from({ length: range }, (_, index) => {
+    const date = addDaysToDateKey(startDate, index);
+    return (
+      byDate.get(date) || {
+        date,
+        totalTokens: 0,
+        taskBreakdown: {},
+        agentBreakdown: {},
+      }
+    );
+  });
 }
 
 // 认证检查组件
@@ -505,7 +538,10 @@ export default function SecondBrain() {
     return { ...point, agentBreakdown };
   });
 
-  const displayTrend = trendData.slice(-trendRange);
+  const todayDate = new Date().toISOString().split('T')[0];
+  const latestTrendDate = trendData[trendData.length - 1]?.date;
+  const trendEndDate = latestTrendDate && latestTrendDate > todayDate ? latestTrendDate : todayDate;
+  const displayTrend = buildContinuousTrend(trendData, trendRange, trendEndDate);
   const tokenTrendMax = Math.max(...displayTrend.map((point) => point.totalTokens), 1);
   const lineSeries = [
     {
@@ -1085,7 +1121,7 @@ export default function SecondBrain() {
               Token 日趋势
             </h3>
             <p className="text-xs text-[#71717a] mt-1">
-              按日查看总 Token 折线与各 Agent 消耗拆解（近 {displayTrend.length} 天）
+              按日查看总 Token 折线与各 Agent 消耗拆解（最近 {trendRange} 个自然日，含无数据日期）
             </p>
             <p className="text-xs text-cyan-300 mt-1">
               Token 数据截止：{formatFullDateTime(latestSupabaseSyncAt)}
@@ -1093,7 +1129,7 @@ export default function SecondBrain() {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-[#71717a]">近 {displayTrend.length} 天总量</p>
+              <p className="text-xs text-[#71717a]">近 {trendRange} 天总量</p>
               <p className="text-xl font-bold text-yellow-400">{(totalRangeTokens / 1000).toFixed(1)}k</p>
             </div>
             <div className="flex bg-[#0f0f10] border border-[#27272a] rounded-lg p-1">
