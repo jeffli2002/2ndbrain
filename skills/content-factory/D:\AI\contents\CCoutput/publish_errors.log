@@ -58,3 +58,43 @@
 2026-03-06 11:44:04,363 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQwTQfW2kP-MfFX3ZeYjtHQ_vewTW25xNyIyeXqCYA5H3Y
 2026-03-06 11:44:04,364 - INFO - Please login to WeChat Official Account backend to publish manually:
 2026-03-06 11:44:04,364 - INFO - https://mp.weixin.qq.com/
+2026-03-15 07:22:08,337 - INFO - Starting publication for: /tmp/claw-article.html
+2026-03-15 07:22:08,869 - INFO - Access token obtained successfully
+2026-03-15 07:22:08,879 - INFO - Found 0 images in HTML
+2026-03-15 07:22:08,886 - INFO - Extracted and converted content from HTML: OpenClaw 2026.3.12 值不值得立刻升级？
+2026-03-15 07:22:08,886 - INFO - Using default cover image: WOr7ZIAYNpvYmON1V3ZQwcJJM5-5tgg8B2WMeN-oQF6R3PSE5lrtwOhwvcAOc_ZC
+2026-03-15 07:22:11,529 - INFO - Draft article created with media_id: WOr7ZIAYNpvYmON1V3ZQwR-ScRkOLQN6e5KhaZAIN49y1FIuyJ9eWKpS5_bWWunm
+2026-03-15 07:22:11,755 - WARNING - Preview submission: api unauthorized rid: 69b5eda3-20490732-6ca644df
+2026-03-15 07:22:11,755 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQwR-ScRkOLQN6e5KhaZAIN49y1FIuyJ9eWKpS5_bWWunm
+2026-03-15 07:22:11,755 - INFO - Please login to WeChat Official Account backend to publish manually:
+2026-03-15 07:22:11,755 - INFO - https://mp.weixin.qq.com/
+2026-03-15 07:27:12,254 - INFO - Starting publication for: /tmp/claw-article-v2.html
+2026-03-15 07:27:12,673 - INFO - Access token obtained successfully
+2026-03-15 07:27:12,677 - INFO - Found 0 images in HTML
+2026-03-15 07:27:12,680 - INFO - Extracted and converted content from HTML: OpenClaw 2026.3.14 值不值得立刻升级？
+2026-03-15 07:27:12,680 - INFO - Using default cover image: WOr7ZIAYNpvYmON1V3ZQwcJJM5-5tgg8B2WMeN-oQF6R3PSE5lrtwOhwvcAOc_ZC
+2026-03-15 07:27:15,170 - INFO - Draft article created with media_id: WOr7ZIAYNpvYmON1V3ZQwYuA31fWDgR7O-8pj2Bpr0cpatu-ECYjIxZS64C6d2BL
+2026-03-15 07:27:15,330 - WARNING - Preview submission: api unauthorized rid: 69b5eed3-58e58989-360eab38
+2026-03-15 07:27:15,330 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQwYuA31fWDgR7O-8pj2Bpr0cpatu-ECYjIxZS64C6d2BL
+2026-03-15 07:27:15,330 - INFO - Please login to WeChat Official Account backend to publish manually:
+2026-03-15 07:27:15,330 - INFO - https://mp.weixin.qq.com/
+2026-03-15 07:36:45,027 - INFO - Starting publication for: /tmp/claw-article-v3.html
+2026-03-15 07:36:45,553 - INFO - Access token obtained successfully
+2026-03-15 07:36:45,557 - INFO - Found 0 images in HTML
+2026-03-15 07:36:45,560 - INFO - Extracted and converted content from HTML: OpenClaw 2026.3.14 值不值得立刻升级？
+2026-03-15 07:36:45,560 - INFO - Using default cover image: WOr7ZIAYNpvYmON1V3ZQwcJJM5-5tgg8B2WMeN-oQF6R3PSE5lrtwOhwvcAOc_ZC
+2026-03-15 07:36:48,194 - INFO - Draft article created with media_id: WOr7ZIAYNpvYmON1V3ZQwf-uweLkPTYcLkQA4C-dxsueXXhOBA8EaEhi_BuwK_w1
+2026-03-15 07:36:48,409 - WARNING - Preview submission: api unauthorized rid: 69b5f110-2026007d-31dd0c1a
+2026-03-15 07:36:48,409 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQwf-uweLkPTYcLkQA4C-dxsueXXhOBA8EaEhi_BuwK_w1
+2026-03-15 07:36:48,409 - INFO - Please login to WeChat Official Account backend to publish manually:
+2026-03-15 07:36:48,409 - INFO - https://mp.weixin.qq.com/
+2026-03-15 07:38:47,490 - INFO - Starting publication for: /tmp/claw-article-v4.html
+2026-03-15 07:38:47,909 - INFO - Access token obtained successfully
+2026-03-15 07:38:47,913 - INFO - Found 0 images in HTML
+2026-03-15 07:38:47,917 - INFO - Extracted and converted content from HTML: OpenClaw 2026.3.14 值不值得立刻升级？
+2026-03-15 07:38:47,917 - INFO - Using default cover image: WOr7ZIAYNpvYmON1V3ZQwcJJM5-5tgg8B2WMeN-oQF6R3PSE5lrtwOhwvcAOc_ZC
+2026-03-15 07:38:50,516 - INFO - Draft article created with media_id: WOr7ZIAYNpvYmON1V3ZQweP2Fbp-rKW2ej8KPMAOD1GiFcNriWJbS1DfXujSVR-5
+2026-03-15 07:38:50,748 - WARNING - Preview submission: api unauthorized rid: 69b5f18a-33962ff4-6cd87366
+2026-03-15 07:38:50,748 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQweP2Fbp-rKW2ej8KPMAOD1GiFcNriWJbS1DfXujSVR-5
+2026-03-15 07:38:50,748 - INFO - Please login to WeChat Official Account backend to publish manually:
+2026-03-15 07:38:50,748 - INFO - https://mp.weixin.qq.com/

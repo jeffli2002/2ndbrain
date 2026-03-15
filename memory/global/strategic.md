@@ -259,7 +259,112 @@
 
 ---
 
-> 最后更新: 2026-03-14 02:05
+## 📊 Memory 提炼 | 2026-03-15 04:10
+
+### Cron 任务超时问题的持续优化（第三轮）
+
+**问题描述**：
+- 2026-03-15 凌晨检查发现3个 cron 任务 timeout：
+  - `openclaw-news-monitor` (growth): timeout 15min → 运行超时
+  - `daily-skill-evolution` (coding): timeout 30min → 运行超时
+  - `github-daily-backup` (coding): timeout 30min → 运行超时（连续4次）
+
+**修复方案**：
+- 使用 `openclaw cron edit <job-id> --timeout-seconds <seconds>` 更新超时配置
+- 修复结果：
+  - openclaw-news-monitor: 900s → 1800s (30min)
+  - daily-skill-evolution: 1800s → 2700s (45min)
+  - github-daily-backup: 1800s → 2700s (45min)
+
+**经验总结**：
+- 监控类任务（openclaw-news-monitor）：建议至少 30min
+- 技能进化/备份类任务：建议至少 45min
+- 内容生成类任务：建议至少 2h (7200s)
+- 定期观察实际执行时间进行调整
+
+---
+
+## 📊 Memory 提炼 | 2026-03-15 08:05
+
+### Cron 任务超时问题持续优化（第四轮）
+
+**问题描述**：
+- 3个任务持续 timeout：openclaw-news-monitor、daily-skill-evolution、github-daily-backup
+- 调整路径：15min → 30min → 45min → 60min
+- 根因：任务实际执行时间接近或超过超时限制
+
+**经验总结**：
+- 监控类任务（openclaw-news-monitor）：建议至少 60min
+- 技能进化/备份类任务：建议至少 60min
+- 内容生成类任务：建议至少 2h
+- 定期观察实际执行时间进行调整
+
+---
+
+> 最后更新: 2026-03-15 08:05
+
+## 📊 Memory 提炼 | 2026-03-15 04:10
+
+### Cron任务超时问题的持续优化
+
+**问题描述**：
+- sync-supabase-30m 任务持续超时
+- 初始timeoutSeconds: 300s (5分钟) → 超时
+- 多次调整: 300s → 600s → 1200s → 1800s
+
+**解决方案**：
+- 根据任务复杂度设置合理的timeoutSeconds
+- 高频同步任务(如30分钟一次)建议至少600s
+- 内容生成类任务建议至少1800s
+- 定期观察实际执行时间进行调整
+
+**经验**：
+- timeoutSeconds调整后需要等待下一次执行验证
+- 不要只看lastStatus，要查看实际的durationMs
+- 有时代理执行时间可能比预期长
+
+## 📊 Memory 提炼 | 2026-03-15 00:10
+
+### GitHub push 失败处理：远程有本地没有的 commit
+
+**问题描述**：
+- 本地 `git push` 失败，错误：`error: failed to push some refs... Updates were rejected because the remote contains work that you do not have locally`
+- 原因：远程仓库有本地没有的 commit（可能是其他设备或手动提交）
+
+**解决方案**：
+- 执行 `git pull --rebase` 合并远程更改
+- 然后再 `git push`
+
+**命令**：
+```bash
+git pull --rebase
+git push
+```
+
+**战略含义**：
+- 不要在有外部提交的仓库上直接 force push
+- 先 pull 再 push 是更安全的协作方式
+
+---
+
+### Edge-TTS 语音合成时 emoji 导致音频损坏
+
+**问题描述**：
+- 用户反馈 TTS 语音播放时出现杂音
+- 原因：edge-tts 会把 emoji 字符当作异常文本处理，导致生成的音频极短（1.59秒）且损坏
+
+**解决方案**：
+- 在 `build_feishu_voice.py` 中添加 `remove_emoji()` 函数
+- TTS 合成前过滤掉 emoji，保留原文显示
+- Emoji 正则只匹配 emoji 字符范围，不触及其他 Unicode 字符（如中文）
+
+**技术细节**：
+- 分离"显示文本"和"朗读文本"
+- 朗读时过滤 emoji，显示时保留原样
+
+**战略含义**：
+- 语音合成前需清理特殊字符
+- 正则需精确范围，避免误删 CJK 字符
 
 ---
 
