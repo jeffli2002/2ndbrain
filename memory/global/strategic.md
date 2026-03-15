@@ -454,6 +454,14 @@ git push
 - 关键坑位：KIE 图床有时返回 403，下载必须用 `curl -L` fallback
 - 已集成到 baoyu-slide-deck skill
 
+**⚠️ 重要：KIE 回调服务器必须先启动**
+- 问题：回调服务器未运行时，KIE 回调无法接收，任务一直 pending
+- 解决：每次使用 KIE 前必须先启动：
+  1. `python3 ~/.agents/skills/baoyu-slide-deck/scripts/kie-callback-server.py &`
+  2. `cloudflared tunnel --url http://127.0.0.1:8787`（每次地址不同！）
+- 回调地址会变：每次启动 Tunnel 都会生成新的 trycloudflare.com 地址
+- 解决方案：Tunnel 日志中提取最新地址，或在提交任务时动态获取
+
 **3. 2nd Brain 云端稳定性三层设计**
 - 本地可用 + 云端可用 + 数据缺失可降级
 - Next.js 多 workspace 需显式 `outputFileTracingRoot: process.cwd()`
@@ -462,7 +470,7 @@ git push
 
 ---
 
-> 最后更新: 2026-03-09 04:05
+> 最后更新: 2026-03-15 16:05
 
 ---
 

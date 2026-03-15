@@ -98,3 +98,13 @@
 2026-03-15 07:38:50,748 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQweP2Fbp-rKW2ej8KPMAOD1GiFcNriWJbS1DfXujSVR-5
 2026-03-15 07:38:50,748 - INFO - Please login to WeChat Official Account backend to publish manually:
 2026-03-15 07:38:50,748 - INFO - https://mp.weixin.qq.com/
+2026-03-15 17:39:20,618 - INFO - Starting publication for: /root/.openclaw/workspace/output/2026-03-15-nvidia-cursor-efficiency.html
+2026-03-15 17:39:21,126 - INFO - Access token obtained successfully
+2026-03-15 17:39:21,132 - INFO - Found 0 images in HTML
+2026-03-15 17:39:21,135 - INFO - Extracted and converted content from HTML: 英伟达4万员工都在用的AI编码神器，让我司效率翻倍了
+2026-03-15 17:39:21,135 - INFO - Using default cover image: WOr7ZIAYNpvYmON1V3ZQwcJJM5-5tgg8B2WMeN-oQF6R3PSE5lrtwOhwvcAOc_ZC
+2026-03-15 17:39:23,754 - INFO - Draft article created with media_id: WOr7ZIAYNpvYmON1V3ZQwbVyHKOq688tjTwoQv4ag54I1mKlg2j9djw3q0FfZOpp
+2026-03-15 17:39:23,948 - WARNING - Preview submission: api unauthorized rid: 69b67e4b-020ac436-3c2a889e
+2026-03-15 17:39:23,948 - INFO - Draft created with media_id: WOr7ZIAYNpvYmON1V3ZQwbVyHKOq688tjTwoQv4ag54I1mKlg2j9djw3q0FfZOpp
+2026-03-15 17:39:23,948 - INFO - Please login to WeChat Official Account backend to publish manually:
+2026-03-15 17:39:23,948 - INFO - https://mp.weixin.qq.com/
