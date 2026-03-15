@@ -313,6 +313,13 @@ interface Agent {
 // Agent 模拟数据
 const agentDefinitions = [
   {
+    id: "coding",
+    name: "Coding Agent",
+    description: "负责代码开发、重构、调试、技术架构与Skill进化",
+    model: "MiniMax M2.5",
+    taskIds: ["task-evolution"],
+  },
+  {
     id: "content",
     name: "Content Agent",
     description: "负责AI日报、内容发布、KOL追踪",
@@ -339,13 +346,6 @@ const agentDefinitions = [
     description: "负责每晚 Chief Agent 工作总结报告与系统巡检",
     model: "GPT-5.4",
     taskIds: ["task-chief", "task-health"],
-  },
-  {
-    id: "evo",
-    name: "Evo Agent",
-    description: "负责每晚 EvoMap 进化报告",
-    model: "MiniMax M2.5",
-    taskIds: ["task-evolution"],
   },
 ];
 
