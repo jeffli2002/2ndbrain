@@ -133,8 +133,7 @@ bash /root/.openclaw/workspace/scripts/check-credentials.sh
 
 ### Feishu 群聊路由
 - **铿锵三人行**
-  - `chat_id`: `oc_80766d1386e90240e5706495dcac1d4f`
-  - message 工具 target 写法：`chat:oc_80766d1386e90240e5706495dcac1d4f`
+  - `chat_id`: `oc_146d88e440030212221baa75084b5ea8`
   - 说明：需要往该群发经验总结、通知或操作说明时，直接使用 chat_id，不要依赖群名解析
 
 ---

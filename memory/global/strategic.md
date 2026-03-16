@@ -301,7 +301,31 @@
 
 ---
 
-> 最后更新: 2026-03-15 18:05
+> 最后更新: 2026-03-16 10:04
+
+## 📊 Memory 提炼 | 2026-03-16 10:04
+
+### SupaData API 调用已验证可用
+
+**问题**：SupaData API 连接失败 - 域名错误
+- 错误域名：`api.supadata.io`（不存在）
+- 正确域名：`api.supadata.ai`
+- Skill 位置：`/root/.openclaw/workspace-coding/tmp/2ndbrain/skills/supadata/`
+
+**调用方式**：
+```python
+from supadata_client import SupadataClient
+client = SupadataClient()
+result = client.get_transcript("https://youtu.be/VIDEO_ID")
+```
+
+**凭据**：`/root/.openclaw/credentials/supadata.json`
+
+**战略含义**：
+- YouTube/Twitter/TikTok 等内容抓取优先使用 Supadata
+- 比 YouTube Data API 更可靠（不需要配置 API Key）
+
+---
 
 ## 📊 Memory 提炼 | 2026-03-15 04:10
 
