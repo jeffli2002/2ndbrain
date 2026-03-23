@@ -99,6 +99,214 @@ function buildContinuousTrend(
   });
 }
 
+type MemorySectionKey = "what" | "decisions" | "insights";
+
+interface MemoryDigest {
+  headline: string;
+  what: string[];
+  decisions: string[];
+  insights: string[];
+  excerpt: string;
+}
+
+interface MemoryTimelineEntry {
+  id: string;
+  timeLabel: string;
+  title: string;
+  summary: MemoryDigest;
+}
+
+const MEMORY_SECTION_LABELS: Record<MemorySectionKey, string[]> = {
+  what: ["what", "发生了什么", "做了什么", "进展", "内容", "事项", "摘要", "总结"],
+  decisions: ["decisions", "decision", "决策", "决定", "判断", "取舍", "行动决策"],
+  insights: ["key insights", "insights", "insight", "洞察", "反思", "经验", "启发", "学习", "结论"],
+};
+
+const DECISION_KEYWORDS = ["决定", "改为", "采用", "切换", "选择", "上线", "发布", "修复", "重置", "推送", "调整"];
+const INSIGHT_KEYWORDS = ["经验", "发现", "说明", "意味着", "提醒", "风险", "洞察", "反思", "以后", "下一次", "注意"];
+
+function stripMarkdownLine(value: string) {
+  return value
+    .replace(/^\s*[-*+]\s+/, "")
+    .replace(/^\s*\d+[.)]\s+/, "")
+    .replace(/^\s*>\s?/, "")
+    .replace(/^\s*#{1,6}\s*/, "")
+    .trim();
+}
+
+function toDisplayType(type: Memory["type"]) {
+  if (type === "long-term") return "长期记忆";
+  if (type === "daily") return "Daily Memory";
+  return "进化记录";
+}
+
+function formatMemoryDateLabel(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
+}
+
+function formatMemoryDateMeta(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function takeMeaningfulLines(text: string) {
+  return text
+    .split(/\n+/)
+    .map(stripMarkdownLine)
+    .filter(Boolean);
+}
+
+function makeHeadline(rawTitle: string, content: string) {
+  const cleanedTitle = stripMarkdownLine(rawTitle)
+    .replace(/^\d{4}-\d{2}-\d{2}\s*/, "")
+    .replace(/工作日志|日报|日记|长期记忆[:：]?/g, "")
+    .trim();
+
+  if (cleanedTitle) return cleanedTitle.slice(0, 42);
+
+  const candidate = takeMeaningfulLines(content).find((line) => line.length > 6) || "Memory Snapshot";
+  return candidate.slice(0, 42);
+}
+
+function normalizeSectionKey(line: string): MemorySectionKey | null {
+  const normalized = stripMarkdownLine(line).toLowerCase().replace(/[：:]/g, "").trim();
+  for (const key of Object.keys(MEMORY_SECTION_LABELS) as MemorySectionKey[]) {
+    if (MEMORY_SECTION_LABELS[key].some((label) => normalized === label || normalized.startsWith(`${label} `))) {
+      return key;
+    }
+  }
+  return null;
+}
+
+function classifyMemoryLines(lines: string[]) {
+  const buckets: Record<MemorySectionKey, string[]> = { what: [], decisions: [], insights: [] };
+  let currentSection: MemorySectionKey = "what";
+
+  for (const rawLine of lines) {
+    const sectionKey = normalizeSectionKey(rawLine);
+    if (sectionKey) {
+      currentSection = sectionKey;
+      continue;
+    }
+
+    const line = stripMarkdownLine(rawLine);
+    if (!line) continue;
+
+    if (currentSection !== "what") {
+      buckets[currentSection].push(line);
+      continue;
+    }
+
+    if (DECISION_KEYWORDS.some((keyword) => line.includes(keyword))) {
+      buckets.decisions.push(line);
+      continue;
+    }
+
+    if (INSIGHT_KEYWORDS.some((keyword) => line.includes(keyword))) {
+      buckets.insights.push(line);
+      continue;
+    }
+
+    buckets.what.push(line);
+  }
+
+  if (!buckets.decisions.length && buckets.what.length > 1) {
+    buckets.decisions.push(buckets.what[1]);
+  }
+
+  if (!buckets.insights.length) {
+    const fallbackInsight = buckets.what.find((line, index) => index > 0 && line.length > 18) || buckets.decisions[0];
+    if (fallbackInsight) buckets.insights.push(fallbackInsight);
+  }
+
+  return {
+    what: buckets.what.slice(0, 3),
+    decisions: buckets.decisions.slice(0, 2),
+    insights: buckets.insights.slice(0, 2),
+  };
+}
+
+function buildMemoryDigest(rawTitle: string, content: string): MemoryDigest {
+  const lines = takeMeaningfulLines(content);
+  const sections = classifyMemoryLines(lines);
+  const excerptSource = [...sections.what, ...sections.decisions, ...sections.insights].join(" · ") || content;
+
+  return {
+    headline: makeHeadline(rawTitle, content),
+    what: sections.what.length ? sections.what : [excerptSource.slice(0, 120)],
+    decisions: sections.decisions,
+    insights: sections.insights,
+    excerpt: excerptSource.slice(0, 180),
+  };
+}
+
+function splitMemoryIntoBlocks(memory: Memory) {
+  const lines = memory.content.split("\n");
+  const blocks: Array<{ title: string; body: string }> = [];
+  let currentTitle = memory.title;
+  let currentLines: string[] = [];
+
+  const pushCurrent = () => {
+    const body = currentLines.join("\n").trim();
+    if (body) blocks.push({ title: currentTitle, body });
+  };
+
+  for (const line of lines) {
+    const headingMatch = line.match(/^\s*#{2,4}\s+(.+)$/);
+    if (headingMatch) {
+      pushCurrent();
+      currentTitle = headingMatch[1].trim();
+      currentLines = [];
+      continue;
+    }
+
+    currentLines.push(line);
+  }
+
+  pushCurrent();
+
+  if (!blocks.length) {
+    const paragraphs = memory.content
+      .split(/\n\s*\n/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    return paragraphs.map((paragraph, index) => ({
+      title: index === 0 ? memory.title : `${memory.title} / ${index + 1}`,
+      body: paragraph,
+    }));
+  }
+
+  return blocks;
+}
+
+function extractTimeLabel(title: string, index: number) {
+  const matched = title.match(/(\d{1,2}:\d{2}(?:\s?[AP]M)?)/i);
+  if (matched) return matched[1].toUpperCase();
+  return `${String(index + 1).padStart(2, "0")}`;
+}
+
+function buildDailyTimeline(memory: Memory): MemoryTimelineEntry[] {
+  return splitMemoryIntoBlocks(memory)
+    .map((block, index) => ({
+      id: `${memory.id}-${index}`,
+      timeLabel: extractTimeLabel(block.title, index),
+      title: makeHeadline(block.title, block.body),
+      summary: buildMemoryDigest(block.title, block.body),
+    }))
+    .filter((entry) => entry.summary.excerpt.trim().length > 0);
+}
+
 // 认证检查组件
 function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -477,6 +685,24 @@ export default function SecondBrain() {
         (m.date >= dateRange.start && m.date <= dateRange.end)) &&
       matchesQuery(searchQuery, m.title, m.content)
   );
+
+  const dailyMemories = filteredMemories
+    .filter((memory) => memory.type === "daily")
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const longTermMemories = filteredMemories
+    .filter((memory) => memory.type === "long-term")
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const evolutionMemories = filteredMemories
+    .filter((memory) => memory.type === "evolution")
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const dailyTimelineGroups = dailyMemories.map((memory) => ({
+    ...memory,
+    entries: buildDailyTimeline(memory),
+    digest: buildMemoryDigest(memory.title, memory.content),
+  }));
+  const selectedMemory = selectedItem && "content" in selectedItem ? selectedItem : null;
+  const selectedMemoryTimeline = selectedMemory ? buildDailyTimeline(selectedMemory) : [];
+  const selectedMemoryDigest = selectedMemory ? buildMemoryDigest(selectedMemory.title, selectedMemory.content) : null;
 
   const filteredDocuments = documents.filter(
     (d) =>
@@ -1439,14 +1665,52 @@ export default function SecondBrain() {
   // 渲染记忆库
   const renderMemories = () => (
     <div className="p-8 animate-fadeIn">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Brain className="w-7 h-7 text-purple-400" />
-          记忆库
-        </h2>
+      <div className="mb-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold flex items-center gap-3">
+              <Brain className="w-8 h-8 text-purple-400" />
+              Memory Journal
+            </h2>
+            <p className="text-sm text-[#a1a1aa] mt-2 max-w-3xl">
+              把长期记忆与 Daily Memory 分开管理：左侧是按时间推进的 journal timeline，右侧保留长期原则与演化沉淀。
+            </p>
+          </div>
+          <div className="text-sm text-[#71717a] lg:text-right">
+            <p>共 {filteredMemories.length} 条记忆</p>
+            <p>最近更新：{dailyTimelineGroups[0]?.date ? formatMemoryDateMeta(dailyTimelineGroups[0].date) : "—"}</p>
+          </div>
+        </div>
       </div>
 
-      {/* 搜索 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <div className="bg-[#141416] border border-[#27272a] rounded-2xl p-4 xl:col-span-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#71717a] mb-2">Overview</p>
+          <p className="text-3xl font-semibold text-white">{filteredMemories.length}</p>
+          <p className="text-sm text-[#a1a1aa] mt-1">Memory records in current view</p>
+        </div>
+        <div className="bg-[#141416] border border-[#27272a] rounded-2xl p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-purple-300 mb-2">Long</p>
+          <p className="text-2xl font-semibold text-white">{longTermMemories.length}</p>
+          <p className="text-xs text-[#71717a] mt-1">长期原则 / 规范</p>
+        </div>
+        <div className="bg-[#141416] border border-[#27272a] rounded-2xl p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-blue-300 mb-2">Daily</p>
+          <p className="text-2xl font-semibold text-white">{dailyMemories.length}</p>
+          <p className="text-xs text-[#71717a] mt-1">按天沉淀的工作日志</p>
+        </div>
+        <div className="bg-[#141416] border border-[#27272a] rounded-2xl p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-2">Evolution</p>
+          <p className="text-2xl font-semibold text-white">{evolutionMemories.length}</p>
+          <p className="text-xs text-[#71717a] mt-1">进化与经验回收</p>
+        </div>
+        <div className="bg-gradient-to-br from-[#171725] to-[#111118] border border-[#2a2a38] rounded-2xl p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-yellow-200 mb-2">Timeline</p>
+          <p className="text-lg font-semibold text-white">What / Decisions / Insights</p>
+          <p className="text-xs text-[#a1a1aa] mt-1">Daily Memory 自动拆成可读摘要卡片</p>
+        </div>
+      </div>
+
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
         <input
@@ -1455,37 +1719,206 @@ export default function SecondBrain() {
           value={draftSearchQuery}
           onChange={(e) => handleSearchInputChange(e.target.value)}
           onKeyDown={handleSearchKeyDown}
-          className="w-full bg-[#141416] border border-[#27272a] rounded-lg pl-12 pr-4 py-3 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-blue-500"
+          className="w-full bg-[#141416] border border-[#27272a] rounded-2xl pl-12 pr-4 py-3 text-white placeholder-[#a1a1aa] focus:outline-none focus:border-blue-500"
         />
       </div>
 
-      {/* 记忆列表 */}
-      <div className="space-y-3">
-        {filteredMemories.map((memory) => (
-          <div
-            key={memory.id}
-            className="bg-[#141416] p-4 rounded-xl border border-[#27272a] hover:border-purple-500/50 cursor-pointer transition-colors"
-            onClick={() => setSelectedItem(memory)}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              {getMemoryTypeIcon(memory.type)}
-              <h3 className="font-semibold">{memory.title}</h3>
-              <span className="text-xs text-[#a1a1aa] ml-auto">{memory.date}</span>
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_380px] gap-6">
+        <div className="space-y-6">
+          <div className="bg-[#141416] border border-[#27272a] rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-blue-300 mb-2">Daily Memory</p>
+                <h3 className="text-xl font-semibold text-white">Journal Timeline</h3>
+              </div>
+              <div className="text-xs text-[#71717a]">Newest first</div>
             </div>
-            <p className="text-sm text-[#a1a1aa] line-clamp-2">{memory.content}</p>
+
+            {!dailyTimelineGroups.length ? (
+              <div className="rounded-2xl border border-dashed border-[#3a3a3f] px-6 py-12 text-center text-[#71717a]">
+                当前筛选范围内没有 daily memory。
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {dailyTimelineGroups.map((memory) => (
+                  <section key={memory.id} id={`memory-day-${memory.date}`} className="grid grid-cols-1 lg:grid-cols-[160px_minmax(0,1fr)] gap-6">
+                    <div className="lg:sticky lg:top-6 self-start">
+                      <div className="bg-[#101014] border border-[#27272a] rounded-2xl p-4">
+                        <p className="text-xs uppercase tracking-[0.22em] text-[#71717a] mb-2">Journal Day</p>
+                        <p className="text-lg font-semibold text-white">{formatMemoryDateLabel(memory.date)}</p>
+                        <p className="text-xs text-[#71717a] mt-1">{formatMemoryDateMeta(memory.date)}</p>
+                        <button
+                          onClick={() => setSelectedItem(memory)}
+                          className="mt-4 inline-flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200"
+                        >
+                          查看原文 <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative pl-6">
+                      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/20 to-transparent" />
+                      <div className="space-y-4">
+                        {memory.entries.map((entry, index) => (
+                          <article
+                            key={entry.id}
+                            className="relative bg-[#111114] border border-[#27272a] rounded-2xl p-5 hover:border-blue-500/40 transition-colors cursor-pointer"
+                            onClick={() => setSelectedItem(memory)}
+                          >
+                            <div className="absolute -left-[22px] top-6 w-4 h-4 rounded-full border-4 border-[#0a0a0b] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.12)]" />
+                            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between mb-4">
+                              <div>
+                                <p className="text-xs uppercase tracking-[0.22em] text-[#71717a] mb-2">{entry.timeLabel}</p>
+                                <h4 className="text-lg font-semibold text-white">{entry.title}</h4>
+                              </div>
+                              <span className="inline-flex items-center rounded-full border border-[#2f2f35] bg-[#18181c] px-3 py-1 text-xs text-[#c4c4cb]">
+                                Summary {String(index + 1).padStart(2, "0")}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
+                                <p className="text-[11px] uppercase tracking-[0.22em] text-blue-300 mb-2">What</p>
+                                <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                                  {entry.summary.what.map((item) => (
+                                    <li key={item} className="leading-relaxed">• {item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
+                                <p className="text-[11px] uppercase tracking-[0.22em] text-purple-300 mb-2">Decisions</p>
+                                {entry.summary.decisions.length ? (
+                                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                                    {entry.summary.decisions.map((item) => (
+                                      <li key={item} className="leading-relaxed">• {item}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-sm text-[#71717a]">No explicit decision captured.</p>
+                                )}
+                              </div>
+                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
+                                <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-300 mb-2">Key Insights</p>
+                                {entry.summary.insights.length ? (
+                                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                                    {entry.summary.insights.map((item) => (
+                                      <li key={item} className="leading-relaxed">• {item}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-sm text-[#71717a]">Waiting for more explicit insights in source text.</p>
+                                )}
+                              </div>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
-        ))}
+        </div>
+
+        <aside className="space-y-6 xl:sticky xl:top-6 self-start">
+          <div className="bg-[#141416] border border-[#27272a] rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-purple-300 mb-2">Long Memory</p>
+                <h3 className="text-lg font-semibold text-white">Durable Knowledge</h3>
+              </div>
+              <span className="text-xs text-[#71717a]">{longTermMemories.length} items</span>
+            </div>
+            <div className="space-y-3">
+              {longTermMemories.length ? longTermMemories.map((memory) => {
+                const digest = buildMemoryDigest(memory.title, memory.content);
+                return (
+                  <button
+                    key={memory.id}
+                    onClick={() => setSelectedItem(memory)}
+                    className="w-full text-left rounded-2xl border border-[#27272a] bg-[#101014] p-4 hover:border-purple-500/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 text-white font-medium">
+                        <Brain className="w-4 h-4 text-purple-400" />
+                        <span>{digest.headline}</span>
+                      </div>
+                      <span className="text-[11px] text-[#71717a] whitespace-nowrap">{memory.date}</span>
+                    </div>
+                    <p className="text-sm text-[#a1a1aa] leading-relaxed">{digest.excerpt || memory.content.slice(0, 140)}</p>
+                  </button>
+                );
+              }) : (
+                <p className="text-sm text-[#71717a]">当前筛选下没有长期记忆。</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#141416] border border-[#27272a] rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-2">Evolution</p>
+                <h3 className="text-lg font-semibold text-white">Signals & Learnings</h3>
+              </div>
+              <span className="text-xs text-[#71717a]">{evolutionMemories.length} items</span>
+            </div>
+            <div className="space-y-3">
+              {evolutionMemories.length ? evolutionMemories.slice(0, 6).map((memory) => {
+                const digest = buildMemoryDigest(memory.title, memory.content);
+                return (
+                  <button
+                    key={memory.id}
+                    onClick={() => setSelectedItem(memory)}
+                    className="w-full text-left rounded-2xl border border-[#27272a] bg-[#101014] p-4 hover:border-emerald-500/40 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-sm font-medium text-white">{digest.headline}</span>
+                      <span className="text-[11px] text-[#71717a]">{memory.date}</span>
+                    </div>
+                    <p className="text-sm text-[#a1a1aa]">{digest.excerpt || memory.content.slice(0, 120)}</p>
+                  </button>
+                );
+              }) : (
+                <p className="text-sm text-[#71717a]">暂无 evolution 记录。</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#141416] border border-[#27272a] rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.25em] text-blue-300 mb-2">Daily Index</p>
+            <h3 className="text-lg font-semibold text-white mb-4">Recent Journal Days</h3>
+            <div className="space-y-2">
+              {dailyTimelineGroups.slice(0, 8).map((memory) => (
+                <a
+                  key={memory.id}
+                  href={`#memory-day-${memory.date}`}
+                  className="flex items-center justify-between rounded-2xl border border-[#27272a] bg-[#101014] px-4 py-3 hover:border-blue-500/40 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm text-white">{formatMemoryDateLabel(memory.date)}</p>
+                    <p className="text-xs text-[#71717a]">{memory.entries.length} summary blocks</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#71717a]" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </aside>
       </div>
 
-      {/* 详情模态框 - 记忆 */}
-      {selectedItem && "content" in selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#141416] rounded-xl border border-[#27272a] max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-[#27272a] flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                {"type" in selectedItem && getMemoryTypeIcon(selectedItem.type)}
-                {selectedItem.title}
-              </h3>
+      {selectedMemory && selectedMemoryDigest && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#141416] rounded-3xl border border-[#27272a] max-w-4xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div className="p-6 border-b border-[#27272a] flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  {getMemoryTypeIcon(selectedMemory.type)}
+                  <span className="text-xs uppercase tracking-[0.22em] text-[#71717a]">{toDisplayType(selectedMemory.type)}</span>
+                </div>
+                <h3 className="text-2xl font-bold text-white">{selectedMemory.title}</h3>
+                <p className="text-sm text-[#71717a] mt-2">{formatMemoryDateLabel(selectedMemory.date)} · {formatMemoryDateMeta(selectedMemory.date)}</p>
+              </div>
               <button
                 onClick={() => setSelectedItem(null)}
                 className="text-[#a1a1aa] hover:text-white text-xl"
@@ -1493,23 +1926,72 @@ export default function SecondBrain() {
                 ✕
               </button>
             </div>
-            <div className="p-6">
-              {/* 元信息 */}
-              <div className="flex gap-4 mb-4 text-sm">
-                <span className="text-[#71717a]">
-                  类型: {"type" in selectedItem && (
-                    <span className="text-blue-400">{selectedItem.type === 'long-term' ? '长期记忆' : selectedItem.type === 'daily' ? '日记' : '进化'}</span>
-                  )}
-                </span>
-                <span className="text-[#71717a]">
-                  日期: <span className="text-white">{selectedItem.date}</span>
-                </span>
+
+            <div className="p-6 space-y-6">
+              <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                <p className="text-xs uppercase tracking-[0.25em] text-[#71717a] mb-2">Summary</p>
+                <h4 className="text-xl font-semibold text-white">{selectedMemoryDigest.headline}</h4>
+                <p className="text-sm text-[#a1a1aa] mt-2 leading-relaxed">{selectedMemoryDigest.excerpt || selectedMemory.content.slice(0, 180)}</p>
               </div>
-              {/* 详细内容 */}
-              <div className="border-t border-[#27272a] pt-4">
-                <pre className="text-[#d4d4d8] whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                  {selectedItem.content}
-                </pre>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                  <p className="text-xs uppercase tracking-[0.22em] text-blue-300 mb-3">What</p>
+                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                    {selectedMemoryDigest.what.map((item) => (
+                      <li key={item}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                  <p className="text-xs uppercase tracking-[0.22em] text-purple-300 mb-3">Decisions</p>
+                  {selectedMemoryDigest.decisions.length ? (
+                    <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                      {selectedMemoryDigest.decisions.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-[#71717a]">No explicit decisions extracted.</p>
+                  )}
+                </div>
+                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-300 mb-3">Key Insights</p>
+                  {selectedMemoryDigest.insights.length ? (
+                    <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                      {selectedMemoryDigest.insights.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-[#71717a]">No explicit insights extracted.</p>
+                  )}
+                </div>
+              </div>
+
+              {selectedMemory.type === "daily" && selectedMemoryTimeline.length > 1 && (
+                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-white">Timeline Breakdown</h4>
+                    <span className="text-xs text-[#71717a]">{selectedMemoryTimeline.length} summary blocks</span>
+                  </div>
+                  <div className="space-y-4">
+                    {selectedMemoryTimeline.map((entry) => (
+                      <div key={entry.id} className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <h5 className="font-medium text-white">{entry.title}</h5>
+                          <span className="text-xs uppercase tracking-[0.22em] text-[#71717a]">{entry.timeLabel}</span>
+                        </div>
+                        <p className="text-sm text-[#a1a1aa] leading-relaxed">{entry.summary.excerpt}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
+                <p className="text-xs uppercase tracking-[0.25em] text-[#71717a] mb-3">Raw Content</p>
+                <pre className="text-[#d4d4d8] whitespace-pre-wrap font-sans text-sm leading-relaxed">{selectedMemory.content}</pre>
               </div>
             </div>
           </div>
