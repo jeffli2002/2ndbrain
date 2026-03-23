@@ -1774,26 +1774,31 @@ export default function SecondBrain() {
                         <div className="absolute left-6 top-6 bottom-6 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/25 to-transparent" />
                         {group.entries.map((entry, index) => {
                           const mergedLines = mergeMemorySummaryLines(entry.summary);
+                          const preview = entry.summary.excerpt || entry.title;
                           return (
                             <div
                               key={entry.id}
                               className={`relative pl-12 pr-5 py-5 ${index !== group.entries.length - 1 ? "border-b border-[#222228]" : ""}`}
                             >
                               <div className="absolute left-[19px] top-7 w-4 h-4 rounded-full border-4 border-[#111114] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.14)]" />
-                              <div className="flex items-start gap-3 md:gap-4">
-                                <div className="w-14 md:w-16 shrink-0 pt-0.5">
-                                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#71717a]">{entry.timeLabel}</p>
+                              <div className="min-w-0">
+                                <div className="flex items-start gap-3 md:gap-4">
+                                  <div className="w-14 md:w-16 shrink-0 pt-0.5">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-[#71717a]">{entry.timeLabel}</p>
+                                  </div>
+                                  <div className="min-w-0 flex-1 pt-0.5">
+                                    <p className="text-sm text-[#cbd5e1] leading-6">{preview}</p>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <h4 className="text-lg font-semibold text-white">{entry.title}</h4>
-                                  <div className="mt-3 rounded-2xl border border-[#25252b] bg-[#17171b] px-4 py-3 text-sm leading-7 text-[#e5e7eb]">
-                                    <div className="space-y-1.5">
-                                      {mergedLines.length ? (
-                                        mergedLines.map((item) => <p key={item}>• {item}</p>)
-                                      ) : (
-                                        <p className="text-[#8a8a93]">暂无可展示摘要。</p>
-                                      )}
-                                    </div>
+
+                                <div className="ml-[3.5rem] md:ml-20 mt-3 rounded-2xl border border-[#25252b] bg-[#17171b] px-4 py-3 text-sm leading-7 text-[#e5e7eb]">
+                                  <h4 className="text-base font-semibold text-white mb-2">{entry.title}</h4>
+                                  <div className="space-y-1.5">
+                                    {mergedLines.length ? (
+                                      mergedLines.map((item) => <p key={item}>• {item}</p>)
+                                    ) : (
+                                      <p className="text-[#8a8a93]">暂无可展示摘要。</p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
