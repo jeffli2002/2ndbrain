@@ -251,6 +251,12 @@ function buildMemoryDigest(rawTitle: string, content: string): MemoryDigest {
   };
 }
 
+function mergeMemorySummaryLines(summary: MemoryDigest) {
+  return [...summary.what, ...summary.decisions, ...summary.insights].filter(
+    (item, index, source) => item && source.indexOf(item) === index
+  );
+}
+
 function splitMemoryIntoBlocks(memory: Memory) {
   const lines = memory.content.split("\n");
   const blocks: Array<{ title: string; body: string }> = [];
@@ -1755,88 +1761,60 @@ export default function SecondBrain() {
             ) : (
               <div className="space-y-8">
                 {dailyTimelineGroups.map((group) => (
-                  <section key={group.date} id={`memory-day-${group.date}`} className="grid grid-cols-1 lg:grid-cols-[160px_minmax(0,1fr)] gap-6">
-                    <div className="lg:sticky lg:top-6 self-start">
-                      <div className="bg-[#101014] border border-[#27272a] rounded-2xl p-4">
-                        <p className="text-xs uppercase tracking-[0.22em] text-[#71717a] mb-2">Journal Day</p>
+                  <section key={group.date} id={`memory-day-${group.date}`} className="rounded-[28px] border border-[#27272a] bg-[#111114] overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#222228] bg-[#101014] px-5 py-4">
+                      <div>
                         <p className="text-lg font-semibold text-white">{formatMemoryDateLabel(group.date)}</p>
-                        <p className="text-xs text-[#71717a] mt-1">{formatMemoryDateMeta(group.date)}</p>
-                        <p className="text-xs text-[#71717a] mt-3">{group.memories.length} memories · {group.entries.length} timeline points</p>
+                        <p className="text-xs text-[#71717a] mt-1">{formatMemoryDateMeta(group.date)} · {group.memories.length} memories · {group.entries.length} timeline points</p>
                       </div>
                     </div>
 
-                    <div className="rounded-[28px] border border-[#27272a] bg-[#111114] overflow-hidden">
-                      <div className="max-h-[860px] overflow-y-auto">
-                        <div className="relative">
-                          <div className="absolute left-8 top-8 bottom-8 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/25 to-transparent" />
-                          {group.entries.map((entry, index) => (
+                    <div className="max-h-[860px] overflow-y-auto">
+                      <div className="relative">
+                        <div className="absolute left-6 top-6 bottom-6 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/25 to-transparent" />
+                        {group.entries.map((entry, index) => {
+                          const mergedLines = mergeMemorySummaryLines(entry.summary);
+                          return (
                             <div
                               key={entry.id}
-                              className={`relative pl-16 pr-6 py-6 ${index !== group.entries.length - 1 ? "border-b border-[#222228]" : ""}`}
+                              className={`relative pl-12 pr-5 py-5 ${index !== group.entries.length - 1 ? "border-b border-[#222228]" : ""}`}
                             >
-                              <div className="absolute left-[27px] top-8 w-5 h-5 rounded-full border-4 border-[#111114] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.14)]" />
-                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                                <div className="lg:w-24 shrink-0">
-                                  <p className="text-xs uppercase tracking-[0.24em] text-[#71717a]">{entry.timeLabel}</p>
+                              <div className="absolute left-[19px] top-7 w-4 h-4 rounded-full border-4 border-[#111114] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.14)]" />
+                              <div className="flex items-start gap-3 md:gap-4">
+                                <div className="w-14 md:w-16 shrink-0 pt-0.5">
+                                  <p className="text-[11px] uppercase tracking-[0.2em] text-[#71717a]">{entry.timeLabel}</p>
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <h4 className="text-lg font-semibold text-white">{entry.title}</h4>
-                                  <div className="mt-4 rounded-2xl border border-[#25252b] bg-[#17171b] px-5 py-4 text-sm leading-7 text-[#e5e7eb]">
-                                    <div>
-                                      <p className="text-[11px] uppercase tracking-[0.24em] text-blue-300 mb-2">What</p>
-                                      <div className="space-y-1.5">
-                                        {entry.summary.what.map((item) => (
-                                          <p key={item}>• {item}</p>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    <div className="mt-4 pt-4 border-t border-[#2a2a31]">
-                                      <p className="text-[11px] uppercase tracking-[0.24em] text-purple-300 mb-2">Decisions</p>
-                                      {entry.summary.decisions.length ? (
-                                        <div className="space-y-1.5">
-                                          {entry.summary.decisions.map((item) => (
-                                            <p key={item}>• {item}</p>
-                                          ))}
-                                        </div>
+                                  <div className="mt-3 rounded-2xl border border-[#25252b] bg-[#17171b] px-4 py-3 text-sm leading-7 text-[#e5e7eb]">
+                                    <div className="space-y-1.5">
+                                      {mergedLines.length ? (
+                                        mergedLines.map((item) => <p key={item}>• {item}</p>)
                                       ) : (
-                                        <p className="text-[#8a8a93]">No explicit decision captured.</p>
-                                      )}
-                                    </div>
-
-                                    <div className="mt-4 pt-4 border-t border-[#2a2a31]">
-                                      <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-300 mb-2">Key Insights</p>
-                                      {entry.summary.insights.length ? (
-                                        <div className="space-y-1.5">
-                                          {entry.summary.insights.map((item) => (
-                                            <p key={item}>• {item}</p>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <p className="text-[#8a8a93]">Waiting for more explicit insights in source text.</p>
+                                        <p className="text-[#8a8a93]">暂无可展示摘要。</p>
                                       )}
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
+                    </div>
 
-                      <div className="border-t border-[#222228] bg-[#101014] px-5 py-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] uppercase tracking-[0.22em] text-[#71717a] mr-2">Source memories</span>
-                          {group.memories.map((memory) => (
-                            <button
-                              key={memory.id}
-                              onClick={() => setSelectedItem(memory)}
-                              className="rounded-full border border-[#31313a] bg-[#18181c] px-3 py-1.5 text-xs text-[#d4d4d8] hover:border-blue-500/40 hover:text-white transition-colors"
-                            >
-                              {memory.title}
-                            </button>
-                          ))}
-                        </div>
+                    <div className="border-t border-[#222228] bg-[#101014] px-5 py-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] uppercase tracking-[0.22em] text-[#71717a] mr-2">Source memories</span>
+                        {group.memories.map((memory) => (
+                          <button
+                            key={memory.id}
+                            onClick={() => setSelectedItem(memory)}
+                            className="rounded-full border border-[#31313a] bg-[#18181c] px-3 py-1.5 text-xs text-[#d4d4d8] hover:border-blue-500/40 hover:text-white transition-colors"
+                          >
+                            {memory.title}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </section>
@@ -1961,38 +1939,11 @@ export default function SecondBrain() {
               </div>
 
               <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5 text-sm leading-7 text-[#e5e7eb]">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.24em] text-blue-300 mb-2">What</p>
-                  <div className="space-y-1.5">
-                    {selectedMemoryDigest.what.map((item) => (
-                      <p key={item}>• {item}</p>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-[#2a2a31]">
-                  <p className="text-[11px] uppercase tracking-[0.24em] text-purple-300 mb-2">Decisions</p>
-                  {selectedMemoryDigest.decisions.length ? (
-                    <div className="space-y-1.5">
-                      {selectedMemoryDigest.decisions.map((item) => (
-                        <p key={item}>• {item}</p>
-                      ))}
-                    </div>
+                <div className="space-y-1.5">
+                  {mergeMemorySummaryLines(selectedMemoryDigest).length ? (
+                    mergeMemorySummaryLines(selectedMemoryDigest).map((item) => <p key={item}>• {item}</p>)
                   ) : (
-                    <p className="text-[#8a8a93]">No explicit decisions extracted.</p>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-[#2a2a31]">
-                  <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-300 mb-2">Key Insights</p>
-                  {selectedMemoryDigest.insights.length ? (
-                    <div className="space-y-1.5">
-                      {selectedMemoryDigest.insights.map((item) => (
-                        <p key={item}>• {item}</p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[#8a8a93]">No explicit insights extracted.</p>
+                    <p className="text-[#8a8a93]">暂无可展示摘要。</p>
                   )}
                 </div>
               </div>
