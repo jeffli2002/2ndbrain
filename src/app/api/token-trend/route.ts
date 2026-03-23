@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-<<<<<<< HEAD
-=======
 import { getSupabaseAdmin } from '@/lib/supabase';
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
 
 const CRON_DIR = '/root/.openclaw/cron';
 const RUNS_DIR = '/root/.openclaw/cron/runs';
@@ -32,10 +29,7 @@ function shanghaiDate(ms: number): string {
 }
 
 function listJobSnapshotFiles(): string[] {
-<<<<<<< HEAD
-=======
   if (!fs.existsSync(CRON_DIR)) return [];
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
   return fs
     .readdirSync(CRON_DIR)
     .filter((name) => name.startsWith('jobs.json'))
@@ -99,11 +93,6 @@ function buildTrend(): TrendPoint[] {
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-<<<<<<< HEAD
-export async function GET() {
-  try {
-    const trend = buildTrend();
-=======
 async function buildTrendFromSupabaseHistory(): Promise<TrendPoint[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -181,7 +170,6 @@ export async function GET() {
       source = 'supabase-snapshot';
     }
 
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
     const latest14 = trend.slice(-14);
     const totalTokens = trend.reduce((sum, point) => sum + point.totalTokens, 0);
 
@@ -191,10 +179,7 @@ export async function GET() {
       latest14,
       totalTokens,
       taskMeta: TASK_MAPPINGS,
-<<<<<<< HEAD
-=======
       source,
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
     });
   } catch (error) {
     console.error('token-trend error:', error);

@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server';
-<<<<<<< HEAD
-import { supabaseAdmin } from '@/lib/supabase';
-
-export async function POST() {
-  try {
-=======
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
     // Create memories table
     const { error: memError } = await supabaseAdmin.from('memories').select('*').limit(1);
     

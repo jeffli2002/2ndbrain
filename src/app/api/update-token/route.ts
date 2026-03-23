@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
-<<<<<<< HEAD
-import { supabaseAdmin } from '@/lib/supabase';
-
-export async function POST(request: Request) {
-  try {
-=======
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
->>>>>>> 8d2abf78b8490403831aae82052e8e107054b856
     const body = await request.json();
     const { task_id, token_usage, duration } = body;
 

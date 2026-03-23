@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brain, Lock, Eye, EyeOff } from "lucide-react";
 
-const ADMIN_PASSWORD = "jeff2026";
+const ADMIN_PASSWORD = "2B-4td6oOSBhqY#";
 
 export default function Login() {
   const router = useRouter();
