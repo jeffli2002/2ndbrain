@@ -43,7 +43,7 @@ export async function GET() {
         strategistProposal: data.strategist_proposal || '',
         productProposal: data.product_proposal || '',
         devilProposal: data.devil_proposal || '',
-        finalMemo: (data.final_memo and data.final_memo.trim()) ? data.final_memo : (data.final_memo || ''),
+        finalMemo: (data.final_memo && data.final_memo.trim()) ? data.final_memo : (data.final_memo || ''),
       };
     });
 
