@@ -257,18 +257,46 @@ function mergeMemorySummaryLines(summary: MemoryDigest) {
   );
 }
 
+function isDuplicateDailyIntroLine(line: string, memory: Memory) {
+  const normalized = stripMarkdownLine(line)
+    .replace(/[（）()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const normalizedTitle = stripMarkdownLine(memory.title)
+    .replace(/[（）()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return false;
+  if (normalized === memory.date) return true;
+  if (normalized === normalizedTitle) return true;
+  if (normalized === `${memory.date} 工作日志`) return true;
+  if (normalized === `${memory.date} 日志`) return true;
+  if (normalized === `${memory.date} 日报`) return true;
+
+  return false;
+}
+
+function trimLeadingDailyIntro(lines: string[], memory: Memory) {
+  const trimmed = [...lines];
+  while (trimmed.length && isDuplicateDailyIntroLine(trimmed[0], memory)) {
+    trimmed.shift();
+  }
+  return trimmed;
+}
+
 function splitMemoryIntoBlocks(memory: Memory) {
-  const lines = memory.content.split("\n");
-  const blocks: Array<{ title: string; body: string }> = [];
+  const sanitizedLines = trimLeadingDailyIntro(memory.content.split("\n"), memory);
+  const blocks: Array<{ title: string; body: string; timeLabel?: string }> = [];
   let currentTitle = memory.title;
   let currentLines: string[] = [];
 
   const pushCurrent = () => {
-    const body = currentLines.join("\n").trim();
+    const body = trimLeadingDailyIntro(currentLines, memory).join("\n").trim();
     if (body) blocks.push({ title: currentTitle, body });
   };
 
-  for (const line of lines) {
+  for (const line of sanitizedLines) {
     const headingMatch = line.match(/^\s*#{2,4}\s+(.+)$/);
     if (headingMatch) {
       pushCurrent();
@@ -282,18 +310,67 @@ function splitMemoryIntoBlocks(memory: Memory) {
 
   pushCurrent();
 
-  if (!blocks.length) {
-    const paragraphs = memory.content
-      .split(/\n\s*\n/)
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0);
-    return paragraphs.map((paragraph, index) => ({
-      title: index === 0 ? memory.title : `${memory.title} / ${index + 1}`,
-      body: paragraph,
-    }));
+  if (blocks.length) {
+    return blocks;
   }
 
-  return blocks;
+  const timePattern = /^\s*(?:[-*+•]\s*)?(\d{1,2}:\d{2}(?:\s?[AP]M)?)\s*(?:[-–—:：]\s*)?(.*)$/i;
+  const timeBlocks: Array<{ title: string; body: string; timeLabel?: string }> = [];
+  let currentTimeBlock: { timeLabel?: string; title: string; lines: string[] } | null = null;
+  const prefaceLines: string[] = [];
+
+  const pushTimeBlock = () => {
+    if (!currentTimeBlock) return;
+    const body = trimLeadingDailyIntro(currentTimeBlock.lines, memory).join("\n").trim();
+    if (body) {
+      timeBlocks.push({
+        title: currentTimeBlock.title,
+        body,
+        timeLabel: currentTimeBlock.timeLabel,
+      });
+    }
+  };
+
+  for (const line of sanitizedLines) {
+    const matched = line.match(timePattern);
+    if (matched) {
+      pushTimeBlock();
+      const [, timeLabel, remainder] = matched;
+      const cleanRemainder = stripMarkdownLine(remainder);
+      currentTimeBlock = {
+        timeLabel: timeLabel.toUpperCase(),
+        title: cleanRemainder || `${memory.title} / ${timeLabel}`,
+        lines: cleanRemainder ? [cleanRemainder] : [],
+      };
+      continue;
+    }
+
+    if (currentTimeBlock) {
+      currentTimeBlock.lines.push(line);
+    } else if (!isDuplicateDailyIntroLine(line, memory)) {
+      prefaceLines.push(line);
+    }
+  }
+
+  pushTimeBlock();
+
+  if (timeBlocks.length) {
+    if (prefaceLines.length) {
+      timeBlocks[0].body = `${prefaceLines.join("\n").trim()}\n${timeBlocks[0].body}`.trim();
+    }
+    return timeBlocks;
+  }
+
+  const paragraphs = trimLeadingDailyIntro(sanitizedLines, memory)
+    .join("\n")
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && !isDuplicateDailyIntroLine(part, memory));
+
+  return paragraphs.map((paragraph, index) => ({
+    title: index === 0 ? memory.title : `${memory.title} / ${index + 1}`,
+    body: paragraph,
+  }));
 }
 
 function extractTimeLabel(title: string, index: number) {
@@ -306,7 +383,7 @@ function buildDailyTimeline(memory: Memory): MemoryTimelineEntry[] {
   return splitMemoryIntoBlocks(memory)
     .map((block, index) => ({
       id: `${memory.id}-${index}`,
-      timeLabel: extractTimeLabel(block.title, index),
+      timeLabel: block.timeLabel || extractTimeLabel(block.title, index),
       title: makeHeadline(block.title, block.body),
       summary: buildMemoryDigest(block.title, block.body),
     }))
