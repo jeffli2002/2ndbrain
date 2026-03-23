@@ -57,7 +57,7 @@ export interface MemoryTimelineEntry {
   summary: MemoryDigest;
 }
 
-export type TabType = "home" | "memories" | "documents" | "tasks" | "agents" | "team" | "office";
+export type TabType = "home" | "memories" | "documents" | "tasks" | "agents" | "team" | "office" | "rd";
 
 export type AgentStatus = "running" | "ok" | "error" | "idle" | "loading" | "external";
 

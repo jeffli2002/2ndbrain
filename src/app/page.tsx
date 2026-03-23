@@ -27,6 +27,7 @@ import { AgentsView } from "@/components/second-brain/AgentsView";
 import { TasksView } from "@/components/second-brain/TasksView";
 import { TeamView } from "@/components/second-brain/TeamView";
 import { OfficeView } from "@/components/second-brain/OfficeView";
+import { RdMemosView } from "@/components/second-brain/RdMemosView";
 
 // Supabase 配置
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://njxjuvxosvwvluxefrzg.supabase.co";
@@ -1662,6 +1663,7 @@ export default function SecondBrain() {
               formatRelativeTime={formatRelativeTime}
             />
           )}
+          {!searchQuery && activeTab === "rd" && <RdMemosView />}
         </main>
       </div>
     </AuthCheck>

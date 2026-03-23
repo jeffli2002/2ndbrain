@@ -184,6 +184,20 @@ export function Sidebar({
               <span>Office</span>
             </button>
           </li>
+          <li>
+            <button
+              onClick={() => setActiveTab("rd")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "rd" ? "bg-blue-500/20 text-blue-400" : "text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span>R&D 智囊团</span>
+            </button>
+          </li>
         </ul>
       </nav>
 
