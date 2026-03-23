@@ -695,11 +695,25 @@ export default function SecondBrain() {
   const evolutionMemories = filteredMemories
     .filter((memory) => memory.type === "evolution")
     .sort((a, b) => b.date.localeCompare(a.date));
-  const dailyTimelineGroups = dailyMemories.map((memory) => ({
-    ...memory,
-    entries: buildDailyTimeline(memory),
-    digest: buildMemoryDigest(memory.title, memory.content),
-  }));
+  const dailyTimelineGroups = dailyMemories
+    .reduce<Array<{ date: string; memories: Memory[]; entries: MemoryTimelineEntry[] }>>((groups, memory) => {
+      const existingGroup = groups.find((group) => group.date === memory.date);
+      const entries = buildDailyTimeline(memory);
+
+      if (existingGroup) {
+        existingGroup.memories.push(memory);
+        existingGroup.entries.push(...entries);
+      } else {
+        groups.push({
+          date: memory.date,
+          memories: [memory],
+          entries: [...entries],
+        });
+      }
+
+      return groups;
+    }, [])
+    .sort((a, b) => b.date.localeCompare(a.date));
   const selectedMemory = selectedItem && "content" in selectedItem ? selectedItem : null;
   const selectedMemoryTimeline = selectedMemory ? buildDailyTimeline(selectedMemory) : [];
   const selectedMemoryDigest = selectedMemory ? buildMemoryDigest(selectedMemory.title, selectedMemory.content) : null;
@@ -1673,7 +1687,7 @@ export default function SecondBrain() {
               Memory Journal
             </h2>
             <p className="text-sm text-[#a1a1aa] mt-2 max-w-3xl">
-              把长期记忆与 Daily Memory 分开管理：左侧是按时间推进的 journal timeline，右侧保留长期原则与演化沉淀。
+              把长期记忆与 Daily Memory 分开管理：左侧是按天整合的 journal timeline，右侧保留长期原则与演化沉淀。
             </p>
           </div>
           <div className="text-sm text-[#71717a] lg:text-right">
@@ -1706,8 +1720,8 @@ export default function SecondBrain() {
         </div>
         <div className="bg-gradient-to-br from-[#171725] to-[#111118] border border-[#2a2a38] rounded-2xl p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-yellow-200 mb-2">Timeline</p>
-          <p className="text-lg font-semibold text-white">What / Decisions / Insights</p>
-          <p className="text-xs text-[#a1a1aa] mt-1">Daily Memory 自动拆成可读摘要卡片</p>
+          <p className="text-lg font-semibold text-white">One Day · One Container</p>
+          <p className="text-xs text-[#a1a1aa] mt-1">同一天内容合并进一个可滚动的日记容器</p>
         </div>
       </div>
 
@@ -1731,7 +1745,7 @@ export default function SecondBrain() {
                 <p className="text-xs uppercase tracking-[0.25em] text-blue-300 mb-2">Daily Memory</p>
                 <h3 className="text-xl font-semibold text-white">Journal Timeline</h3>
               </div>
-              <div className="text-xs text-[#71717a]">Newest first</div>
+              <div className="text-xs text-[#71717a]">Grouped by date</div>
             </div>
 
             {!dailyTimelineGroups.length ? (
@@ -1740,78 +1754,89 @@ export default function SecondBrain() {
               </div>
             ) : (
               <div className="space-y-8">
-                {dailyTimelineGroups.map((memory) => (
-                  <section key={memory.id} id={`memory-day-${memory.date}`} className="grid grid-cols-1 lg:grid-cols-[160px_minmax(0,1fr)] gap-6">
+                {dailyTimelineGroups.map((group) => (
+                  <section key={group.date} id={`memory-day-${group.date}`} className="grid grid-cols-1 lg:grid-cols-[160px_minmax(0,1fr)] gap-6">
                     <div className="lg:sticky lg:top-6 self-start">
                       <div className="bg-[#101014] border border-[#27272a] rounded-2xl p-4">
                         <p className="text-xs uppercase tracking-[0.22em] text-[#71717a] mb-2">Journal Day</p>
-                        <p className="text-lg font-semibold text-white">{formatMemoryDateLabel(memory.date)}</p>
-                        <p className="text-xs text-[#71717a] mt-1">{formatMemoryDateMeta(memory.date)}</p>
-                        <button
-                          onClick={() => setSelectedItem(memory)}
-                          className="mt-4 inline-flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200"
-                        >
-                          查看原文 <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        <p className="text-lg font-semibold text-white">{formatMemoryDateLabel(group.date)}</p>
+                        <p className="text-xs text-[#71717a] mt-1">{formatMemoryDateMeta(group.date)}</p>
+                        <p className="text-xs text-[#71717a] mt-3">{group.memories.length} memories · {group.entries.length} timeline points</p>
                       </div>
                     </div>
 
-                    <div className="relative pl-6">
-                      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/20 to-transparent" />
-                      <div className="space-y-4">
-                        {memory.entries.map((entry, index) => (
-                          <article
-                            key={entry.id}
-                            className="relative bg-[#111114] border border-[#27272a] rounded-2xl p-5 hover:border-blue-500/40 transition-colors cursor-pointer"
-                            onClick={() => setSelectedItem(memory)}
-                          >
-                            <div className="absolute -left-[22px] top-6 w-4 h-4 rounded-full border-4 border-[#0a0a0b] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.12)]" />
-                            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between mb-4">
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.22em] text-[#71717a] mb-2">{entry.timeLabel}</p>
-                                <h4 className="text-lg font-semibold text-white">{entry.title}</h4>
-                              </div>
-                              <span className="inline-flex items-center rounded-full border border-[#2f2f35] bg-[#18181c] px-3 py-1 text-xs text-[#c4c4cb]">
-                                Summary {String(index + 1).padStart(2, "0")}
-                              </span>
-                            </div>
+                    <div className="rounded-[28px] border border-[#27272a] bg-[#111114] overflow-hidden">
+                      <div className="max-h-[860px] overflow-y-auto">
+                        <div className="relative">
+                          <div className="absolute left-8 top-8 bottom-8 w-px bg-gradient-to-b from-blue-500/60 via-purple-500/25 to-transparent" />
+                          {group.entries.map((entry, index) => (
+                            <div
+                              key={entry.id}
+                              className={`relative pl-16 pr-6 py-6 ${index !== group.entries.length - 1 ? "border-b border-[#222228]" : ""}`}
+                            >
+                              <div className="absolute left-[27px] top-8 w-5 h-5 rounded-full border-4 border-[#111114] bg-blue-400 shadow-[0_0_0_4px_rgba(96,165,250,0.14)]" />
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                                <div className="lg:w-24 shrink-0">
+                                  <p className="text-xs uppercase tracking-[0.24em] text-[#71717a]">{entry.timeLabel}</p>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-lg font-semibold text-white">{entry.title}</h4>
+                                  <div className="mt-4 rounded-2xl border border-[#25252b] bg-[#17171b] px-5 py-4 text-sm leading-7 text-[#e5e7eb]">
+                                    <div>
+                                      <p className="text-[11px] uppercase tracking-[0.24em] text-blue-300 mb-2">What</p>
+                                      <div className="space-y-1.5">
+                                        {entry.summary.what.map((item) => (
+                                          <p key={item}>• {item}</p>
+                                        ))}
+                                      </div>
+                                    </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
-                                <p className="text-[11px] uppercase tracking-[0.22em] text-blue-300 mb-2">What</p>
-                                <ul className="space-y-2 text-sm text-[#e4e4e7]">
-                                  {entry.summary.what.map((item) => (
-                                    <li key={item} className="leading-relaxed">• {item}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
-                                <p className="text-[11px] uppercase tracking-[0.22em] text-purple-300 mb-2">Decisions</p>
-                                {entry.summary.decisions.length ? (
-                                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
-                                    {entry.summary.decisions.map((item) => (
-                                      <li key={item} className="leading-relaxed">• {item}</li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-sm text-[#71717a]">No explicit decision captured.</p>
-                                )}
-                              </div>
-                              <div className="rounded-2xl bg-[#17171b] border border-[#26262c] p-4">
-                                <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-300 mb-2">Key Insights</p>
-                                {entry.summary.insights.length ? (
-                                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
-                                    {entry.summary.insights.map((item) => (
-                                      <li key={item} className="leading-relaxed">• {item}</li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-sm text-[#71717a]">Waiting for more explicit insights in source text.</p>
-                                )}
+                                    <div className="mt-4 pt-4 border-t border-[#2a2a31]">
+                                      <p className="text-[11px] uppercase tracking-[0.24em] text-purple-300 mb-2">Decisions</p>
+                                      {entry.summary.decisions.length ? (
+                                        <div className="space-y-1.5">
+                                          {entry.summary.decisions.map((item) => (
+                                            <p key={item}>• {item}</p>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[#8a8a93]">No explicit decision captured.</p>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-[#2a2a31]">
+                                      <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-300 mb-2">Key Insights</p>
+                                      {entry.summary.insights.length ? (
+                                        <div className="space-y-1.5">
+                                          {entry.summary.insights.map((item) => (
+                                            <p key={item}>• {item}</p>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[#8a8a93]">Waiting for more explicit insights in source text.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </article>
-                        ))}
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-[#222228] bg-[#101014] px-5 py-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] uppercase tracking-[0.22em] text-[#71717a] mr-2">Source memories</span>
+                          {group.memories.map((memory) => (
+                            <button
+                              key={memory.id}
+                              onClick={() => setSelectedItem(memory)}
+                              className="rounded-full border border-[#31313a] bg-[#18181c] px-3 py-1.5 text-xs text-[#d4d4d8] hover:border-blue-500/40 hover:text-white transition-colors"
+                            >
+                              {memory.title}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </section>
@@ -1889,15 +1914,15 @@ export default function SecondBrain() {
             <p className="text-xs uppercase tracking-[0.25em] text-blue-300 mb-2">Daily Index</p>
             <h3 className="text-lg font-semibold text-white mb-4">Recent Journal Days</h3>
             <div className="space-y-2">
-              {dailyTimelineGroups.slice(0, 8).map((memory) => (
+              {dailyTimelineGroups.slice(0, 8).map((group) => (
                 <a
-                  key={memory.id}
-                  href={`#memory-day-${memory.date}`}
+                  key={group.date}
+                  href={`#memory-day-${group.date}`}
                   className="flex items-center justify-between rounded-2xl border border-[#27272a] bg-[#101014] px-4 py-3 hover:border-blue-500/40 transition-colors"
                 >
                   <div>
-                    <p className="text-sm text-white">{formatMemoryDateLabel(memory.date)}</p>
-                    <p className="text-xs text-[#71717a]">{memory.entries.length} summary blocks</p>
+                    <p className="text-sm text-white">{formatMemoryDateLabel(group.date)}</p>
+                    <p className="text-xs text-[#71717a]">{group.memories.length} memories · {group.entries.length} points</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[#71717a]" />
                 </a>
@@ -1910,8 +1935,17 @@ export default function SecondBrain() {
       {selectedMemory && selectedMemoryDigest && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-[#141416] rounded-3xl border border-[#27272a] max-w-4xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b border-[#27272a] flex items-start justify-between gap-4">
-              <div>
+            <div className="sticky top-0 z-20 flex justify-end p-4 bg-gradient-to-b from-[#141416] via-[#141416]/95 to-transparent backdrop-blur-sm">
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="w-10 h-10 rounded-full border border-[#34343b] bg-[#0f0f10]/95 text-[#d4d4d8] hover:text-white hover:border-white/30 transition-colors shadow-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="px-6 pb-6 space-y-6 -mt-3">
+              <div className="pb-6 border-b border-[#27272a] pr-12">
                 <div className="flex items-center gap-3 mb-3">
                   {getMemoryTypeIcon(selectedMemory.type)}
                   <span className="text-xs uppercase tracking-[0.22em] text-[#71717a]">{toDisplayType(selectedMemory.type)}</span>
@@ -1919,52 +1953,46 @@ export default function SecondBrain() {
                 <h3 className="text-2xl font-bold text-white">{selectedMemory.title}</h3>
                 <p className="text-sm text-[#71717a] mt-2">{formatMemoryDateLabel(selectedMemory.date)} · {formatMemoryDateMeta(selectedMemory.date)}</p>
               </div>
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="text-[#a1a1aa] hover:text-white text-xl"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="p-6 space-y-6">
               <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
                 <p className="text-xs uppercase tracking-[0.25em] text-[#71717a] mb-2">Summary</p>
                 <h4 className="text-xl font-semibold text-white">{selectedMemoryDigest.headline}</h4>
                 <p className="text-sm text-[#a1a1aa] mt-2 leading-relaxed">{selectedMemoryDigest.excerpt || selectedMemory.content.slice(0, 180)}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
-                  <p className="text-xs uppercase tracking-[0.22em] text-blue-300 mb-3">What</p>
-                  <ul className="space-y-2 text-sm text-[#e4e4e7]">
+              <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5 text-sm leading-7 text-[#e5e7eb]">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-blue-300 mb-2">What</p>
+                  <div className="space-y-1.5">
                     {selectedMemoryDigest.what.map((item) => (
-                      <li key={item}>• {item}</li>
+                      <p key={item}>• {item}</p>
                     ))}
-                  </ul>
+                  </div>
                 </div>
-                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
-                  <p className="text-xs uppercase tracking-[0.22em] text-purple-300 mb-3">Decisions</p>
+
+                <div className="mt-4 pt-4 border-t border-[#2a2a31]">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-purple-300 mb-2">Decisions</p>
                   {selectedMemoryDigest.decisions.length ? (
-                    <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                    <div className="space-y-1.5">
                       {selectedMemoryDigest.decisions.map((item) => (
-                        <li key={item}>• {item}</li>
+                        <p key={item}>• {item}</p>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
-                    <p className="text-sm text-[#71717a]">No explicit decisions extracted.</p>
+                    <p className="text-[#8a8a93]">No explicit decisions extracted.</p>
                   )}
                 </div>
-                <div className="rounded-3xl border border-[#27272a] bg-[#101014] p-5">
-                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-300 mb-3">Key Insights</p>
+
+                <div className="mt-4 pt-4 border-t border-[#2a2a31]">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-300 mb-2">Key Insights</p>
                   {selectedMemoryDigest.insights.length ? (
-                    <ul className="space-y-2 text-sm text-[#e4e4e7]">
+                    <div className="space-y-1.5">
                       {selectedMemoryDigest.insights.map((item) => (
-                        <li key={item}>• {item}</li>
+                        <p key={item}>• {item}</p>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
-                    <p className="text-sm text-[#71717a]">No explicit insights extracted.</p>
+                    <p className="text-[#8a8a93]">No explicit insights extracted.</p>
                   )}
                 </div>
               </div>
