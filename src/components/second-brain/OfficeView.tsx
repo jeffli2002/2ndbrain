@@ -158,10 +158,12 @@ export function OfficeView({
     ];
 
     const walkingSpots: SceneSpot[] = [
-      { zone: 'Central Aisle · Walk Loop', x: 540, y: 360, pose: 'walk' },
-      { zone: 'Central Aisle · Walk Loop', x: 600, y: 540, pose: 'walk' },
-      { zone: 'Meeting Hall · Walk Loop', x: 720, y: 215, pose: 'walk' },
-      { zone: 'Coffee Bar · Walk Loop', x: 365, y: 585, pose: 'walk' },
+      { zone: 'Central Aisle · North Loop', x: 555, y: 360, pose: 'walk' },
+      { zone: 'Central Aisle · South Loop', x: 585, y: 525, pose: 'walk' },
+      { zone: 'Break Area · Walk Loop', x: 360, y: 430, pose: 'walk' },
+      { zone: 'Break Area · Coffee Loop', x: 405, y: 555, pose: 'walk' },
+      { zone: 'Print / Storage · Front Loop', x: 220, y: 235, pose: 'walk' },
+      { zone: 'Print / Storage · Side Loop', x: 315, y: 220, pose: 'walk' },
     ];
 
     const restingSpots: SceneSpot[] = [
@@ -255,8 +257,8 @@ export function OfficeView({
 
       if (agent.id === 'abby') {
         officePlacementMap.set(agent.id, {
-          zone: 'Reception · Front Desk',
-          x: 255,
+          zone: 'Entrance Reception · Front Desk',
+          x: 205,
           y: 664,
           pose: 'reception',
         });
