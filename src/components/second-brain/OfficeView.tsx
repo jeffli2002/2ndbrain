@@ -167,15 +167,19 @@ export function OfficeView({
     ];
 
     const restingSpots: SceneSpot[] = [
-      { zone: 'Break Area · Sofa Left', x: 155, y: 474, pose: 'sit' },
-      { zone: 'Break Area · Sofa Center', x: 235, y: 474, pose: 'sit' },
-      { zone: 'Break Area · Sofa Right', x: 315, y: 474, pose: 'sit' },
+      { zone: 'Break Area · Sofa Far Left', x: 130, y: 474, pose: 'sit' },
+      { zone: 'Break Area · Sofa Left', x: 190, y: 474, pose: 'sit' },
+      { zone: 'Break Area · Sofa Center', x: 250, y: 474, pose: 'sit' },
+      { zone: 'Break Area · Sofa Right', x: 310, y: 474, pose: 'sit' },
       { zone: 'Break Area · Lounge Chair', x: 410, y: 520, pose: 'sit' },
+      { zone: 'Break Area · Window Bench', x: 392, y: 438, pose: 'sit' },
     ];
 
     const fallbackSpots: SceneSpot[] = [
       { zone: 'Collab Corner', x: 650, y: 250, pose: 'stand' },
       { zone: 'Printer Area', x: 180, y: 205, pose: 'stand' },
+      { zone: 'Central Aisle · Pause Point', x: 560, y: 610, pose: 'stand' },
+      { zone: 'Break Area · Plant Corner', x: 378, y: 384, pose: 'stand' },
     ];
 
     const meetingSeats: Record<'meeting-a' | 'meeting-b', SceneSpot[]> = {
@@ -225,6 +229,39 @@ export function OfficeView({
       return ((seed % length) + length) % length;
     };
 
+    const assignUniqueSceneSpots = (agents: TeamAgent[], spots: SceneSpot[], phase: number, overflowSpots: SceneSpot[] = []) => {
+      const assignments = new Map<string, SceneSpot>();
+      if (!agents.length || !spots.length) return assignments;
+
+      const rotatedPrimary = spots.map((_, index) => spots[getSlotIndex(spots.length, index + phase)]);
+      const rotatedOverflow = overflowSpots.length
+        ? overflowSpots.map((_, index) => overflowSpots[getSlotIndex(overflowSpots.length, index + phase)])
+        : [];
+
+      agents.forEach((agent, index) => {
+        if (index < rotatedPrimary.length) {
+          assignments.set(agent.id, rotatedPrimary[index]);
+          return;
+        }
+
+        const overflowIndex = index - rotatedPrimary.length;
+        if (overflowIndex < rotatedOverflow.length) {
+          assignments.set(agent.id, rotatedOverflow[overflowIndex]);
+          return;
+        }
+
+        const fallbackSpot = rotatedPrimary[overflowIndex % rotatedPrimary.length];
+        assignments.set(agent.id, {
+          ...fallbackSpot,
+          x: fallbackSpot.x + 22 * ((overflowIndex % 3) - 1),
+          y: fallbackSpot.y + 20 * (Math.floor(overflowIndex / 3) + 1),
+          zone: `${fallbackSpot.zone} · Overflow`,
+        });
+      });
+
+      return assignments;
+    };
+
     const getIdleDurationMs = (agent: TeamAgent) => {
       const timestamp = agent.lastActiveAt ? new Date(agent.lastActiveAt).getTime() : Number.NaN;
       if (Number.isNaN(timestamp)) return Number.POSITIVE_INFINITY;
@@ -257,19 +294,9 @@ export function OfficeView({
       .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) >= ONE_HOUR_MS)
       .sort((a, b) => a.id.localeCompare(b.id));
 
-    const walkingSpotByAgentId = new Map(
-      walkingIdleAgents.map((agent, index) => [
-        agent.id,
-        walkingSpots[getSlotIndex(walkingSpots.length, index + currentWalkPhase)],
-      ])
-    );
+    const walkingSpotByAgentId = assignUniqueSceneSpots(walkingIdleAgents, walkingSpots, currentWalkPhase, fallbackSpots);
 
-    const restingSpotByAgentId = new Map(
-      restingIdleAgents.map((agent, index) => [
-        agent.id,
-        restingSpots[getSlotIndex(restingSpots.length, index + currentRestPhase)],
-      ])
-    );
+    const restingSpotByAgentId = assignUniqueSceneSpots(restingIdleAgents, restingSpots, currentRestPhase, fallbackSpots);
 
     let fallbackIndex = 0;
 
