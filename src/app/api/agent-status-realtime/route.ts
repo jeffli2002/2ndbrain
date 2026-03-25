@@ -37,6 +37,7 @@ const USER_CHANNEL_SEGMENTS = new Set([
 ]);
 
 const ACTIVE_SESSION_WINDOW_MINUTES = 20;
+const LAST_ACTIVE_LOOKBACK_MINUTES = 14 * 24 * 60;
 
 type CanonicalAgentId = (typeof CANONICAL_AGENTS)[number]['id'];
 type AggregatedAgentStatus = 'running' | 'ok' | 'error' | 'idle';
@@ -85,6 +86,12 @@ type LiveSessionSummary = {
   updatedAt?: number;
   ageMs?: number;
   isSubagent: boolean;
+};
+
+type AgentRecentActivity = {
+  agentId: CanonicalAgentId;
+  updatedAt: number;
+  key: string;
 };
 
 type SupabaseTaskRow = {
@@ -214,6 +221,19 @@ function isLikelySubagentSession(session: OpenClawSession) {
   return session.key.includes('subagent') || session.key.includes(':worker:') || session.key.includes(':delegate:');
 }
 
+function toRecentActivity(session: OpenClawSession): AgentRecentActivity | null {
+  const agentId = normalizeAgentId(session.agentId);
+  if (!agentId) return null;
+  if (isCronSession(session)) return null;
+  if (!session.updatedAt) return null;
+
+  return {
+    agentId,
+    updatedAt: session.updatedAt,
+    key: session.key,
+  };
+}
+
 function toLiveSessionSummary(session: OpenClawSession): LiveSessionSummary | null {
   const agentId = normalizeAgentId(session.agentId);
   if (!agentId) return null;
@@ -337,6 +357,7 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
         runningTasks,
         idleTasks: Math.max(taskCount - completedTasks - failedTasks - runningTasks, 0),
         lastRun: aggregatedRow.last_run || null,
+        lastActiveAt: aggregatedRow.updated_at || aggregatedRow.last_run || null,
       };
     }
 
@@ -348,6 +369,12 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
       if (!task.last_run) return latest;
       if (!latest) return task.last_run;
       return new Date(task.last_run).getTime() > new Date(latest).getTime() ? task.last_run : latest;
+    }, null);
+    const lastActiveAt = rawAgentTasks.reduce<string | null>((latest, task) => {
+      const current = task.updated_at || task.last_run;
+      if (!current) return latest;
+      if (!latest) return current;
+      return new Date(current).getTime() > new Date(latest).getTime() ? current : latest;
     }, null);
 
     let status: AggregatedAgentStatus = 'idle';
@@ -365,6 +392,7 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
       runningTasks,
       idleTasks: Math.max(rawAgentTasks.length - completedTasks - failedTasks - runningTasks, 0),
       lastRun,
+      lastActiveAt,
     };
   });
 
@@ -373,8 +401,8 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
     .map((agent) => ({
       key: `supabase:agent:${agent.id}`,
       agentId: agent.id,
-      updatedAt: agent.lastRun ? new Date(agent.lastRun).getTime() : Date.now(),
-      ageMs: agent.lastRun ? Math.max(Date.now() - new Date(agent.lastRun).getTime(), 0) : 0,
+      updatedAt: (agent.lastActiveAt || agent.lastRun) ? new Date((agent.lastActiveAt || agent.lastRun) as string).getTime() : Date.now(),
+      ageMs: (agent.lastActiveAt || agent.lastRun) ? Math.max(Date.now() - new Date((agent.lastActiveAt || agent.lastRun) as string).getTime(), 0) : 0,
       isSubagent: false,
     }));
 
@@ -417,11 +445,39 @@ async function loadOpenClawActiveSessions(): Promise<LiveSessionSummary[]> {
   return dedupeLiveSessionsByAgent(liveSessions);
 }
 
+async function loadOpenClawRecentActivityByAgent(): Promise<Map<CanonicalAgentId, AgentRecentActivity>> {
+  const { stdout } = await execFileAsync(
+    'openclaw',
+    ['sessions', '--json', '--all-agents', '--active', String(LAST_ACTIVE_LOOKBACK_MINUTES)],
+    {
+      timeout: 30_000,
+      maxBuffer: 8 * 1024 * 1024,
+      env: process.env,
+    }
+  );
+
+  const payload = extractJsonPayload<OpenClawSessionsResponse>(stdout);
+  const byAgent = new Map<CanonicalAgentId, AgentRecentActivity>();
+
+  (payload.sessions || [])
+    .map((session) => toRecentActivity(session))
+    .filter((session): session is AgentRecentActivity => Boolean(session))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .forEach((session) => {
+      if (!byAgent.has(session.agentId)) {
+        byAgent.set(session.agentId, session);
+      }
+    });
+
+  return byAgent;
+}
+
 export async function GET() {
   try {
-    const [jobs, activeSessions] = await Promise.all([
+    const [jobs, activeSessions, recentActivityByAgent] = await Promise.all([
       loadOpenClawCronJobs(),
       loadOpenClawActiveSessions(),
+      loadOpenClawRecentActivityByAgent(),
     ]);
     const activeCollaborations = buildActiveCollaborations(activeSessions);
 
@@ -438,6 +494,9 @@ export async function GET() {
         return latest;
       }, null);
 
+      const recentActivityAtMs = recentActivityByAgent.get(agent.id)?.updatedAt || null;
+      const lastActiveAtMs = Math.max(lastRunAtMs || 0, recentActivityAtMs || 0) || null;
+
       let status: AggregatedAgentStatus = 'idle';
       if (runningTasks > 0) status = 'running';
       else if (failedTasks > 0) status = 'error';
@@ -453,6 +512,7 @@ export async function GET() {
         runningTasks,
         idleTasks,
         lastRun: lastRunAtMs ? new Date(lastRunAtMs).toISOString() : null,
+        lastActiveAt: lastActiveAtMs ? new Date(lastActiveAtMs).toISOString() : null,
       };
     });
 
@@ -485,6 +545,7 @@ export async function GET() {
           runningTasks: 0,
           idleTasks: 0,
           lastRun: null,
+          lastActiveAt: null,
         })),
         activeSessions: [],
         activeCollaborations: [],

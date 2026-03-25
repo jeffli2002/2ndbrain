@@ -1025,6 +1025,7 @@ export default function SecondBrain() {
     runningTasks: number;
     idleTasks: number;
     lastRun: string | null;
+    lastActiveAt?: string | null;
   }
 
   interface OfficeCollaboration {
@@ -1207,6 +1208,7 @@ export default function SecondBrain() {
             const okTasks = realAgent?.completedTasks || 0;
             const errorTasks = realAgent?.failedTasks || 0;
             const runningTasks = realAgent?.runningTasks || 0;
+            const lastActiveAt = realAgent?.lastActiveAt || realAgent?.lastRun || null;
             
             // 如果有活跃的 subagent 会话，状态为 running
             const isSubAgentRunning = activeAgentIds.has(agent.id);
@@ -1215,8 +1217,8 @@ export default function SecondBrain() {
             return {
               ...agent,
               status: status as AgentStatus,
-              lastActive: formatRelativeTime(realAgent?.lastRun),
-              lastActiveAt: realAgent?.lastRun || null,
+              lastActive: formatRelativeTime(lastActiveAt),
+              lastActiveAt,
               currentTask: isSubAgentRunning 
                 ? `活跃会话: ${activeSessions.find((s: any) => s.agentId === agent.id)?.key?.split(':').pop() || '工作中'}`
                 : buildCurrentTaskSummary(realAgent),

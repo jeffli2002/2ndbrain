@@ -217,11 +217,8 @@ export function OfficeView({
 
     const now = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000;
-    const currentWalkPhase = Math.floor(now / 15000);
-    const currentRestPhase = Math.floor(now / 45000);
-
-    const hashAgentId = (value: string) =>
-      value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const currentWalkPhase = Math.floor(now / 10000);
+    const currentRestPhase = Math.floor(now / 30000);
 
     const getSlotIndex = (length: number, seed: number) => {
       if (!length) return 0;
@@ -250,6 +247,30 @@ export function OfficeView({
       });
     });
 
+    const unplacedAgents = teamAgents.filter((agent) => !officePlacementMap.has(agent.id));
+
+    const walkingIdleAgents = unplacedAgents
+      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) < ONE_HOUR_MS)
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    const restingIdleAgents = unplacedAgents
+      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) >= ONE_HOUR_MS)
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    const walkingSpotByAgentId = new Map(
+      walkingIdleAgents.map((agent, index) => [
+        agent.id,
+        walkingSpots[getSlotIndex(walkingSpots.length, index + currentWalkPhase)],
+      ])
+    );
+
+    const restingSpotByAgentId = new Map(
+      restingIdleAgents.map((agent, index) => [
+        agent.id,
+        restingSpots[getSlotIndex(restingSpots.length, index + currentRestPhase)],
+      ])
+    );
+
     let fallbackIndex = 0;
 
     teamAgents.forEach((agent) => {
@@ -277,18 +298,15 @@ export function OfficeView({
         return;
       }
 
-      if (agent.status === 'idle' || agent.status === 'ok') {
-        const idleDurationMs = getIdleDurationMs(agent);
-        const seed = hashAgentId(agent.id);
+      const walkingSpot = walkingSpotByAgentId.get(agent.id);
+      if (walkingSpot) {
+        officePlacementMap.set(agent.id, { ...walkingSpot });
+        return;
+      }
 
-        if (idleDurationMs < ONE_HOUR_MS) {
-          const spot = walkingSpots[getSlotIndex(walkingSpots.length, seed + currentWalkPhase)];
-          officePlacementMap.set(agent.id, { ...spot });
-          return;
-        }
-
-        const spot = restingSpots[getSlotIndex(restingSpots.length, seed + currentRestPhase)];
-        officePlacementMap.set(agent.id, { ...spot });
+      const restingSpot = restingSpotByAgentId.get(agent.id);
+      if (restingSpot) {
+        officePlacementMap.set(agent.id, { ...restingSpot });
         return;
       }
 
