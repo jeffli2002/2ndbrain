@@ -559,60 +559,62 @@ export function OfficeView({
       return (
         <g
           transform={`translate(${placement.x} ${placement.y}) scale(${scale})`}
-          className={animationClass}
           onClick={() => setSelectedOfficeAgentId(agent.id)}
           style={{ cursor: 'pointer' }}
         >
           {selected && <circle cx="0" cy="-18" r="38" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeDasharray="6 5" />}
-          <ellipse cx="0" cy="16" rx="22" ry="7" fill="rgba(0,0,0,0.22)" />
 
-          {renderHair(profile, headY)}
-          <circle cx="0" cy={headY} r="14" fill="#fde7d3" />
-          <circle cx="-5" cy={headY - 2} r="1.2" fill="#1f2937" />
-          <circle cx="5" cy={headY - 2} r="1.2" fill="#1f2937" />
-          <path d={`M -4 ${headY + 6} Q 0 ${headY + 9} 4 ${headY + 6}`} stroke="#b45309" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <rect x="-5" y={headY + 12} width="10" height="14" rx="5" fill="#f3d2b8" />
-          <path
-            d={`M -15 ${bodyY + 10} Q 0 ${bodyY - 2} 15 ${bodyY + 10} L 15 ${bodyY + 17} Q 0 ${bodyY + 7} -15 ${bodyY + 17} Z`}
-            fill={profile.secondary}
-            opacity="0.95"
-          />
-          <rect x="-17" y={bodyY} width="34" height={bodyHeight} rx="13" fill={profile.outfit} />
-          <rect x="-17" y={bodyY + 22} width="34" height="10" rx="5" fill={profile.secondary} opacity="0.5" />
-          {renderAccessory(profile, bodyY)}
-          <text x="0" y={bodyY + 23} textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize="11" fontWeight="700">
-            {chestLetter}
-          </text>
+          <g className={animationClass}>
+            <ellipse cx="0" cy="16" rx="22" ry="7" fill="rgba(0,0,0,0.22)" />
 
-          {seated ? (
-            <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
-              <line x1="-8" y1={bodyY + 28} x2="-20" y2={bodyY + 18} />
-              <line x1="8" y1={bodyY + 28} x2="20" y2={bodyY + 18} />
-              <line x1="-20" y1={bodyY + 18} x2="-18" y2={bodyY + 34} />
-              <line x1="20" y1={bodyY + 18} x2="18" y2={bodyY + 34} />
-            </g>
-          ) : walking ? (
-            <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
-              <line x1="-12" y1={bodyY + 8} x2="-22" y2={bodyY + 20} />
-              <line x1="12" y1={bodyY + 8} x2="24" y2={bodyY + 16} />
-              <line x1="-6" y1={bodyY + 30} x2="-20" y2={bodyY + 48} />
-              <line x1="6" y1={bodyY + 30} x2="18" y2={bodyY + 38} />
-            </g>
-          ) : (
-            <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
-              <line x1="-14" y1={bodyY + 10} x2="-24" y2={bodyY + 22} />
-              <line x1="14" y1={bodyY + 10} x2="24" y2={bodyY + 22} />
-              <line x1="-6" y1={bodyY + 30} x2="-8" y2={bodyY + 48} />
-              <line x1="6" y1={bodyY + 30} x2="8" y2={bodyY + 48} />
-            </g>
-          )}
-
-          <circle cx="24" cy={headY - 8} r="5" fill={statusColor} stroke="rgba(255,255,255,0.9)" strokeWidth="2" />
-          <g transform="translate(0 40)">
-            <rect x="-30" y="0" width="60" height="16" rx="8" fill="rgba(15,23,42,0.82)" stroke={theme.accent} strokeWidth="1" />
-            <text x="0" y="11" textAnchor="middle" fill="#f8fafc" fontSize="9.5" fontWeight="700">
-              {profile.label}
+            {renderHair(profile, headY)}
+            <circle cx="0" cy={headY} r="14" fill="#fde7d3" />
+            <circle cx="-5" cy={headY - 2} r="1.2" fill="#1f2937" />
+            <circle cx="5" cy={headY - 2} r="1.2" fill="#1f2937" />
+            <path d={`M -4 ${headY + 6} Q 0 ${headY + 9} 4 ${headY + 6}`} stroke="#b45309" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <rect x="-5" y={headY + 12} width="10" height="14" rx="5" fill="#f3d2b8" />
+            <path
+              d={`M -15 ${bodyY + 10} Q 0 ${bodyY - 2} 15 ${bodyY + 10} L 15 ${bodyY + 17} Q 0 ${bodyY + 7} -15 ${bodyY + 17} Z`}
+              fill={profile.secondary}
+              opacity="0.95"
+            />
+            <rect x="-17" y={bodyY} width="34" height={bodyHeight} rx="13" fill={profile.outfit} />
+            <rect x="-17" y={bodyY + 22} width="34" height="10" rx="5" fill={profile.secondary} opacity="0.5" />
+            {renderAccessory(profile, bodyY)}
+            <text x="0" y={bodyY + 23} textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize="11" fontWeight="700">
+              {chestLetter}
             </text>
+
+            {seated ? (
+              <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
+                <line x1="-8" y1={bodyY + 28} x2="-20" y2={bodyY + 18} />
+                <line x1="8" y1={bodyY + 28} x2="20" y2={bodyY + 18} />
+                <line x1="-20" y1={bodyY + 18} x2="-18" y2={bodyY + 34} />
+                <line x1="20" y1={bodyY + 18} x2="18" y2={bodyY + 34} />
+              </g>
+            ) : walking ? (
+              <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
+                <line x1="-12" y1={bodyY + 8} x2="-22" y2={bodyY + 20} />
+                <line x1="12" y1={bodyY + 8} x2="24" y2={bodyY + 16} />
+                <line x1="-6" y1={bodyY + 30} x2="-20" y2={bodyY + 48} />
+                <line x1="6" y1={bodyY + 30} x2="18" y2={bodyY + 38} />
+              </g>
+            ) : (
+              <g stroke="#1f2937" strokeWidth="4.5" strokeLinecap="round">
+                <line x1="-14" y1={bodyY + 10} x2="-24" y2={bodyY + 22} />
+                <line x1="14" y1={bodyY + 10} x2="24" y2={bodyY + 22} />
+                <line x1="-6" y1={bodyY + 30} x2="-8" y2={bodyY + 48} />
+                <line x1="6" y1={bodyY + 30} x2="8" y2={bodyY + 48} />
+              </g>
+            )}
+
+            <circle cx="24" cy={headY - 8} r="5" fill={statusColor} stroke="rgba(255,255,255,0.9)" strokeWidth="2" />
+            <g transform="translate(0 40)">
+              <rect x="-30" y="0" width="60" height="16" rx="8" fill="rgba(15,23,42,0.82)" stroke={theme.accent} strokeWidth="1" />
+              <text x="0" y="11" textAnchor="middle" fill="#f8fafc" fontSize="9.5" fontWeight="700">
+                {profile.label}
+              </text>
+            </g>
           </g>
         </g>
       );
