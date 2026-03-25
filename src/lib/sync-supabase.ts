@@ -8,6 +8,17 @@ const cronDir = '/root/.openclaw/cron';
 const jobsPath = '/root/.openclaw/cron/jobs.json';
 const runsDir = '/root/.openclaw/cron/runs';
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
+const ACTIVE_SESSION_WINDOW_MINUTES = 20;
+const LAST_ACTIVE_LOOKBACK_MINUTES = 14 * 24 * 60;
+
+const CANONICAL_AGENTS = [
+  { id: 'chief', name: 'Chief Agent', taskIds: ['task-chief', 'task-health'] },
+  { id: 'content', name: 'Content Agent', taskIds: ['task-ai-daily', 'task-content-publish', 'task-kol'] },
+  { id: 'growth', name: 'Growth Agent', taskIds: ['task-seo'] },
+  { id: 'coding', name: 'Coding Agent', taskIds: ['task-evolution'] },
+  { id: 'product', name: 'Product Agent', taskIds: ['task-product'] },
+  { id: 'finance', name: 'Finance Agent', taskIds: [] },
+] as const;
 
 const TASK_MAPPINGS = [
   { task_id: 'task-ai-daily', job_name: 'ai-daily-newsletter', schedule: '07:30 每天' },
@@ -109,6 +120,98 @@ function msToDuration(ms?: number | null): string | null {
 
 function shanghaiDate(ms: number): string {
   return new Date(ms + SHANGHAI_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+
+function extractJsonPayload<T>(raw: string): T {
+  const jsonStart = raw.indexOf('{');
+  const jsonEnd = raw.lastIndexOf('}');
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
+    throw new Error('OpenClaw CLI did not return JSON payload');
+  }
+
+  return JSON.parse(raw.slice(jsonStart, jsonEnd + 1)) as T;
+}
+
+function normalizeAgentId(value?: string | null) {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === 'main') return 'chief';
+  return CANONICAL_AGENTS.some((agent) => agent.id === normalized) ? normalized : null;
+}
+
+function isCronSessionKey(key?: string | null) {
+  return String(key || '').includes(':cron:');
+}
+
+function loadOpenClawSessions(activeMinutes: number): any[] {
+  try {
+    const raw = execFileSync('openclaw', ['sessions', '--json', '--all-agents', '--active', String(activeMinutes)], {
+      encoding: 'utf-8',
+      timeout: 30_000,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    const payload = extractJsonPayload<{ sessions?: any[] }>(raw);
+    return payload.sessions || [];
+  } catch {
+    return [];
+  }
+}
+
+function buildAgentAggregateRows(baseTasks: any[]) {
+  const activeSessions = loadOpenClawSessions(ACTIVE_SESSION_WINDOW_MINUTES);
+  const recentSessions = loadOpenClawSessions(LAST_ACTIVE_LOOKBACK_MINUTES);
+
+  const activeSessionCountByAgent = new Map<string, number>();
+  const recentActivityMsByAgent = new Map<string, number>();
+
+  activeSessions.forEach((session) => {
+    const agentId = normalizeAgentId(session.agentId);
+    if (!agentId || isCronSessionKey(session.key)) return;
+    activeSessionCountByAgent.set(agentId, (activeSessionCountByAgent.get(agentId) || 0) + 1);
+  });
+
+  recentSessions.forEach((session) => {
+    const agentId = normalizeAgentId(session.agentId);
+    const updatedAt = Number(session.updatedAt || 0);
+    if (!agentId || isCronSessionKey(session.key) || !updatedAt) return;
+    if (updatedAt > (recentActivityMsByAgent.get(agentId) || 0)) {
+      recentActivityMsByAgent.set(agentId, updatedAt);
+    }
+  });
+
+  return CANONICAL_AGENTS.map((agent) => {
+    const agentTasks = baseTasks.filter((task) => agent.taskIds.includes(task.id));
+    const completedTasks = agentTasks.filter((task) => task.status === 'ok').length;
+    const failedTasks = agentTasks.filter((task) => task.status === 'error').length;
+    const cronRunningTasks = agentTasks.filter((task) => task.status === 'running').length;
+    const sessionRunningTasks = activeSessionCountByAgent.get(agent.id) || 0;
+    const totalTasks = agentTasks.length;
+    const latestTaskRunMs = agentTasks.reduce((latest, task) => {
+      const current = task.last_run ? new Date(task.last_run).getTime() : 0;
+      return current > latest ? current : latest;
+    }, 0);
+    const recentActivityMs = recentActivityMsByAgent.get(agent.id) || 0;
+    const lastActiveMs = Math.max(latestTaskRunMs, recentActivityMs);
+
+    let status = 'idle';
+    if (sessionRunningTasks > 0 || cronRunningTasks > 0) status = 'running';
+    else if (failedTasks > 0) status = 'error';
+    else if (completedTasks > 0 || recentActivityMs > 0) status = 'ok';
+
+    return {
+      id: `agent-${agent.id}`,
+      name: agent.name,
+      schedule: `${totalTasks} tasks`,
+      status,
+      last_run: latestTaskRunMs ? new Date(latestTaskRunMs).toISOString() : null,
+      next_run: null,
+      last_duration: null,
+      error_count: failedTasks,
+      token_usage: agentTasks.reduce((sum, task) => sum + (task.token_usage || 0), 0),
+      updated_at: lastActiveMs ? new Date(lastActiveMs).toISOString() : null,
+    };
+  });
 }
 
 function buildHistoricalTokenSnapshots(now: string) {
@@ -237,7 +340,7 @@ export async function syncSecondBrainData() {
   const existingTasksRes = await supabase.from('tasks').select('*');
   const existingTasks = Object.fromEntries((existingTasksRes.data || []).map((row: any) => [row.id, row]));
 
-  const tasks = TASK_MAPPINGS.map((mapping) => {
+  const baseTasks = TASK_MAPPINGS.map((mapping) => {
     const job = jobsByName[mapping.job_name];
     const existing = existingTasks[mapping.task_id] || {};
     const latestRun = pickLatestRun(job ? getLatestRun(job.id) : null, getLatestHistoricalRun(mapping.job_name));
@@ -262,6 +365,9 @@ export async function syncSecondBrainData() {
   if (docs.length > 0) {
     await supabase.from('documents').upsert(docs.map((d) => ({ ...d, updated_at: now })));
   }
+  const agentAggregateRows = buildAgentAggregateRows(baseTasks);
+  const tasks = [...baseTasks, ...agentAggregateRows];
+
   if (tasks.length > 0) {
     await supabase.from('tasks').upsert(tasks);
   }
