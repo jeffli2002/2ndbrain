@@ -341,9 +341,13 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
   const agents = CANONICAL_AGENTS.map((agent) => {
     const aggregatedRow = tasks.find((task) => isAggregatedAgentRow(task, agent.id));
     if (aggregatedRow) {
-      const status = normalizeSupabaseStatus(aggregatedRow.status);
+      const rawStatus = normalizeSupabaseStatus(aggregatedRow.status);
       const taskCount = parseTaskCountFromSchedule(aggregatedRow.schedule);
       const failedTasks = Math.max(aggregatedRow.error_count || 0, 0);
+      const lastActiveAt = aggregatedRow.updated_at || aggregatedRow.last_run || null;
+      const lastActiveMs = lastActiveAt ? new Date(lastActiveAt).getTime() : 0;
+      const staleRunning = rawStatus === 'running' && lastActiveMs > 0 && Date.now() - lastActiveMs > ACTIVE_SESSION_WINDOW_MINUTES * 60 * 1000;
+      const status = staleRunning ? (taskCount > 0 ? 'ok' : 'idle') : rawStatus;
       const runningTasks = status === 'running' ? 1 : 0;
       const completedTasks = Math.max(taskCount - failedTasks - runningTasks, 0);
 
@@ -357,7 +361,7 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
         runningTasks,
         idleTasks: Math.max(taskCount - completedTasks - failedTasks - runningTasks, 0),
         lastRun: aggregatedRow.last_run || null,
-        lastActiveAt: aggregatedRow.updated_at || aggregatedRow.last_run || null,
+        lastActiveAt,
       };
     }
 

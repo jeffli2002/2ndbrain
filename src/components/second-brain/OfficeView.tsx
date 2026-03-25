@@ -7,6 +7,7 @@ interface OfficeViewProps {
   setSelectedOfficeAgentId: (id: string) => void;
   activeCollaborations: OfficeCollaboration[];
   officeActivities: OfficeActivity[];
+  officeStatusSource?: string;
   statusMap: Record<AgentStatus, StatusStyle>;
   getStatusStyle: (status: AgentStatus) => StatusStyle;
   formatRelativeTime: (value?: string | null) => string;
@@ -19,6 +20,7 @@ export function OfficeView({
   setSelectedOfficeAgentId,
   activeCollaborations,
   officeActivities,
+  officeStatusSource,
   statusMap,
   getStatusStyle,
   formatRelativeTime,
@@ -221,8 +223,11 @@ export function OfficeView({
 
     const now = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000;
+    const FALLBACK_REST_THRESHOLD_MS = 8 * ONE_HOUR_MS;
     const currentWalkPhase = Math.floor(now / 10000);
     const currentRestPhase = Math.floor(now / 30000);
+    const usesFallbackPresence = (officeStatusSource || '').includes('fallback');
+    const effectiveRestThresholdMs = usesFallbackPresence ? FALLBACK_REST_THRESHOLD_MS : ONE_HOUR_MS;
 
     const getSlotIndex = (length: number, seed: number) => {
       if (!length) return 0;
@@ -287,11 +292,11 @@ export function OfficeView({
     const unplacedAgents = teamAgents.filter((agent) => !officePlacementMap.has(agent.id));
 
     const walkingIdleAgents = unplacedAgents
-      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) < ONE_HOUR_MS)
+      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) < effectiveRestThresholdMs)
       .sort((a, b) => a.id.localeCompare(b.id));
 
     const restingIdleAgents = unplacedAgents
-      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) >= ONE_HOUR_MS)
+      .filter((agent) => !agent.isExternal && agent.id !== 'abby' && (agent.status === 'idle' || agent.status === 'ok') && getIdleDurationMs(agent) >= effectiveRestThresholdMs)
       .sort((a, b) => a.id.localeCompare(b.id));
 
     const walkingSpotByAgentId = assignUniqueSceneSpots(walkingIdleAgents, walkingSpots, currentWalkPhase, fallbackSpots);
@@ -702,7 +707,7 @@ export function OfficeView({
               Second Brain Office
             </h2>
             <p className="text-sm text-[#71717a] mt-2 max-w-4xl leading-6">
-Agent 现在会按实时状态自动换位：忙碌时回工位打字，空闲未满 1 小时会在办公室里走动，空闲超过 1 小时会去休息区；检测到协作会话时，会自动进入对应会议室。
+Agent 现在会按状态自动换位：忙碌时回工位打字，检测到协作会话时进入会议室；实时数据源按 1 小时阈值区分 walk / rest，Supabase fallback 会放宽到 8 小时，避免陈旧快照把所有人都判去沙发。
             </p>
           </div>
 
@@ -801,12 +806,12 @@ Agent 现在会按实时状态自动换位：忙碌时回工位打字，空闲�
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
               <p className="text-xs text-[#71717a] mb-2">闲置走动</p>
               <p className="text-2xl font-semibold text-white">{walkingCount}</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">最后活跃时间距今少于 1 小时的 Agent 会在办公室里走动。</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">实时数据按 1 小时阈值走动；fallback 数据按 8 小时阈值走动，避免状态过度保守。</p>
             </div>
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
               <p className="text-xs text-[#71717a] mb-2">休息区落座</p>
               <p className="text-2xl font-semibold text-white">{restingCount}</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">超过 1 小时没有活跃的 Agent 会去沙发区休息。</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">实时数据超过 1 小时才休息；fallback 数据需要超过 8 小时才会去沙发区。</p>
             </div>
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
               <p className="text-xs text-[#71717a] mb-2">会议协作</p>

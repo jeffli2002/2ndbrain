@@ -1028,6 +1028,14 @@ export default function SecondBrain() {
     lastActiveAt?: string | null;
   }
 
+  interface AgentStatusApiResponse {
+    source?: string;
+    timestamp?: string;
+    agents?: AgentStatusApiAgent[];
+    activeSessions?: Array<{ agentId?: string; ageMs?: number; key?: string }>;
+    activeCollaborations?: OfficeCollaboration[];
+  }
+
   interface OfficeCollaboration {
     id: string;
     room: 'meeting-a' | 'meeting-b';
@@ -1159,6 +1167,7 @@ export default function SecondBrain() {
   const [selectedOfficeAgentId, setSelectedOfficeAgentId] = useState('chief');
   const [activeCollaborations, setActiveCollaborations] = useState<OfficeCollaboration[]>([]);
   const [officeActivities, setOfficeActivities] = useState<OfficeActivity[]>([]);
+  const [officeStatusSource, setOfficeStatusSource] = useState<string>('unknown');
   const officeActivitySnapshotRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -1171,12 +1180,13 @@ export default function SecondBrain() {
           throw new Error(`status api failed: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as AgentStatusApiResponse;
         const apiAgents = ((data.agents || []) as AgentStatusApiAgent[]);
         const agentsById = new Map<string, AgentStatusApiAgent>(apiAgents.map((agent) => [agent.id, agent]));
+        setOfficeStatusSource(data.source || 'unknown');
 
-        // 获取活跃的 subagent 会话
-        const activeSessions = data.activeSessions || [];
+        // 获取活跃的 subagent 会话（仅信任 20 分钟窗口内的会话）
+        const activeSessions = (data.activeSessions || []).filter((s) => (s.ageMs ?? Number.POSITIVE_INFINITY) <= 20 * 60 * 1000);
         const activeAgentIds = new Set(activeSessions.map((s: any) => s.agentId));
         const nextActiveCollaborations = ((data.activeCollaborations || []) as OfficeCollaboration[]).filter(
           (collaboration) => collaboration.agentIds.length >= 2
@@ -1234,6 +1244,7 @@ export default function SecondBrain() {
         console.error('Failed to refresh agent status:', error);
         if (cancelled) return;
 
+        setOfficeStatusSource('error');
         setActiveCollaborations([]);
         setTeamAgents(
           TEAM_AGENT_DEFINITIONS.map((agent) => {
@@ -1686,6 +1697,7 @@ export default function SecondBrain() {
               setSelectedOfficeAgentId={setSelectedOfficeAgentId}
               activeCollaborations={activeCollaborations}
               officeActivities={officeActivities}
+              officeStatusSource={officeStatusSource}
               statusMap={statusMap}
               getStatusStyle={getStatusStyle}
               formatRelativeTime={formatRelativeTime}
