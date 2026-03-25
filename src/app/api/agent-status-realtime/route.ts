@@ -248,8 +248,8 @@ function buildActiveCollaborations(activeSessions: LiveSessionSummary[], detecte
   const uniqueAgentIds = [...new Set(activeSessions.map((session) => session.agentId))];
   if (uniqueAgentIds.length < 2) return [];
 
-  const room = uniqueAgentIds.length >= 3 ? 'meeting-b' : 'meeting-a';
-  const roomName = room === 'meeting-a' ? 'Office A · 小会议室' : 'Office B · 大会议室';
+  const room = uniqueAgentIds.length >= 3 ? 'meeting-a' : 'meeting-b';
+  const roomName = room === 'meeting-a' ? 'Meeting Room A · 大会议室' : 'Meeting Room B · 小会议室';
   const agentNames = uniqueAgentIds.map((agentId) => {
     const agent = CANONICAL_AGENTS.find((candidate) => candidate.id === agentId);
     return agent?.name.replace(/ Agent$/, '') || agentId;

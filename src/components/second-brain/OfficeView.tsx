@@ -1,10 +1,11 @@
-import type { AgentStatus, OfficeActivity, StatusStyle, TeamAgent } from "./types";
+import type { AgentStatus, OfficeActivity, OfficeCollaboration, StatusStyle, TeamAgent } from "./types";
 
 interface OfficeViewProps {
   teamAgents: TeamAgent[];
   isLoadingAgents: boolean;
   selectedOfficeAgentId: string;
   setSelectedOfficeAgentId: (id: string) => void;
+  activeCollaborations: OfficeCollaboration[];
   officeActivities: OfficeActivity[];
   statusMap: Record<AgentStatus, StatusStyle>;
   getStatusStyle: (status: AgentStatus) => StatusStyle;
@@ -16,6 +17,7 @@ export function OfficeView({
   isLoadingAgents,
   selectedOfficeAgentId,
   setSelectedOfficeAgentId,
+  activeCollaborations,
   officeActivities,
   statusMap,
   getStatusStyle,
@@ -45,7 +47,7 @@ export function OfficeView({
 
     type HairStyle = 'bun' | 'bob' | 'spiky' | 'side-part' | 'curly' | 'ponytail' | 'waves';
     type AvatarAccessory = 'tie' | 'scarf' | 'hoodie' | 'badge' | 'glasses' | 'apron' | 'headset';
-    type OfficePose = 'desk' | 'walk' | 'sit' | 'reception' | 'stand';
+    type OfficePose = 'desk' | 'walk' | 'sit' | 'meeting' | 'reception' | 'stand';
 
     interface AvatarProfile {
       hairStyle: HairStyle;
@@ -63,6 +65,7 @@ export function OfficeView({
       y: number;
       pose: OfficePose;
       onDesk?: boolean;
+      collaborationId?: string;
     }
 
     interface DeskAnchor {
@@ -173,7 +176,25 @@ export function OfficeView({
       { zone: 'Printer Area', x: 180, y: 205, pose: 'stand' },
     ];
 
+    const meetingSeats: Record<'meeting-a' | 'meeting-b', SceneSpot[]> = {
+      'meeting-b': [
+        { zone: 'Meeting Room B · Small Table', x: 453, y: 190, pose: 'meeting' },
+        { zone: 'Meeting Room B · Small Table', x: 657, y: 190, pose: 'meeting' },
+        { zone: 'Meeting Room B · Small Table', x: 555, y: 118, pose: 'meeting' },
+        { zone: 'Meeting Room B · Small Table', x: 555, y: 264, pose: 'meeting' },
+      ],
+      'meeting-a': [
+        { zone: 'Meeting Room A · Big Table', x: 798, y: 188, pose: 'meeting' },
+        { zone: 'Meeting Room A · Big Table', x: 858, y: 122, pose: 'meeting' },
+        { zone: 'Meeting Room A · Big Table', x: 936, y: 102, pose: 'meeting' },
+        { zone: 'Meeting Room A · Big Table', x: 1014, y: 122, pose: 'meeting' },
+        { zone: 'Meeting Room A · Big Table', x: 1074, y: 188, pose: 'meeting' },
+        { zone: 'Meeting Room A · Big Table', x: 936, y: 276, pose: 'meeting' },
+      ],
+    };
+
     const findOfficeAgent = (agentId: string) => teamAgents.find((agent) => agent.id === agentId);
+    const deskAnchorByOwner = new Map(deskAnchors.map((anchor) => [anchor.ownerId, anchor]));
 
     const getOfficeStatusColor = (status: AgentStatus) => {
       switch (status) {
@@ -192,30 +213,41 @@ export function OfficeView({
       }
     };
 
-    const relaxingAgents = teamAgents.filter(
-      (agent) => !agent.isExternal && (agent.status === 'idle' || agent.status === 'ok')
-    );
-    const walkingTarget = Math.ceil(relaxingAgents.length / 2);
-    const walkingAgentIds = new Set(relaxingAgents.slice(0, walkingTarget).map((agent) => agent.id));
-    const restingAgentIds = new Set(relaxingAgents.slice(walkingTarget).map((agent) => agent.id));
+    const now = Date.now();
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const currentWalkPhase = Math.floor(now / 15000);
+    const currentRestPhase = Math.floor(now / 45000);
+
+    const hashAgentId = (value: string) =>
+      value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+    const getSlotIndex = (length: number, seed: number) => {
+      if (!length) return 0;
+      return ((seed % length) + length) % length;
+    };
+
+    const getIdleDurationMs = (agent: TeamAgent) => {
+      const timestamp = agent.lastActiveAt ? new Date(agent.lastActiveAt).getTime() : Number.NaN;
+      if (Number.isNaN(timestamp)) return Number.POSITIVE_INFINITY;
+      return Math.max(now - timestamp, 0);
+    };
 
     const officePlacementMap = new Map<string, OfficePlacement>();
 
-    deskAnchors.forEach((anchor) => {
-      const agent = findOfficeAgent(anchor.ownerId);
-      if (!agent || agent.isExternal) return;
-      if (walkingAgentIds.has(agent.id) || restingAgentIds.has(agent.id)) return;
-      officePlacementMap.set(agent.id, {
-        zone: `Open Workspace · ${anchor.label}`,
-        x: anchor.x,
-        y: anchor.y,
-        pose: 'desk',
-        onDesk: true,
+    activeCollaborations.forEach((collaboration) => {
+      const seats = meetingSeats[collaboration.room] || meetingSeats['meeting-b'];
+      collaboration.agentIds.forEach((agentId, index) => {
+        const agent = findOfficeAgent(agentId);
+        if (!agent || agent.isExternal) return;
+
+        const seat = seats[index % seats.length];
+        officePlacementMap.set(agent.id, {
+          ...seat,
+          collaborationId: collaboration.id,
+        });
       });
     });
 
-    let walkingIndex = 0;
-    let restingIndex = 0;
     let fallbackIndex = 0;
 
     teamAgents.forEach((agent) => {
@@ -231,16 +263,29 @@ export function OfficeView({
         return;
       }
 
-      if (walkingAgentIds.has(agent.id)) {
-        const spot = walkingSpots[walkingIndex % walkingSpots.length];
-        walkingIndex += 1;
-        officePlacementMap.set(agent.id, { ...spot });
+      const deskAnchor = deskAnchorByOwner.get(agent.id);
+      if (deskAnchor && ['running', 'error', 'loading'].includes(agent.status)) {
+        officePlacementMap.set(agent.id, {
+          zone: `Open Workspace · ${deskAnchor.label}`,
+          x: deskAnchor.x,
+          y: deskAnchor.y,
+          pose: 'desk',
+          onDesk: true,
+        });
         return;
       }
 
-      if (restingAgentIds.has(agent.id)) {
-        const spot = restingSpots[restingIndex % restingSpots.length];
-        restingIndex += 1;
+      if (agent.status === 'idle' || agent.status === 'ok') {
+        const idleDurationMs = getIdleDurationMs(agent);
+        const seed = hashAgentId(agent.id);
+
+        if (idleDurationMs < ONE_HOUR_MS) {
+          const spot = walkingSpots[getSlotIndex(walkingSpots.length, seed + currentWalkPhase)];
+          officePlacementMap.set(agent.id, { ...spot });
+          return;
+        }
+
+        const spot = restingSpots[getSlotIndex(restingSpots.length, seed + currentRestPhase)];
         officePlacementMap.set(agent.id, { ...spot });
         return;
       }
@@ -447,14 +492,19 @@ export function OfficeView({
       const theme = officeAgentThemes[agent.id] || officeAgentThemes.chief;
       const statusColor = getOfficeStatusColor(agent.status);
       const selected = selectedOfficeAgentId === agent.id;
-      const seated = placement.pose === 'sit' || placement.pose === 'desk';
+      const seated = placement.pose === 'sit' || placement.pose === 'desk' || placement.pose === 'meeting';
       const walking = placement.pose === 'walk';
-      const bodyY = seated ? -14 : -20;
-      const headY = seated ? -44 : -52;
+      const bodyY = seated ? -22 : -28;
+      const bodyHeight = 42;
+      const headY = seated ? -44 : -50;
       const animationClass =
         placement.pose === 'walk'
           ? 'office-anim-anchor animate-office-walk'
-          : placement.pose === 'sit' || placement.pose === 'reception'
+          : placement.pose === 'desk'
+          ? 'office-anim-anchor animate-office-type'
+          : placement.pose === 'meeting' || placement.pose === 'reception' || placement.pose === 'stand'
+          ? 'office-anim-anchor animate-office-talk'
+          : placement.pose === 'sit'
           ? 'office-anim-anchor animate-office-rest'
           : '';
       const chestLetter = (profile.label || agent.name).slice(0, 1).toUpperCase();
@@ -474,9 +524,14 @@ export function OfficeView({
           <circle cx="-5" cy={headY - 2} r="1.2" fill="#1f2937" />
           <circle cx="5" cy={headY - 2} r="1.2" fill="#1f2937" />
           <path d={`M -4 ${headY + 6} Q 0 ${headY + 9} 4 ${headY + 6}`} stroke="#b45309" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-
-          <rect x="-17" y={bodyY} width="34" height="36" rx="13" fill={profile.outfit} />
-          <rect x="-17" y={bodyY + 18} width="34" height="10" rx="5" fill={profile.secondary} opacity="0.5" />
+          <rect x="-5" y={headY + 12} width="10" height="14" rx="5" fill="#f3d2b8" />
+          <path
+            d={`M -15 ${bodyY + 10} Q 0 ${bodyY - 2} 15 ${bodyY + 10} L 15 ${bodyY + 17} Q 0 ${bodyY + 7} -15 ${bodyY + 17} Z`}
+            fill={profile.secondary}
+            opacity="0.95"
+          />
+          <rect x="-17" y={bodyY} width="34" height={bodyHeight} rx="13" fill={profile.outfit} />
+          <rect x="-17" y={bodyY + 22} width="34" height="10" rx="5" fill={profile.secondary} opacity="0.5" />
           {renderAccessory(profile, bodyY)}
           <text x="0" y={bodyY + 23} textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize="11" fontWeight="700">
             {chestLetter}
@@ -573,7 +628,8 @@ export function OfficeView({
     const seatedDeskCount = Array.from(officePlacementMap.values()).filter((placement) => placement.onDesk).length;
     const walkingCount = Array.from(officePlacementMap.values()).filter((placement) => placement.pose === 'walk').length;
     const restingCount = Array.from(officePlacementMap.values()).filter((placement) => placement.pose === 'sit').length;
-    const errorCount = teamAgents.filter((agent) => !agent.isExternal && agent.status === 'error').length;
+    const meetingCount = Array.from(officePlacementMap.values()).filter((placement) => placement.pose === 'meeting').length;
+    const collaborationCount = activeCollaborations.length;
 
     const presenceCards = teamAgents.map((agent) => ({
       agent,
@@ -597,7 +653,7 @@ export function OfficeView({
               Second Brain Office
             </h2>
             <p className="text-sm text-[#71717a] mt-2 max-w-4xl leading-6">
-              Office 视图现在改成单列全宽：删除右侧 Selected Agent 面板，把办公室主画布拉满。空闲中的 Agent 会自动分流——一半在中央过道走动，一半在休息区落座。
+Agent 现在会按实时状态自动换位：忙碌时回工位打字，空闲未满 1 小时会在办公室里走动，空闲超过 1 小时会去休息区；检测到协作会话时，会自动进入对应会议室。
             </p>
           </div>
 
@@ -605,6 +661,7 @@ export function OfficeView({
             <div className="px-3 py-2 rounded-xl border border-[#27272a] bg-[#141416] text-[#a1a1aa]">Full Width Canvas</div>
             <div className="px-3 py-2 rounded-xl border border-[#27272a] bg-[#141416] text-[#a1a1aa]">SVG Furniture + Cartoon Agents</div>
             <div className="px-3 py-2 rounded-xl border border-green-500/20 bg-green-500/10 text-green-200">{walkingCount} walking · {restingCount} resting</div>
+            <div className="px-3 py-2 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-200">{meetingCount} in meetings · {collaborationCount} live collab</div>
           </div>
         </div>
 
@@ -614,7 +671,7 @@ export function OfficeView({
               <div>
                 <h3 className="font-semibold text-white">SVG Office Overview</h3>
                 <p className="text-xs text-[#71717a] mt-1 leading-5">
-                  用 SVG 重画了真实桌子、椭圆会议桌、三人沙发、茶几、带轮办公椅和差异化人物形象；点击人物或工位即可查看详情。
+                  用 SVG 重画了真实桌子、椭圆会议桌、三人沙发、茶几、带轮办公椅和差异化人物形象；现在会根据 idle 时长、running 状态和 live collaboration 自动切换位置。
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs text-[#71717a]">
@@ -688,24 +745,24 @@ export function OfficeView({
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
-              <p className="text-xs text-[#71717a] mb-2">工位占用</p>
+              <p className="text-xs text-[#71717a] mb-2">工位打字</p>
               <p className="text-2xl font-semibold text-white">{seatedDeskCount}/6</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">running / error / loading 的 Agent 会回到工位前。</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">running / error / loading 的 Agent 会坐回工位并显示 typing 动画。</p>
             </div>
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
               <p className="text-xs text-[#71717a] mb-2">闲置走动</p>
               <p className="text-2xl font-semibold text-white">{walkingCount}</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">空闲中的一半 Agent 在中央过道做 walk 动画。</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">最后活跃时间距今少于 1 小时的 Agent 会在办公室里走动。</p>
             </div>
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
               <p className="text-xs text-[#71717a] mb-2">休息区落座</p>
               <p className="text-2xl font-semibold text-white">{restingCount}</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">另一半 Agent 会坐在沙发或休息椅上做轻微休息动画。</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">超过 1 小时没有活跃的 Agent 会去沙发区休息。</p>
             </div>
             <div className="rounded-2xl border border-[#27272a] bg-[#141416] p-4">
-              <p className="text-xs text-[#71717a] mb-2">异常处理</p>
-              <p className="text-2xl font-semibold text-red-300">{errorCount}</p>
-              <p className="text-xs text-[#a1a1aa] mt-2">红灯代表正在处理错误或阻塞任务。</p>
+              <p className="text-xs text-[#71717a] mb-2">会议协作</p>
+              <p className="text-2xl font-semibold text-blue-300">{meetingCount}</p>
+              <p className="text-xs text-[#a1a1aa] mt-2">2 人会去 Meeting B，3 人及以上会自动去 Meeting A。异常 Agent 仍会亮红灯留在工位。</p>
             </div>
           </div>
 

@@ -998,6 +998,7 @@ export default function SecondBrain() {
     icon: string;
     status: AgentStatus;
     lastActive: string;
+    lastActiveAt?: string | null;
     currentTask: string;
     taskProgress: number;
     totalTasks: number;
@@ -1024,6 +1025,17 @@ export default function SecondBrain() {
     runningTasks: number;
     idleTasks: number;
     lastRun: string | null;
+  }
+
+  interface OfficeCollaboration {
+    id: string;
+    room: 'meeting-a' | 'meeting-b';
+    roomName: string;
+    agentIds: string[];
+    label: string;
+    lastUpdatedAt: string;
+    sessionKeys: string[];
+    detectedFrom?: string;
   }
 
   interface OfficeActivity {
@@ -1116,6 +1128,7 @@ export default function SecondBrain() {
           ...agent,
           status: 'external' as AgentStatus,
           lastActive: '外部系统',
+          lastActiveAt: null,
           currentTask: '不受 OpenClaw cron 管理',
           taskProgress: 0,
           totalTasks: 0,
@@ -1129,6 +1142,7 @@ export default function SecondBrain() {
         ...agent,
         status: 'loading' as AgentStatus,
         lastActive: '同步中',
+        lastActiveAt: null,
         currentTask: '正在读取 OpenClaw 实时状态',
         taskProgress: 0,
         totalTasks: 0,
@@ -1142,6 +1156,7 @@ export default function SecondBrain() {
   const [teamAgents, setTeamAgents] = useState<TeamAgent[]>(createInitialTeamAgents);
   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [selectedOfficeAgentId, setSelectedOfficeAgentId] = useState('chief');
+  const [activeCollaborations, setActiveCollaborations] = useState<OfficeCollaboration[]>([]);
   const [officeActivities, setOfficeActivities] = useState<OfficeActivity[]>([]);
   const officeActivitySnapshotRef = useRef<Map<string, string>>(new Map());
 
@@ -1158,12 +1173,17 @@ export default function SecondBrain() {
         const data = await response.json();
         const apiAgents = ((data.agents || []) as AgentStatusApiAgent[]);
         const agentsById = new Map<string, AgentStatusApiAgent>(apiAgents.map((agent) => [agent.id, agent]));
-        
+
         // 获取活跃的 subagent 会话
         const activeSessions = data.activeSessions || [];
         const activeAgentIds = new Set(activeSessions.map((s: any) => s.agentId));
+        const nextActiveCollaborations = ((data.activeCollaborations || []) as OfficeCollaboration[]).filter(
+          (collaboration) => collaboration.agentIds.length >= 2
+        );
 
         if (cancelled) return;
+
+        setActiveCollaborations(nextActiveCollaborations);
 
         setTeamAgents(
           TEAM_AGENT_DEFINITIONS.map((agent) => {
@@ -1172,6 +1192,7 @@ export default function SecondBrain() {
                 ...agent,
                 status: 'external' as AgentStatus,
                 lastActive: '外部系统',
+                lastActiveAt: null,
                 currentTask: '不受 OpenClaw cron 管理',
                 taskProgress: 0,
                 totalTasks: 0,
@@ -1195,6 +1216,7 @@ export default function SecondBrain() {
               ...agent,
               status: status as AgentStatus,
               lastActive: formatRelativeTime(realAgent?.lastRun),
+              lastActiveAt: realAgent?.lastRun || null,
               currentTask: isSubAgentRunning 
                 ? `活跃会话: ${activeSessions.find((s: any) => s.agentId === agent.id)?.key?.split(':').pop() || '工作中'}`
                 : buildCurrentTaskSummary(realAgent),
@@ -1210,6 +1232,7 @@ export default function SecondBrain() {
         console.error('Failed to refresh agent status:', error);
         if (cancelled) return;
 
+        setActiveCollaborations([]);
         setTeamAgents(
           TEAM_AGENT_DEFINITIONS.map((agent) => {
             if (agent.isExternal) {
@@ -1217,6 +1240,7 @@ export default function SecondBrain() {
                 ...agent,
                 status: 'external' as AgentStatus,
                 lastActive: '外部系统',
+                lastActiveAt: null,
                 currentTask: '不受 OpenClaw cron 管理',
                 taskProgress: 0,
                 totalTasks: 0,
@@ -1230,6 +1254,7 @@ export default function SecondBrain() {
               ...agent,
               status: 'loading' as AgentStatus,
               lastActive: '状态获取失败',
+              lastActiveAt: null,
               currentTask: '无法连接 /api/agent-status',
               taskProgress: 0,
               totalTasks: 0,
@@ -1657,6 +1682,7 @@ export default function SecondBrain() {
               isLoadingAgents={isLoadingAgents}
               selectedOfficeAgentId={selectedOfficeAgentId}
               setSelectedOfficeAgentId={setSelectedOfficeAgentId}
+              activeCollaborations={activeCollaborations}
               officeActivities={officeActivities}
               statusMap={statusMap}
               getStatusStyle={getStatusStyle}

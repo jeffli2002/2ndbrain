@@ -63,3 +63,59 @@ a { text-decoration: none; color: inherit; }
   background: rgba(139, 92, 246, 0.3);
   color: white;
 }
+
+.office-anim-anchor {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+@keyframes officeWalk {
+  0%, 100% { transform: translate3d(-10px, 0, 0); }
+  25% { transform: translate3d(2px, -2px, 0); }
+  50% { transform: translate3d(14px, 0, 0); }
+  75% { transform: translate3d(0, 2px, 0); }
+}
+
+@keyframes officeRest {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -2px, 0) scale(1.01); }
+}
+
+@keyframes officeType {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  20% { transform: translate3d(0, -1px, 0) rotate(-1deg); }
+  50% { transform: translate3d(0, 1px, 0) rotate(1deg); }
+  80% { transform: translate3d(0, -1px, 0) rotate(-0.5deg); }
+}
+
+@keyframes officeTalk {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  30% { transform: translate3d(-1px, -2px, 0) rotate(-1deg); }
+  60% { transform: translate3d(1px, 0, 0) rotate(1deg); }
+}
+
+.animate-office-walk {
+  animation: officeWalk 5.2s ease-in-out infinite;
+}
+
+.animate-office-rest {
+  animation: officeRest 3.4s ease-in-out infinite;
+}
+
+.animate-office-type {
+  animation: officeType 1.2s ease-in-out infinite;
+}
+
+.animate-office-talk {
+  animation: officeTalk 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-office-walk,
+  .animate-office-rest,
+  .animate-office-type,
+  .animate-office-talk {
+    animation: none;
+  }
+}

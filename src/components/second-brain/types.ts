@@ -68,6 +68,7 @@ export interface TeamAgent {
   icon: string;
   status: AgentStatus;
   lastActive: string;
+  lastActiveAt?: string | null;
   currentTask: string;
   taskProgress: number;
   totalTasks: number;
@@ -75,6 +76,17 @@ export interface TeamAgent {
   errorTasks: number;
   runningTasks: number;
   isExternal?: boolean;
+}
+
+export interface OfficeCollaboration {
+  id: string;
+  room: "meeting-a" | "meeting-b";
+  roomName: string;
+  agentIds: string[];
+  label: string;
+  lastUpdatedAt: string;
+  sessionKeys: string[];
+  detectedFrom?: string;
 }
 
 export interface OfficeActivity {
