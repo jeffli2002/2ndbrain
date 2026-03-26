@@ -669,7 +669,7 @@ export function OfficeView({
             </g>
           )}
 
-          {occupied && placement && renderOfficeAvatar(owner, placement, 0.92)}
+          {occupied && placement && renderOfficeAvatar(owner, { ...placement, x: 0, y: 0 }, 0.92)}
         </g>
       );
     };
