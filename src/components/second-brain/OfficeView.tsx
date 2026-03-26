@@ -224,10 +224,14 @@ export function OfficeView({
     const now = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const FALLBACK_REST_THRESHOLD_MS = 8 * ONE_HOUR_MS;
-    const currentWalkPhase = Math.floor(now / 10000);
-    const currentRestPhase = Math.floor(now / 30000);
     const usesFallbackPresence = (officeStatusSource || '').includes('fallback');
     const effectiveRestThresholdMs = usesFallbackPresence ? FALLBACK_REST_THRESHOLD_MS : ONE_HOUR_MS;
+
+    // Keep walk/rest seat assignment stable.
+    // The avatar itself already animates with CSS; rotating scene slots every few seconds
+    // makes agents appear to "jump"/teleport instead of walking naturally.
+    const currentWalkPhase = 0;
+    const currentRestPhase = 0;
 
     const getSlotIndex = (length: number, seed: number) => {
       if (!length) return 0;
