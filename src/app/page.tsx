@@ -1020,12 +1020,15 @@ export default function SecondBrain() {
     id: string;
     status: 'running' | 'ok' | 'error' | 'idle';
     tasks: number;
+    cronTasks?: number;
+    manualTasks?: number;
     completedTasks: number;
     failedTasks: number;
     runningTasks: number;
     idleTasks: number;
     lastRun: string | null;
     lastActiveAt?: string | null;
+    currentTask?: string | null;
   }
 
   interface AgentStatusApiResponse {
@@ -1087,7 +1090,9 @@ export default function SecondBrain() {
   }
 
   function buildCurrentTaskSummary(agent?: AgentStatusApiAgent) {
-    if (!agent || agent.tasks === 0) return '暂无绑定 cron 任务';
+    if (!agent) return '暂无状态';
+    if (agent.currentTask) return agent.currentTask;
+    if (agent.tasks === 0) return '暂无绑定 cron 任务';
     if (agent.status === 'running') return `${agent.runningTasks} 个 cron 正在运行`;
     if (agent.status === 'error') return `${agent.failedTasks} 个 cron 异常`;
     if (agent.status === 'ok') return `${agent.completedTasks}/${agent.tasks} 个 cron 正常`;

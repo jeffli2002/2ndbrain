@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { NextResponse } from 'next/server';
+import { getManualTaskAgentId, getManualTaskTitle, isoToTimestamp, normalizeAgentId, normalizeManualTaskStatus, pickLatestIso, type CanonicalAgentId } from '@/lib/manual-tasks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,7 +40,6 @@ const USER_CHANNEL_SEGMENTS = new Set([
 const ACTIVE_SESSION_WINDOW_MINUTES = 20;
 const LAST_ACTIVE_LOOKBACK_MINUTES = 14 * 24 * 60;
 
-type CanonicalAgentId = (typeof CANONICAL_AGENTS)[number]['id'];
 type AggregatedAgentStatus = 'running' | 'ok' | 'error' | 'idle';
 
 type OpenClawCronJob = {
@@ -103,19 +103,6 @@ type SupabaseTaskRow = {
   error_count?: number | null;
   updated_at?: string | null;
 };
-
-function normalizeAgentId(value?: string | null): CanonicalAgentId | null {
-  const normalized = value?.trim().toLowerCase();
-  if (!normalized) return null;
-
-  if (normalized === 'main') return 'chief';
-
-  if (CANONICAL_AGENTS.some((agent) => agent.id === normalized)) {
-    return normalized as CanonicalAgentId;
-  }
-
-  return null;
-}
 
 function extractJsonPayload<T>(raw: string): T {
   const jsonStart = raw.indexOf('{');
@@ -334,69 +321,119 @@ async function fetchSupabaseTasks(): Promise<SupabaseTaskRow[]> {
   return (await response.json()) as SupabaseTaskRow[];
 }
 
+function buildManualTaskMap(tasks: SupabaseTaskRow[]) {
+  const manualTaskByAgent = new Map<CanonicalAgentId, SupabaseTaskRow>();
+
+  tasks.forEach((task) => {
+    const agentId = getManualTaskAgentId(task);
+    if (!agentId) return;
+
+    const existing = manualTaskByAgent.get(agentId);
+    const currentTimestamp = isoToTimestamp(pickLatestIso(task.updated_at, task.last_run));
+    const existingTimestamp = isoToTimestamp(pickLatestIso(existing?.updated_at, existing?.last_run));
+
+    if (!existing || currentTimestamp >= existingTimestamp) {
+      manualTaskByAgent.set(agentId, task);
+    }
+  });
+
+  return manualTaskByAgent;
+}
+
+function buildCronSummary(taskCount: number, status: AggregatedAgentStatus, completedTasks: number, failedTasks: number, runningTasks: number, idleTasks: number) {
+  if (taskCount === 0) return '暂无绑定 cron 任务';
+  if (status === 'running') return `${runningTasks} 个 cron 正在运行`;
+  if (status === 'error') return `${failedTasks} 个 cron 异常`;
+  if (status === 'ok') return `${completedTasks}/${taskCount} 个 cron 正常`;
+  return `${idleTasks} 个 cron 等待执行`;
+}
+
 function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
   const aggregatedRows = CANONICAL_AGENTS.map((agent) => tasks.find((task) => isAggregatedAgentRow(task, agent.id))).filter(Boolean) as SupabaseTaskRow[];
   const hasAggregatedRows = aggregatedRows.length > 0;
+  const manualTaskByAgent = buildManualTaskMap(tasks);
 
   const agents = CANONICAL_AGENTS.map((agent) => {
     const aggregatedRow = tasks.find((task) => isAggregatedAgentRow(task, agent.id));
+    const manualTask = manualTaskByAgent.get(agent.id);
+    const manualStatus = normalizeManualTaskStatus(manualTask?.status);
+    const manualTaskTitle = getManualTaskTitle(manualTask);
+    const manualTaskCount = manualTaskTitle ? 1 : 0;
+
     if (aggregatedRow) {
       const rawStatus = normalizeSupabaseStatus(aggregatedRow.status);
-      const taskCount = parseTaskCountFromSchedule(aggregatedRow.schedule);
-      const failedTasks = Math.max(aggregatedRow.error_count || 0, 0);
-      const lastActiveAt = aggregatedRow.updated_at || aggregatedRow.last_run || null;
-      const lastActiveMs = lastActiveAt ? new Date(lastActiveAt).getTime() : 0;
+      const cronTaskCount = parseTaskCountFromSchedule(aggregatedRow.schedule);
+      const cronFailedTasks = Math.max(aggregatedRow.error_count || 0, 0);
+      const aggregatedLastActiveAt = pickLatestIso(aggregatedRow.updated_at, aggregatedRow.last_run);
+      const lastActiveMs = isoToTimestamp(aggregatedLastActiveAt);
       const staleRunning = rawStatus === 'running' && lastActiveMs > 0 && Date.now() - lastActiveMs > ACTIVE_SESSION_WINDOW_MINUTES * 60 * 1000;
-      const status = staleRunning ? (taskCount > 0 ? 'ok' : 'idle') : rawStatus;
-      const runningTasks = status === 'running' ? 1 : 0;
-      const completedTasks = Math.max(taskCount - failedTasks - runningTasks, 0);
+      const cronStatus = staleRunning ? (cronTaskCount > 0 ? 'ok' : 'idle') : rawStatus;
+      const cronRunningTasks = cronStatus === 'running' ? 1 : 0;
+      const cronCompletedTasks = Math.max(cronTaskCount - cronFailedTasks - cronRunningTasks, 0);
+      const cronIdleTasks = Math.max(cronTaskCount - cronCompletedTasks - cronFailedTasks - cronRunningTasks, 0);
+
+      const runningTasks = cronRunningTasks + (manualStatus === 'running' ? 1 : 0);
+      const failedTasks = cronFailedTasks + (manualStatus === 'error' ? 1 : 0);
+      const completedTasks = cronCompletedTasks + (manualStatus === 'ok' ? 1 : 0);
+      const idleTasks = cronIdleTasks + (manualStatus === 'idle' && manualTaskCount > 0 ? 1 : 0);
+      const lastRun = pickLatestIso(aggregatedRow.last_run, manualTask?.last_run);
+      const lastActiveAt = pickLatestIso(aggregatedLastActiveAt, manualTask?.updated_at, manualTask?.last_run);
+
+      let status: AggregatedAgentStatus = cronStatus;
+      if (manualStatus === 'running') status = 'running';
+      else if (manualStatus === 'error' && status !== 'running') status = 'error';
+      else if (manualTaskCount > 0 && status === 'idle') status = manualStatus === 'idle' ? 'ok' : manualStatus;
 
       return {
         id: agent.id,
         name: agent.name,
         status,
-        tasks: taskCount,
+        tasks: cronTaskCount + manualTaskCount,
+        cronTasks: cronTaskCount,
+        manualTasks: manualTaskCount,
         completedTasks,
         failedTasks,
         runningTasks,
-        idleTasks: Math.max(taskCount - completedTasks - failedTasks - runningTasks, 0),
-        lastRun: aggregatedRow.last_run || null,
+        idleTasks,
+        lastRun,
         lastActiveAt,
+        currentTask: manualTaskTitle || buildCronSummary(cronTaskCount, cronStatus, cronCompletedTasks, cronFailedTasks, cronRunningTasks, cronIdleTasks),
       };
     }
 
-    const rawAgentTasks = tasks.filter((task) => !String(task.id || '').startsWith('agent-') && detectAgentFromName(task.name) === agent.id);
-    const runningTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'running').length;
-    const failedTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'error').length;
-    const completedTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'ok').length;
-    const lastRun = rawAgentTasks.reduce<string | null>((latest, task) => {
-      if (!task.last_run) return latest;
-      if (!latest) return task.last_run;
-      return new Date(task.last_run).getTime() > new Date(latest).getTime() ? task.last_run : latest;
-    }, null);
-    const lastActiveAt = rawAgentTasks.reduce<string | null>((latest, task) => {
-      const current = task.updated_at || task.last_run;
-      if (!current) return latest;
-      if (!latest) return current;
-      return new Date(current).getTime() > new Date(latest).getTime() ? current : latest;
-    }, null);
+    const rawAgentTasks = tasks.filter((task) => !String(task.id || '').startsWith('agent-') && !getManualTaskAgentId(task) && detectAgentFromName(task.name) === agent.id);
+    const cronRunningTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'running').length;
+    const cronFailedTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'error').length;
+    const cronCompletedTasks = rawAgentTasks.filter((task) => normalizeSupabaseStatus(task.status) === 'ok').length;
+    const cronTaskCount = rawAgentTasks.length;
+    const cronIdleTasks = Math.max(cronTaskCount - cronCompletedTasks - cronFailedTasks - cronRunningTasks, 0);
+    const lastRun = rawAgentTasks.reduce<string | null>((latest, task) => pickLatestIso(latest, task.last_run), null);
+    const cronLastActiveAt = rawAgentTasks.reduce<string | null>((latest, task) => pickLatestIso(latest, task.updated_at, task.last_run), null);
+
+    const runningTasks = cronRunningTasks + (manualStatus === 'running' ? 1 : 0);
+    const failedTasks = cronFailedTasks + (manualStatus === 'error' ? 1 : 0);
+    const completedTasks = cronCompletedTasks + (manualStatus === 'ok' ? 1 : 0);
+    const idleTasks = cronIdleTasks + (manualStatus === 'idle' && manualTaskCount > 0 ? 1 : 0);
 
     let status: AggregatedAgentStatus = 'idle';
     if (runningTasks > 0) status = 'running';
     else if (failedTasks > 0) status = 'error';
-    else if (completedTasks > 0) status = 'ok';
+    else if (completedTasks > 0 || manualTaskCount > 0) status = 'ok';
 
     return {
       id: agent.id,
       name: agent.name,
       status,
-      tasks: rawAgentTasks.length,
+      tasks: cronTaskCount + manualTaskCount,
+      cronTasks: cronTaskCount,
+      manualTasks: manualTaskCount,
       completedTasks,
       failedTasks,
       runningTasks,
-      idleTasks: Math.max(rawAgentTasks.length - completedTasks - failedTasks - runningTasks, 0),
-      lastRun,
-      lastActiveAt,
+      idleTasks,
+      lastRun: pickLatestIso(lastRun, manualTask?.last_run),
+      lastActiveAt: pickLatestIso(cronLastActiveAt, manualTask?.updated_at, manualTask?.last_run),
+      currentTask: manualTaskTitle || buildCronSummary(cronTaskCount, status, cronCompletedTasks, cronFailedTasks, cronRunningTasks, cronIdleTasks),
     };
   });
 
@@ -412,7 +449,7 @@ function buildSupabaseFallback(tasks: SupabaseTaskRow[]) {
 
   return {
     timestamp: new Date().toISOString(),
-    source: hasAggregatedRows ? 'supabase-agent-sync-fallback' : 'supabase-task-fallback',
+    source: hasAggregatedRows ? 'supabase-agent-sync-fallback+manual' : 'supabase-task-fallback+manual',
     agents,
     activeSessions,
     activeCollaborations: buildActiveCollaborations(activeSessions as LiveSessionSummary[], hasAggregatedRows ? 'supabase-agent-sync' : 'supabase-task-inference'),
@@ -478,19 +515,21 @@ async function loadOpenClawRecentActivityByAgent(): Promise<Map<CanonicalAgentId
 
 export async function GET() {
   try {
-    const [jobs, activeSessions, recentActivityByAgent] = await Promise.all([
+    const [jobs, activeSessions, recentActivityByAgent, supabaseTasks] = await Promise.all([
       loadOpenClawCronJobs(),
       loadOpenClawActiveSessions(),
       loadOpenClawRecentActivityByAgent(),
+      fetchSupabaseTasks().catch(() => [] as SupabaseTaskRow[]),
     ]);
     const activeCollaborations = buildActiveCollaborations(activeSessions);
+    const manualTaskByAgent = buildManualTaskMap(supabaseTasks);
 
     const agents = CANONICAL_AGENTS.map((agent) => {
       const agentJobs = jobs.filter((job) => inferAgentId(job) === agent.id);
-      const completedTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'ok').length;
-      const failedTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'error').length;
-      const runningTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'running').length;
-      const idleTasks = Math.max(agentJobs.length - completedTasks - failedTasks - runningTasks, 0);
+      const cronCompletedTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'ok').length;
+      const cronFailedTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'error').length;
+      const cronRunningTasks = agentJobs.filter((job) => normalizeJobStatus(job) === 'running').length;
+      const cronIdleTasks = Math.max(agentJobs.length - cronCompletedTasks - cronFailedTasks - cronRunningTasks, 0);
       const lastRunAtMs = agentJobs.reduce<number | null>((latest, job) => {
         const current = job.state?.lastRunAtMs;
         if (!current) return latest;
@@ -499,30 +538,43 @@ export async function GET() {
       }, null);
 
       const recentActivityAtMs = recentActivityByAgent.get(agent.id)?.updatedAt || null;
-      const lastActiveAtMs = Math.max(lastRunAtMs || 0, recentActivityAtMs || 0) || null;
+      const manualTask = manualTaskByAgent.get(agent.id);
+      const manualStatus = normalizeManualTaskStatus(manualTask?.status);
+      const manualTaskTitle = getManualTaskTitle(manualTask);
+      const manualTaskCount = manualTaskTitle ? 1 : 0;
+      const manualLastActiveAtMs = isoToTimestamp(pickLatestIso(manualTask?.updated_at, manualTask?.last_run)) || null;
+      const lastActiveAtMs = Math.max(lastRunAtMs || 0, recentActivityAtMs || 0, manualLastActiveAtMs || 0) || null;
+
+      const runningTasks = cronRunningTasks + (manualStatus === 'running' ? 1 : 0);
+      const failedTasks = cronFailedTasks + (manualStatus === 'error' ? 1 : 0);
+      const completedTasks = cronCompletedTasks + (manualStatus === 'ok' ? 1 : 0);
+      const idleTasks = cronIdleTasks + (manualStatus === 'idle' && manualTaskCount > 0 ? 1 : 0);
 
       let status: AggregatedAgentStatus = 'idle';
       if (runningTasks > 0) status = 'running';
       else if (failedTasks > 0) status = 'error';
-      else if (completedTasks > 0) status = 'ok';
+      else if (completedTasks > 0 || manualTaskCount > 0) status = 'ok';
 
       return {
         id: agent.id,
         name: agent.name,
         status,
-        tasks: agentJobs.length,
+        tasks: agentJobs.length + manualTaskCount,
+        cronTasks: agentJobs.length,
+        manualTasks: manualTaskCount,
         completedTasks,
         failedTasks,
         runningTasks,
         idleTasks,
-        lastRun: lastRunAtMs ? new Date(lastRunAtMs).toISOString() : null,
+        lastRun: pickLatestIso(lastRunAtMs ? new Date(lastRunAtMs).toISOString() : null, manualTask?.last_run),
         lastActiveAt: lastActiveAtMs ? new Date(lastActiveAtMs).toISOString() : null,
+        currentTask: manualTaskTitle || buildCronSummary(agentJobs.length, status, cronCompletedTasks, cronFailedTasks, cronRunningTasks, cronIdleTasks),
       };
     });
 
     return NextResponse.json({
       timestamp: new Date().toISOString(),
-      source: 'openclaw-cron+sessions-realtime',
+      source: manualTaskByAgent.size > 0 ? 'openclaw-cron+sessions-realtime+manual' : 'openclaw-cron+sessions-realtime',
       agents,
       activeSessions,
       activeCollaborations,
