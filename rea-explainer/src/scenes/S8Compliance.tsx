@@ -40,7 +40,7 @@ export const S8Compliance: React.FC = () => {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 40, fontWeight: 900 }}>{title}</div>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>{title}</div>
         <div style={{ padding: "6px 16px", borderRadius: 999, background: `${color}18`, color, fontWeight: 700, fontSize: 22 }}>{tag}</div>
       </div>
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -99,7 +99,7 @@ export const S8Compliance: React.FC = () => {
                 width: 46,
                 height: 46,
                 borderRadius: 12,
-                border: `3px solid ${on ? C.green : "#CBD5E1"}`,
+                border: `3px solid ${on ? C.green : "#D3CEC1"}`,
                 background: on ? C.green : "#fff",
                 color: "#fff",
                 fontSize: 30,

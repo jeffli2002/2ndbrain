@@ -11,7 +11,7 @@ const TARGETS = [
   { glyph: "APK", name: "Android APK", out: "清单 · 类 · 反编译方法", color: C.green },
   { glyph: "FW", name: "固件", out: "区域提取 · 转交原生分析", color: C.rose },
   { glyph: "Ξ", name: "EVM 字节码", out: "函数选择器 · 参数推断", color: C.teal },
-  { glyph: ">_", name: "进程行为", out: "终端输出 · 文件系统观察", color: "#334155" },
+  { glyph: ">_", name: "进程行为", out: "终端输出 · 文件系统观察", color: "#4A4842" },
 ];
 
 const W = 360;
@@ -53,11 +53,11 @@ export const S5Targets: React.FC = () => {
               width: W,
               height: H,
               borderRadius: 24,
-              background: isH ? `linear-gradient(160deg, #fff, ${tg.color}12)` : "#fff",
+              background: isH ? `${tg.color}0F` : C.card,
               border: `2px solid ${isH ? tg.color : seen ? `${tg.color}55` : C.line}`,
               boxShadow: isH
-                ? `0 ${20 + hk * 10}px 50px ${tg.color}40`
-                : "0 8px 30px rgba(15,23,42,0.07)",
+                ? `0 ${14 + hk * 8}px 36px rgba(20,20,19,0.12)`
+                : "0 6px 22px rgba(20,20,19,0.06)",
               transform: `translateY(${(1 - k) * 80 - hk * 14}px) scale(${k * (1 + hk * 0.04)})`,
               opacity: k,
               padding: 26,
@@ -83,7 +83,7 @@ export const S5Targets: React.FC = () => {
             >
               {tg.glyph}
             </div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: C.ink, marginTop: 18 }}>{tg.name}</div>
+            <div style={{ fontSize: 32, fontWeight: 700, color: C.ink, marginTop: 18 }}>{tg.name}</div>
             <div
               style={{
                 fontSize: 22,

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
+import { C, FONT, MONO } from "../theme";
 import { Card, Cursor, lerp, pressScale, Title, useSpringAt, useT } from "../components";
 
 const TABS = [
@@ -59,7 +59,7 @@ const Graph: React.FC = () => {
             width: 200,
             height: 56,
             borderRadius: 12,
-            background: "#F5F3FF",
+            background: "#F4EAEF",
             border: `2px solid ${C.violet}`,
             fontFamily: MONO,
             fontSize: 21,
@@ -92,7 +92,7 @@ const PartA: React.FC = () => {
       </Title>
       <Card style={{ left: 140, top: 260, width: 660, height: 520, padding: 36, opacity: left, transform: `translateX(${(1 - left) * -60}px)` }}>
         <div style={{ fontSize: 24, fontWeight: 700, color: C.sub }}>智能体的结论</div>
-        <div style={{ fontSize: 38, fontWeight: 900, lineHeight: 1.45, marginTop: 16 }}>
+        <div style={{ fontSize: 38, fontWeight: 700, lineHeight: 1.45, marginTop: 16 }}>
           Notes 的搜索使用
           <span style={{ color: C.primary }}>本地倒排索引</span>，按
           <span style={{ color: C.primary }}> TF-IDF </span>
@@ -108,7 +108,7 @@ const PartA: React.FC = () => {
                 gap: 12,
                 fontSize: 24,
                 fontWeight: 700,
-                color: i <= active ? C.green : "#CBD5E1",
+                color: i <= active ? C.green : "#D3CEC1",
               }}
             >
               <div
@@ -116,7 +116,7 @@ const PartA: React.FC = () => {
                   width: 28,
                   height: 28,
                   borderRadius: 14,
-                  background: i <= active ? C.green : "#E2E8F0",
+                  background: i <= active ? C.green : "#E3DFD3",
                   color: "#fff",
                   fontSize: 18,
                   display: "flex",
@@ -142,7 +142,7 @@ const PartA: React.FC = () => {
             borderRadius: 14,
             padding: "8px 20px",
             fontSize: 34,
-            fontWeight: 900,
+            fontWeight: 700,
           }}
         >
           有据可查 · 不靠猜
@@ -176,14 +176,14 @@ const PartA: React.FC = () => {
                   style={{
                     padding: "16px 22px",
                     borderRadius: 14,
-                    background: "#FFFBEB",
+                    background: "#FAF1E2",
                     border: `1.5px solid ${col}55`,
                     display: "flex",
                     gap: 16,
                     opacity: lerp(t, [TABS[2].at + j * 0.25, TABS[2].at + j * 0.25 + 0.3], [0, 1]),
                   }}
                 >
-                  <span style={{ color: col, fontWeight: 900 }}>{i}</span>
+                  <span style={{ color: col, fontWeight: 700 }}>{i}</span>
                   {txt}
                 </div>
               ))}
@@ -203,7 +203,7 @@ const PartA: React.FC = () => {
               width: 220,
               height: 60,
               borderRadius: 14,
-              background: on ? GRAD : "#F1F5F9",
+              background: on ? C.primary : "#EFEBE1",
               color: on ? "#fff" : C.sub,
               fontFamily: FONT,
               fontSize: 26,
@@ -213,7 +213,7 @@ const PartA: React.FC = () => {
               justifyContent: "center",
               opacity: right,
               transform: `scale(${pressScale(t, tab.at)})`,
-              boxShadow: on ? "0 10px 24px rgba(79,70,229,0.3)" : "none",
+              boxShadow: on ? "0 10px 24px rgba(20,20,19,0.12)" : "none",
             }}
           >
             {tab.name}
@@ -261,11 +261,11 @@ const PartB: React.FC = () => {
             />
           ))}
         </div>
-        <div style={{ position: "absolute", left: ballX - 16, top: ballY - 16, width: 32, height: 32, borderRadius: 16, background: C.amber, boxShadow: `0 0 20px ${C.amber}` }} />
+        <div style={{ position: "absolute", left: ballX - 16, top: ballY - 16, width: 32, height: 32, borderRadius: 16, background: C.primary }} />
         <div style={{ position: "absolute", left: ballX - 80, top: 478, width: 160, height: 18, borderRadius: 9, background: C.ink }} />
         <div style={{ position: "absolute", left: 30, right: 30, bottom: 26, display: "flex", alignItems: "center", gap: 14, fontFamily: MONO, fontSize: 22, fontWeight: 700 }}>
           <span>L</span>
-          <div style={{ flex: 1, height: 14, borderRadius: 7, background: "#E2E8F0", position: "relative" }}>
+          <div style={{ flex: 1, height: 14, borderRadius: 7, background: "#E3DFD3", position: "relative" }}>
             <div style={{ position: "absolute", left: "50%", top: -6, width: 2, height: 26, background: C.sub }} />
             <div
               style={{
@@ -275,7 +275,7 @@ const PartB: React.FC = () => {
                 width: 26,
                 height: 26,
                 borderRadius: 13,
-                background: GRAD,
+                background: C.primary,
               }}
             />
           </div>
@@ -288,9 +288,9 @@ const PartB: React.FC = () => {
         <div style={{ fontSize: 26, color: C.sub, fontWeight: 700 }}>重建后的 C 函数 · 原始 x86 测试用例</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 8 }}>
           <span style={{ fontFamily: MONO, fontSize: 104, fontWeight: 700, color: C.green }}>{count.toLocaleString("en-US")}</span>
-          <span style={{ fontSize: 34, fontWeight: 900 }}>个测试全部通过</span>
+          <span style={{ fontSize: 34, fontWeight: 700 }}>个测试全部通过</span>
         </div>
-        <div style={{ height: 14, borderRadius: 7, background: "#E2E8F0", overflow: "hidden" }}>
+        <div style={{ height: 14, borderRadius: 7, background: "#E3DFD3", overflow: "hidden" }}>
           <div style={{ width: `${(count / 3205) * 100}%`, height: "100%", background: C.green }} />
         </div>
       </Card>
@@ -309,11 +309,11 @@ const PartB: React.FC = () => {
                 style={{
                   height: 44,
                   borderRadius: 6,
-                  background: on ? "#DCFCE7" : "#F1F5F9",
+                  background: on ? "#E5EEDD" : "#EFEBE1",
                   border: `1.5px solid ${on ? C.green : C.line}`,
                   fontFamily: MONO,
                   fontSize: 15,
-                  color: on ? C.green : "#CBD5E1",
+                  color: on ? C.green : "#D3CEC1",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",

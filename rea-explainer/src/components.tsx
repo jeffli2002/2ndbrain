@@ -7,7 +7,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { C, FONT, GRAD, MONO, shadow } from "./theme";
+import { C, FONT, MONO, SERIF, shadow } from "./theme";
 
 export const useT = () => {
   const frame = useCurrentFrame();
@@ -46,39 +46,58 @@ export const Background: React.FC = () => {
     <AbsoluteFill style={{ backgroundColor: C.bg, overflow: "hidden" }}>
       <AbsoluteFill
         style={{
-          backgroundImage:
-            "radial-gradient(rgba(79,70,229,0.16) 1.4px, transparent 1.4px)",
+          backgroundImage: "radial-gradient(rgba(20,20,19,0.09) 1.3px, transparent 1.3px)",
           backgroundSize: "36px 36px",
           backgroundPosition: `${(t * 6) % 36}px ${(t * 4) % 36}px`,
         }}
       />
-      <div
-        style={{
-          position: "absolute",
-          width: 900,
-          height: 900,
-          borderRadius: "50%",
-          left: -250 + Math.sin(t * 0.3) * 60,
-          top: -380 + Math.cos(t * 0.25) * 40,
-          background:
-            "radial-gradient(circle, rgba(124,58,237,0.16), rgba(124,58,237,0) 65%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          width: 1000,
-          height: 1000,
-          borderRadius: "50%",
-          right: -300 + Math.cos(t * 0.27) * 60,
-          bottom: -500 + Math.sin(t * 0.33) * 50,
-          background:
-            "radial-gradient(circle, rgba(8,145,178,0.15), rgba(8,145,178,0) 65%)",
-        }}
-      />
+      {[
+        { x: -260, y: -420, r: 520, k: 0.3 },
+        { x: 1500, y: 620, r: 620, k: 0.25 },
+      ].map((c, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: c.x + Math.sin(t * c.k) * 40,
+            top: c.y + Math.cos(t * c.k) * 30,
+            width: c.r * 2,
+            height: c.r * 2,
+            borderRadius: "50%",
+            border: "1.5px solid rgba(217,119,87,0.18)",
+          }}
+        />
+      ))}
     </AbsoluteFill>
   );
 };
+
+/** Radiating spark mark in the Claude visual idiom. */
+export const Spark: React.FC<{ size?: number; color?: string; spin?: number }> = ({
+  size = 40,
+  color = C.primary,
+  spin = 0,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" style={{ transform: `rotate(${spin}deg)` }}>
+    {Array.from({ length: 10 }, (_, i) => {
+      const a = (i / 10) * Math.PI * 2;
+      const r1 = 4;
+      const r2 = i % 2 ? 15 : 19;
+      return (
+        <line
+          key={i}
+          x1={20 + Math.cos(a) * r1}
+          y1={20 + Math.sin(a) * r1}
+          x2={20 + Math.cos(a) * r2}
+          y2={20 + Math.sin(a) * r2}
+          stroke={color}
+          strokeWidth={4.2}
+          strokeLinecap="round"
+        />
+      );
+    })}
+  </svg>
+);
 
 export type CursorPoint = { t: number; x: number; y: number; click?: boolean };
 
@@ -114,7 +133,7 @@ export const Cursor: React.FC<{ points: CursorPoint[]; hideAt?: number }> = ({
             height: r * 2,
             borderRadius: "50%",
             border: `3px solid ${C.primary}`,
-            background: "rgba(79,70,229,0.12)",
+            background: "rgba(217,119,87,0.12)",
             opacity: interpolate(dt, [0, 0.7], [0.9, 0]),
           }}
         />,
@@ -135,7 +154,7 @@ export const Cursor: React.FC<{ points: CursorPoint[]; hideAt?: number }> = ({
           top: y - 3,
           transform: `scale(${scale})`,
           transformOrigin: "4px 3px",
-          filter: "drop-shadow(0 6px 10px rgba(15,23,42,0.35))",
+          filter: "drop-shadow(0 6px 10px rgba(20,20,19,0.35))",
         }}
       >
         <path
@@ -222,7 +241,7 @@ export const ChapterTag: React.FC<{ index: string; label: string }> = ({
           fontWeight: 700,
           fontSize: 22,
           color: "#fff",
-          background: GRAD,
+          background: C.primary,
           padding: "6px 14px",
           borderRadius: 10,
         }}
@@ -249,8 +268,8 @@ export const Title: React.FC<{
         left: 0,
         right: 0,
         textAlign: "center",
-        fontFamily: FONT,
-        fontWeight: 900,
+        fontFamily: SERIF,
+        fontWeight: 700,
         fontSize: size,
         color: C.ink,
         opacity: k,
@@ -263,17 +282,8 @@ export const Title: React.FC<{
   );
 };
 
-export const GradText: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span
-    style={{
-      background: GRAD,
-      WebkitBackgroundClip: "text",
-      backgroundClip: "text",
-      color: "transparent",
-    }}
-  >
-    {children}
-  </span>
+export const Accent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span style={{ color: C.primary }}>{children}</span>
 );
 
 export const Card: React.FC<{
@@ -307,7 +317,7 @@ export const WindowBar: React.FC<{ title: string; dark?: boolean }> = ({
       alignItems: "center",
       padding: "0 20px",
       gap: 10,
-      borderBottom: `1px solid ${dark ? "#1E293B" : C.line}`,
+      borderBottom: `1px solid ${dark ? "#34322E" : C.line}`,
     }}
   >
     {["#FF5F57", "#FEBC2E", "#28C840"].map((c) => (
@@ -318,7 +328,7 @@ export const WindowBar: React.FC<{ title: string; dark?: boolean }> = ({
         marginLeft: 14,
         fontSize: 20,
         fontWeight: 500,
-        color: dark ? "#94A3B8" : C.sub,
+        color: dark ? "#A39E93" : C.sub,
         fontFamily: FONT,
       }}
     >

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
+import { C, FONT, MONO, SERIF } from "../theme";
 import { Card, Cursor, lerp, pressScale, useSpringAt, useT, WindowBar } from "../components";
 
 const WORDS = [
@@ -18,11 +18,11 @@ const APPROVE = 12.3;
 
 const CMD = "npx rea-agents setup";
 const OUT = [
-  { at: 9.5, text: "✓ 检测到本机智能体 ×4", color: "#4ADE80" },
-  { at: 9.8, text: "✓ 生成 MCP 配置（已备份旧配置）", color: "#4ADE80" },
-  { at: 10.1, text: "? 选择要接入的智能体 →", color: "#FBBF24" },
-  { at: 12.6, text: "✓ 已注册 REA MCP 服务", color: "#4ADE80" },
-  { at: 12.9, text: "✓ 已安装逆向工作流指引", color: "#4ADE80" },
+  { at: 9.5, text: "✓ 检测到本机智能体 ×4", color: "#9DBF8A" },
+  { at: 9.8, text: "✓ 生成 MCP 配置（已备份旧配置）", color: "#9DBF8A" },
+  { at: 10.1, text: "? 选择要接入的智能体 →", color: "#E3B661" },
+  { at: 12.6, text: "✓ 已注册 REA MCP 服务", color: "#9DBF8A" },
+  { at: 12.9, text: "✓ 已安装逆向工作流指引", color: "#9DBF8A" },
 ];
 
 export const S3Setup: React.FC = () => {
@@ -68,10 +68,9 @@ export const S3Setup: React.FC = () => {
               <span
                 style={{
                   fontSize: 200,
-                  fontWeight: 900,
-                  background: GRAD,
-                  WebkitBackgroundClip: "text",
-                  color: "transparent",
+                  fontWeight: 700,
+                  fontFamily: SERIF,
+                  color: C.primary,
                   lineHeight: 1,
                 }}
               >
@@ -80,7 +79,8 @@ export const S3Setup: React.FC = () => {
               <span
                 style={{
                   fontSize: 88,
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  fontFamily: SERIF,
                   color: C.ink,
                   display: "inline-block",
                   maxWidth: expand * 420,
@@ -120,7 +120,7 @@ export const S3Setup: React.FC = () => {
           top: PY,
           width: 840,
           height: 500,
-          background: "#0F172A",
+          background: C.dark,
           border: "1px solid #1E293B",
           overflow: "hidden",
           opacity: termK,
@@ -128,11 +128,11 @@ export const S3Setup: React.FC = () => {
         }}
       >
         <WindowBar title="终端 — zsh" dark />
-        <div style={{ padding: "26px 30px", fontFamily: MONO, fontSize: 28, color: "#E2E8F0", lineHeight: 1.75 }}>
+        <div style={{ padding: "26px 30px", fontFamily: MONO, fontSize: 28, color: "#E3DFD3", lineHeight: 1.75 }}>
           <div>
-            <span style={{ color: "#22D3EE" }}>~ $</span> {typed}
+            <span style={{ color: "#E89B7F" }}>~ $</span> {typed}
             {t < 9.2 && Math.floor(t * 3) % 2 === 0 && (
-              <span style={{ background: "#E2E8F0", marginLeft: 2 }}>&nbsp;</span>
+              <span style={{ background: "#E3DFD3", marginLeft: 2 }}>&nbsp;</span>
             )}
           </div>
           {OUT.filter((o) => t > o.at).map((o) => (
@@ -182,7 +182,7 @@ export const S3Setup: React.FC = () => {
               opacity: panelK,
               borderRadius: 14,
               padding: "0 16px",
-              background: on ? "#EEF2FF" : "transparent",
+              background: on ? "#F6E6DE" : "transparent",
             }}
           >
             <div
@@ -190,7 +190,7 @@ export const S3Setup: React.FC = () => {
                 width: 34,
                 height: 34,
                 borderRadius: 9,
-                border: `2.5px solid ${on ? C.primary : "#CBD5E1"}`,
+                border: `2.5px solid ${on ? C.primary : "#D3CEC1"}`,
                 background: on ? C.primary : "#fff",
                 display: "flex",
                 alignItems: "center",
@@ -206,7 +206,7 @@ export const S3Setup: React.FC = () => {
             <div style={{ flex: 1 }} />
             {connected && (
               <div style={{ fontSize: 22, color: C.green, display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 5, background: C.green, boxShadow: `0 0 10px ${C.green}` }} />
+                <div style={{ width: 10, height: 10, borderRadius: 5, background: C.green }} />
                 已连接
               </div>
             )}
@@ -221,17 +221,17 @@ export const S3Setup: React.FC = () => {
           width: 660,
           height: 66,
           borderRadius: 16,
-          background: t > APPROVE ? C.green : GRAD,
+          background: t > APPROVE ? C.green : C.primary,
           color: "#fff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: FONT,
           fontSize: 28,
-          fontWeight: 900,
+          fontWeight: 700,
           opacity: panelK,
           transform: `scale(${pressScale(t, APPROVE)})`,
-          boxShadow: "0 10px 24px rgba(79,70,229,0.3)",
+          boxShadow: "0 10px 24px rgba(20,20,19,0.12)",
         }}
       >
         {t > APPROVE ? "✓ 已接入 REA" : "批准并接入"}

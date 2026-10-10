@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
-import { Card, Chip, Cursor, lerp, pressScale, Title, useSpringAt, useT } from "../components";
+import { C, FONT, MONO, SERIF } from "../theme";
+import { Card, Chip, Cursor, Spark, lerp, pressScale, Title, useSpringAt, useT } from "../components";
 
 const STEPS = [
   { at: 2.6, label: "提问" },
@@ -35,7 +35,7 @@ const Packet: React.FC<{ path: P[]; from: number; to: number; color?: string; la
           height: 32,
           borderRadius: 16,
           background: color,
-          boxShadow: `0 0 0 8px ${color}33, 0 0 30px ${color}`,
+          boxShadow: `0 0 0 7px ${color}26`,
         }}
       />
       {label && (
@@ -62,7 +62,7 @@ const Packet: React.FC<{ path: P[]; from: number; to: number; color?: string; la
   );
 };
 
-const Line: React.FC<{ d: string; at: number; color?: string; dash?: boolean }> = ({ d, at, color = "#CBD5E1", dash }) => {
+const Line: React.FC<{ d: string; at: number; color?: string; dash?: boolean }> = ({ d, at, color = "#D3CEC1", dash }) => {
   const t = useT();
   const k = lerp(t, [at, at + 0.6], [0, 1]);
   return (
@@ -142,8 +142,8 @@ export const S4Loop: React.FC = () => {
               fontSize: 22,
               fontWeight: 700,
               color: i === step ? "#fff" : i < step ? C.primary : C.sub,
-              background: i === step ? GRAD : i < step ? "#EEF2FF" : "#fff",
-              border: `1.5px solid ${i <= step ? "#C7D2FE" : C.line}`,
+              background: i === step ? C.primary : i < step ? "#F6E6DE" : "#fff",
+              border: `1.5px solid ${i <= step ? "#EBC2B0" : C.line}`,
               transform: `scale(${i === step ? 1.08 : 1})`,
             }}
           >
@@ -175,7 +175,7 @@ export const S4Loop: React.FC = () => {
             background: C.bg,
             padding: "0 14px",
             fontFamily: FONT,
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: 26,
             color: C.teal,
           }}
@@ -210,7 +210,7 @@ export const S4Loop: React.FC = () => {
               width: 64,
               height: 64,
               borderRadius: 18,
-              background: GRAD,
+              background: C.primary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -218,10 +218,10 @@ export const S4Loop: React.FC = () => {
               fontSize: 34,
             }}
           >
-            ✦
+            <Spark size={40} color="#fff" spin={t * 30} />
           </div>
           <div>
-            <div style={{ fontSize: 30, fontWeight: 900 }}>AI 智能体</div>
+            <div style={{ fontSize: 30, fontWeight: 700 }}>AI 智能体</div>
             <div style={{ fontSize: 20, color: C.sub }}>Claude Code / Codex / Cursor</div>
           </div>
         </div>
@@ -230,7 +230,7 @@ export const S4Loop: React.FC = () => {
             marginTop: 22,
             padding: "14px 18px",
             borderRadius: 14,
-            background: "#F1F5F9",
+            background: "#EFEBE1",
             fontSize: 24,
             minHeight: 70,
             lineHeight: 1.4,
@@ -250,7 +250,7 @@ export const S4Loop: React.FC = () => {
             style={{
               padding: "8px 26px",
               borderRadius: 12,
-              background: t > 3.7 ? C.green : GRAD,
+              background: t > 3.7 ? C.green : C.primary,
               color: "#fff",
               fontWeight: 700,
               fontSize: 22,
@@ -279,7 +279,7 @@ export const S4Loop: React.FC = () => {
           top: REAY,
           width: 340,
           height: 260,
-          background: GRAD,
+          background: C.primary,
           border: "none",
           color: "#fff",
           display: "flex",
@@ -288,17 +288,17 @@ export const S4Loop: React.FC = () => {
           justifyContent: "center",
           opacity: reaK,
           transform: `scale(${reaK * reaPulse})`,
-          boxShadow: "0 20px 50px rgba(79,70,229,0.35)",
+          boxShadow: "0 20px 50px rgba(20,20,19,0.12)",
         }}
       >
-        <div style={{ fontSize: 76, fontWeight: 900, letterSpacing: 4 }}>REA</div>
+        <div style={{ fontSize: 80, fontWeight: 700, fontFamily: SERIF, letterSpacing: 4 }}>REA</div>
         <div style={{ fontFamily: MONO, fontSize: 22, opacity: 0.9 }}>MCP Server</div>
         <div style={{ fontSize: 20, marginTop: 8, opacity: 0.9 }}>调度 · 追踪 · 汇总证据</div>
       </Card>
 
       {/* engines */}
       <Card style={{ left: ENX, top: 300, width: 400, height: 280, padding: 22, opacity: enK, transform: `scale(${enK})` }}>
-        <div style={{ fontSize: 24, fontWeight: 900, marginBottom: 12 }}>专业分析引擎</div>
+        <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>专业分析引擎</div>
         {engines.map((e) => {
           const on = t > e.at;
           return (
@@ -315,12 +315,12 @@ export const S4Loop: React.FC = () => {
                 fontFamily: MONO,
                 fontSize: 24,
                 fontWeight: 700,
-                background: on ? "#ECFEFF" : "#F8FAFC",
+                background: on ? "#E9EFF6" : "#F6F4EE",
                 border: `1.5px solid ${on ? C.cyan : C.line}`,
                 color: on ? C.cyan : C.sub,
               }}
             >
-              <div style={{ width: 12, height: 12, borderRadius: 6, background: on ? C.cyan : "#CBD5E1", boxShadow: on ? `0 0 12px ${C.cyan}` : "none" }} />
+              <div style={{ width: 12, height: 12, borderRadius: 6, background: on ? C.cyan : "#D3CEC1", }} />
               {e.name}
               <div style={{ flex: 1 }} />
               {on && <span style={{ fontSize: 18 }}>运行中</span>}
@@ -331,7 +331,7 @@ export const S4Loop: React.FC = () => {
 
       {/* target */}
       <Card style={{ left: ENX, top: 650, width: 400, height: 160, padding: 22, overflow: "hidden", opacity: tgK, transform: `scale(${tgK})` }}>
-        <div style={{ fontSize: 24, fontWeight: 900 }}>目标程序 · Notes.app</div>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>目标程序 · Notes.app</div>
         <div style={{ fontFamily: MONO, fontSize: 20, color: C.sub, marginTop: 10, lineHeight: 1.5 }}>
           sub_4012A0 → search_index
           <br />
@@ -346,7 +346,8 @@ export const S4Loop: React.FC = () => {
               bottom: 0,
               width: 120,
               transform: `translateX(${-120 + scan * 520}px)`,
-              background: `linear-gradient(90deg, transparent, ${C.cyan}55, transparent)`,
+              background: `${C.cyan}1F`,
+              borderLeft: `3px solid ${C.cyan}`,
             }}
           />
         )}

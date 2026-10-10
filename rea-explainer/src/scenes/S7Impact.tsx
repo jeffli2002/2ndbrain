@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
+import { C, FONT, MONO } from "../theme";
 import { Card, Cursor, lerp, pressScale, Title, useSpringAt, useT } from "../components";
 
 const PICK = 3.4;
@@ -14,8 +14,8 @@ const Bar: React.FC<{ label: string; y: number; at: number; color: string }> = (
         <span>{label}</span>
         <span style={{ fontFamily: MONO, color }}>{Math.round(fill * 100)}%</span>
       </div>
-      <div style={{ position: "relative", height: 26, borderRadius: 13, background: "#E2E8F0", marginTop: 12, overflow: "visible" }}>
-        <div style={{ width: `${fill * 100}%`, height: "100%", borderRadius: 13, background: `linear-gradient(90deg, ${color}99, ${color})`, boxShadow: `0 0 20px ${color}66` }} />
+      <div style={{ position: "relative", height: 26, borderRadius: 13, background: "#E3DFD3", marginTop: 12, overflow: "visible" }}>
+        <div style={{ width: `${fill * 100}%`, height: "100%", borderRadius: 13, background: color }} />
         <div style={{ position: "absolute", left: "32%", top: -10, width: 3, height: 46, background: C.sub }} />
         <div style={{ position: "absolute", left: "32%", top: 40, fontSize: 18, color: C.sub, transform: "translateX(-50%)" }}>过去</div>
       </div>
@@ -49,10 +49,10 @@ export const S7Impact: React.FC = () => {
           filter: `grayscale(${picked})`,
         }}
       >
-        <div style={{ fontSize: 34, fontWeight: 900 }}>聊天套壳</div>
+        <div style={{ fontSize: 34, fontWeight: 700 }}>聊天套壳</div>
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ alignSelf: "flex-end", background: "#EEF2FF", padding: "8px 16px", borderRadius: 14, fontSize: 22 }}>帮我分析这个 App</div>
-          <div style={{ alignSelf: "flex-start", background: "#F1F5F9", padding: "8px 16px", borderRadius: 14, fontSize: 22 }}>它可能用了某种搜索算法…</div>
+          <div style={{ alignSelf: "flex-end", background: "#F6E6DE", padding: "8px 16px", borderRadius: 14, fontSize: 22 }}>帮我分析这个 App</div>
+          <div style={{ alignSelf: "flex-start", background: "#EFEBE1", padding: "8px 16px", borderRadius: 14, fontSize: 22 }}>它可能用了某种搜索算法…</div>
         </div>
         <div style={{ marginTop: 18, fontSize: 22, color: C.sub }}>只会说 · 接触不到真实目标</div>
       </Card>
@@ -90,10 +90,10 @@ export const S7Impact: React.FC = () => {
           opacity: r,
           transform: `translateX(${(1 - r) * 60}px) scale(${(1 + picked * 0.06) * pressScale(t, PICK)})`,
           border: `2px solid ${picked > 0 ? C.primary : C.line}`,
-          boxShadow: picked > 0 ? `0 0 0 ${10 * picked}px rgba(79,70,229,0.12), 0 24px 60px rgba(79,70,229,0.3)` : undefined,
+          boxShadow: picked > 0 ? `0 0 0 ${10 * picked}px rgba(217,119,87,0.12), 0 24px 60px rgba(20,20,19,0.12)` : undefined,
         }}
       >
-        <div style={{ fontSize: 34, fontWeight: 900 }}>
+        <div style={{ fontSize: 34, fontWeight: 700 }}>
           Agent <span style={{ color: C.primary }}>+</span> 硬核工程
         </div>
         <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -103,7 +103,7 @@ export const S7Impact: React.FC = () => {
               style={{
                 padding: "8px 16px",
                 borderRadius: 12,
-                background: GRAD,
+                background: C.primary,
                 color: "#fff",
                 fontSize: 22,
                 fontWeight: 700,
@@ -140,7 +140,7 @@ export const S7Impact: React.FC = () => {
             <path d="M10 130 H80 V90 H150 V50 H220 V10" stroke={C.primary} strokeWidth={8} fill="none" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - step} />
             <path d="M205 22 L222 4 L240 22" stroke={C.primary} strokeWidth={8} fill="none" strokeLinecap="round" />
           </svg>
-          <div style={{ fontFamily: FONT, fontSize: 28, fontWeight: 900, color: C.primary, textAlign: "center" }}>抬高一个台阶</div>
+          <div style={{ fontFamily: FONT, fontSize: 28, fontWeight: 700, color: C.primary, textAlign: "center" }}>抬高一个台阶</div>
         </div>
       </Card>
 

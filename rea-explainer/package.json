@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "voiceover": "python3 scripts/gen_voiceover.py",
+    "bgm": "python3 scripts/gen_bgm.py",
     "start": "remotion studio",
     "build": "remotion render ReaExplainer out/rea-explainer.mp4"
   },

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
+import { C, FONT, MONO, SERIF } from "../theme";
 import { Card, Cursor, lerp, pressScale, useSpringAt, useT, WindowBar } from "../components";
 
 const NOTES = [
@@ -24,7 +24,7 @@ const Highlight: React.FC<{ text: string; on: number }> = ({ text, on }) => {
       {text.slice(0, i)}
       <span
         style={{
-          background: `rgba(245,158,11,${0.35 * on})`,
+          background: `rgba(217,119,87,${0.28 * on})`,
           borderRadius: 6,
           padding: "0 2px",
         }}
@@ -76,7 +76,7 @@ export const S1Intro: React.FC = () => {
             color: C.sub,
             fontFamily: MONO,
             transform: `scale(${pressScale(t, 5.6)})`,
-            background: t > 5.6 ? "#EEF2FF" : "#fff",
+            background: t > 5.6 ? "#F6E6DE" : "#fff",
           }}
         >
           {"</> 查看源代码"}
@@ -87,7 +87,7 @@ export const S1Intro: React.FC = () => {
               height: 64,
               borderRadius: 16,
               border: `2px solid ${t > 1.3 ? C.primary : C.line}`,
-              boxShadow: t > 1.3 ? `0 0 0 6px rgba(79,70,229,0.12)` : "none",
+              boxShadow: t > 1.3 ? `0 0 0 6px rgba(217,119,87,0.12)` : "none",
               display: "flex",
               alignItems: "center",
               padding: "0 22px",
@@ -111,13 +111,13 @@ export const S1Intro: React.FC = () => {
                 transform: `scale(${0.6 + magic * 0.4})`,
                 padding: "6px 14px",
                 borderRadius: 999,
-                background: GRAD,
+                background: C.primary,
                 color: "#fff",
                 fontSize: 20,
                 fontWeight: 700,
               }}
             >
-              ✦ 智能匹配 0.03s
+              智能匹配 0.03s
             </div>
           </div>
           <div style={{ position: "relative", height: 460, marginTop: 24 }}>
@@ -135,8 +135,8 @@ export const S1Intro: React.FC = () => {
                     top: y,
                     height: 74,
                     borderRadius: 14,
-                    background: n.hit && filterK > 0 ? "#F8FAFF" : "#fff",
-                    border: `1.5px solid ${n.hit && filterK > 0.5 ? "#C7D2FE" : C.line}`,
+                    background: n.hit && filterK > 0 ? "#FBF1EC" : "#fff",
+                    border: `1.5px solid ${n.hit && filterK > 0.5 ? "#EBC2B0" : C.line}`,
                     display: "flex",
                     alignItems: "center",
                     padding: "0 24px",
@@ -175,18 +175,17 @@ export const S1Intro: React.FC = () => {
         <div
           style={{
             fontSize: 220,
-            fontWeight: 900,
+            fontWeight: 700,
+            fontFamily: SERIF,
             lineHeight: 1,
-            background: GRAD,
-            WebkitBackgroundClip: "text",
-            color: "transparent",
+            color: C.primary,
             transform: `rotate(${Math.sin(t * 2) * 4}deg)`,
             display: "inline-block",
           }}
         >
           ?
         </div>
-        <div style={{ fontSize: 58, fontWeight: 900, color: C.ink, lineHeight: 1.3 }}>
+        <div style={{ fontSize: 58, fontWeight: 700, fontFamily: SERIF, color: C.ink, lineHeight: 1.3 }}>
           它是怎么
           <br />
           做出来的？
@@ -218,7 +217,7 @@ export const S1Intro: React.FC = () => {
               <circle cx="20" cy="31" r="3.5" fill="#fff" />
             </svg>
             <div>
-              <div style={{ fontSize: 40, fontWeight: 900, color: C.rose }}>源代码不可用</div>
+              <div style={{ fontSize: 40, fontWeight: 700, color: C.rose }}>源代码不可用</div>
               <div style={{ fontSize: 24, color: C.sub, marginTop: 6 }}>闭源应用，拿不到一行代码</div>
             </div>
           </div>
@@ -229,7 +228,7 @@ export const S1Intro: React.FC = () => {
               fontSize: 22,
               color: C.sub,
               opacity: binK,
-              background: "#F1F5F9",
+              background: "#EFEBE1",
               borderRadius: 12,
               padding: "10px 16px",
               whiteSpace: "nowrap",

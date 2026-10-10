@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Audio, interpolate, Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Background, ChapterTag, SceneFade, Subtitle } from "./components";
-import { C, FPS, GRAD, SCENE_PAD } from "./theme";
+import { C, FPS, SCENE_PAD } from "./theme";
 import VO from "./voiceover.json";
 import { S1Intro } from "./scenes/S1Intro";
 import { S2Layers } from "./scenes/S2Layers";
@@ -28,24 +28,41 @@ const SCENES: Record<string, { C: React.FC; label: string }> = {
 export const sceneFrames = VO.map((v) => Math.ceil((v.duration + SCENE_PAD) * FPS));
 export const TOTAL_FRAMES = sceneFrames.reduce((a, b) => a + b, 0);
 
+const sceneStarts = sceneFrames.map((_, i) => sceneFrames.slice(0, i).reduce((a, b) => a + b, 0));
+
+/** 1 while a voiceover clip is playing, 0 in the gaps, with short ramps for smooth ducking. */
+const speechLevel = (f: number) => {
+  const ramp = 0.35 * FPS;
+  let level = 0;
+  VO.forEach((v, i) => {
+    const s = sceneStarts[i];
+    const e = s + v.duration * FPS;
+    const k = Math.min((f - s + ramp) / ramp, (e + ramp - f) / ramp);
+    level = Math.max(level, Math.min(1, Math.max(0, k)));
+  });
+  return level;
+};
+
 const ProgressBar: React.FC = () => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 6, background: "rgba(15,23,42,0.06)" }}>
-      <div style={{ width: `${(frame / durationInFrames) * 100}%`, height: "100%", background: GRAD }} />
+    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 6, background: "rgba(20,20,19,0.06)" }}>
+      <div style={{ width: `${(frame / durationInFrames) * 100}%`, height: "100%", background: C.primary }} />
     </div>
   );
 };
 
 export const ReaExplainer: React.FC = () => {
-  const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   let from = 0;
-  const bgmVolume = interpolate(frame, [0, 30, durationInFrames - 60, durationInFrames], [0, 0.07, 0.07, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const bgmVolume = (f: number) => {
+    const fade = interpolate(f, [0, 30, durationInFrames - 75, durationInFrames], [0, 1, 1, 0], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    });
+    return fade * interpolate(speechLevel(f), [0, 1], [0.2, 0.1]);
+  };
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg }}>
       <Background />

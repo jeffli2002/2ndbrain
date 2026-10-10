@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
-import { Card, Cursor, GradText, lerp, Title, useSpringAt, useT } from "../components";
+import { C, FONT, MONO } from "../theme";
+import { Accent, Card, Cursor, lerp, Title, useSpringAt, useT } from "../components";
 
 const LX = 330;
 const LW = 1120;
@@ -31,7 +31,7 @@ const Layer: React.FC<{
         opacity: k,
         transform: `translateX(${(1 - k) * -80}px) scale(${1 + active * 0.02})`,
         border: `2px solid ${active > 0.1 ? color : C.line}`,
-        boxShadow: active > 0.1 ? `0 0 0 ${8 * active}px ${color}22, 0 14px 40px ${color}33` : undefined,
+        boxShadow: active > 0.1 ? `0 0 0 ${6 * active}px ${color}22, 0 10px 28px rgba(20,20,19,0.08)` : undefined,
       }}
     >
       <div
@@ -47,7 +47,7 @@ const Layer: React.FC<{
         }}
       >
         <div style={{ fontFamily: MONO, fontSize: 18, color, fontWeight: 700 }}>{tag}</div>
-        <div style={{ fontSize: 32, fontWeight: 900 }}>{name}</div>
+        <div style={{ fontSize: 32, fontWeight: 700 }}>{name}</div>
       </div>
       <div style={{ flex: 1, padding: "0 34px", display: "flex", alignItems: "center", gap: 18 }}>
         {children}
@@ -92,7 +92,7 @@ export const S2Layers: React.FC = () => {
   return (
     <AbsoluteFill>
       <Title top={110} size={60}>
-        逆向工程：从<GradText>「行为」</GradText>挖到<GradText>「二进制」</GradText>
+        逆向工程：从<Accent>「行为」</Accent>挖到<Accent>「二进制」</Accent>
       </Title>
 
       <Layer i={0} name="界面行为" tag="L1 · BEHAVIOR" color={C.primary} active={activeOf(0)}>
@@ -143,7 +143,7 @@ export const S2Layers: React.FC = () => {
             width: 8,
             height: Math.max(0, dragY - LY[0] - 10),
             borderRadius: 4,
-            background: GRAD,
+            background: C.primary,
           }}
         />
       </div>
@@ -155,14 +155,14 @@ export const S2Layers: React.FC = () => {
           width: 92,
           height: 92,
           borderRadius: 46,
-          background: GRAD,
-          boxShadow: "0 12px 30px rgba(79,70,229,0.4)",
+          background: C.primary,
+          boxShadow: "0 8px 20px rgba(20,20,19,0.12)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           color: "#fff",
           fontFamily: FONT,
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: 22,
           opacity: handleK,
           transform: `scale(${handleK}) rotate(${t > 4.4 && t < 8.8 ? t * 240 : 0}deg)`,
@@ -196,9 +196,8 @@ export const S2Layers: React.FC = () => {
             top: dragY - 2,
             width: LW + 90,
             height: 4,
-            background: `linear-gradient(90deg, transparent, ${C.primary}, ${C.cyan}, transparent)`,
-            boxShadow: `0 0 24px ${C.primary}`,
-            opacity: 0.8,
+            background: C.primary,
+            opacity: 0.9,
           }}
         />
       )}
@@ -223,7 +222,7 @@ export const S2Layers: React.FC = () => {
             color: C.ink,
             padding: "14px 30px",
             borderRadius: 16,
-            background: "#FFF7ED",
+            background: "#FAEEDD",
             border: `2px solid ${C.amber}66`,
           }}
         >

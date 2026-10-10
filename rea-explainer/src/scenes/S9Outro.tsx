@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { C, FONT, GRAD, MONO } from "../theme";
-import { Chip, Cursor, lerp, pressScale, useSpringAt, useT } from "../components";
+import { C, FONT, MONO, SERIF } from "../theme";
+import { Chip, Cursor, Spark, lerp, pressScale, useSpringAt, useT } from "../components";
 
 const COPY = 6.4;
 
@@ -24,7 +24,7 @@ export const S9Outro: React.FC = () => {
             width: (260 + i * 90) * 2,
             height: (260 + i * 90) * 2,
             borderRadius: "50%",
-            border: `2px ${i === 1 ? "dashed" : "solid"} rgba(79,70,229,${0.18 - i * 0.04})`,
+            border: `2px ${i === 1 ? "dashed" : "solid"} rgba(217,119,87,${0.18 - i * 0.04})`,
             transform: `rotate(${t * (i % 2 ? -20 : 14)}deg) scale(${logo})`,
           }}
         >
@@ -44,19 +44,22 @@ export const S9Outro: React.FC = () => {
       <div
         style={{
           marginTop: 200,
+          display: "flex",
+          alignItems: "center",
+          gap: 36,
           fontSize: 240,
-          fontWeight: 900,
+          fontWeight: 700,
+          fontFamily: SERIF,
           lineHeight: 1,
           letterSpacing: 16,
-          background: GRAD,
-          WebkitBackgroundClip: "text",
-          color: "transparent",
+          color: C.ink,
           transform: `scale(${logo})`,
         }}
       >
+        <Spark size={170} spin={t * 25} />
         REA
       </div>
-      <div style={{ marginTop: 24, fontSize: 54, fontWeight: 900, color: C.ink, opacity: tag, transform: `translateY(${(1 - tag) * 20}px)` }}>
+      <div style={{ marginTop: 24, fontSize: 54, fontWeight: 700, fontFamily: SERIF, color: C.ink, opacity: tag, transform: `translateY(${(1 - tag) * 20}px)` }}>
         看见一个功能，就能读懂它的底层
       </div>
       <div style={{ marginTop: 28, display: "flex", gap: 16, opacity: chips, transform: `scale(${0.8 + chips * 0.2})` }}>
@@ -71,15 +74,15 @@ export const S9Outro: React.FC = () => {
           alignItems: "center",
           gap: 0,
           borderRadius: 18,
-          background: "#0F172A",
-          boxShadow: "0 18px 40px rgba(15,23,42,0.25)",
+          background: C.dark,
+          boxShadow: "0 18px 40px rgba(20,20,19,0.25)",
           overflow: "hidden",
           opacity: cmd,
           transform: `translateY(${(1 - cmd) * 30}px)`,
         }}
       >
-        <div style={{ padding: "18px 30px", fontFamily: MONO, fontSize: 34, color: "#E2E8F0" }}>
-          <span style={{ color: "#22D3EE" }}>$</span> npx rea-agents setup
+        <div style={{ padding: "18px 30px", fontFamily: MONO, fontSize: 34, color: "#E3DFD3" }}>
+          <span style={{ color: "#E89B7F" }}>$</span> npx rea-agents setup
         </div>
         <div
           style={{
