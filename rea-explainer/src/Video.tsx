@@ -61,7 +61,7 @@ export const ReaExplainer: React.FC = () => {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
     });
-    return fade * interpolate(speechLevel(f), [0, 1], [0.2, 0.1]);
+    return fade * interpolate(speechLevel(f), [0, 1], [0.13, 0.06]);
   };
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg }}>
